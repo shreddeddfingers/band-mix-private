@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        getUserData().role == 'admin';
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isBandMember(bandId) {
+      return isAuthenticated() && (
+        isAdmin() || 
+        (
+          exists(/databases/$(database)/documents/bands/$(bandId)) &&
+          request.auth.uid in get(/databases/$(database)/documents/bands/$(bandId)).data.memberIds
+        )
+      );
+    }
+
+    // 1. Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      
+      // Allow initial user creation
+      allow create: if isAuthenticated() && isOwner(userId)
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.email is string
+        && request.resource.data.role in ['admin', 'student'];
+
+      // Owner can update their own profile details, but CANNOT escalate role to admin unless already admin
+      allow update: if isAuthenticated() && (
+        isAdmin() || (
+          isOwner(userId) 
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+        )
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // 2. Bands collection
+    match /bands/{bandId} {
+      allow read: if isAuthenticated();
+      allow create, delete: if isAdmin();
+      
+      // Allow admin updates, or allow members array modification during member joins
+      allow update: if isAdmin() || (
+        isAuthenticated() && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberIds'])
+      );
+
+      // Dedicated Band Chat Subcollection
+      match /messages/{messageId} {
+        allow read: if isBandMember(bandId);
+        
+        allow create: if isBandMember(bandId)
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 2000
+          && request.resource.data.timestamp is string;
+
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    // 3. Rehearsal Events (Admin exclusive scheduling)
+    match /rehearsals/{eventId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // 4. Invites & QR passes
+    match /invites/{code} {
+      // Publicly readable for dynamic QR code resolution before sign-in
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAuthenticated() || true; // For incrementing usage count
+    }
+  }
+}
