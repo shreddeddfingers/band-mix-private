@@ -12,6 +12,19 @@ interface AuthContextType {
   role: UserRole;
   isAdmin: boolean;
   isStudent: boolean;
+  directors: UserProfile[];
+  activeDirectorId: string;
+  createDirectorAccount: (data: {
+    name: string;
+    email: string;
+    studioName: string;
+    primaryInstrument: any;
+    instruments?: any[];
+    musicalStyles?: string[];
+    bio?: string;
+    avatar?: string;
+  }) => UserProfile;
+  switchDirector: (directorId: string) => void;
   switchUser: (userId: string) => void;
   switchRole: (role: UserRole, studentId?: string) => void;
   availableUsers: UserProfile[];
@@ -25,6 +38,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [availableUsers, setAvailableUsers] = useState<UserProfile[]>([]);
+  const [directors, setDirectors] = useState<UserProfile[]>([]);
   const isFirebaseActive = isFirebaseConfigured;
 
   useEffect(() => {
@@ -46,6 +60,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Refresh available users from store
     const refreshUsers = async () => {
+      const allDirectors = DataStore.getDirectors();
+      setDirectors(allDirectors);
+
       if (isFirebaseActive) {
         try {
           const remoteUsers = await FirestoreService.getAllUsers();
@@ -87,12 +104,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const switchDirector = (directorId: string) => {
+    const director = directors.find((d) => d.id === directorId) || DataStore.getDirector(directorId);
+    if (director) {
+      setCurrentUser(director);
+      DataStore.setDirector(director);
+    }
+  };
+
+  const createDirectorAccount = (data: {
+    name: string;
+    email: string;
+    studioName: string;
+    primaryInstrument: any;
+    instruments?: any[];
+    musicalStyles?: string[];
+    bio?: string;
+    avatar?: string;
+  }): UserProfile => {
+    const newDirector = DataStore.createDirector(data);
+    const updatedDirectors = DataStore.getDirectors();
+    setDirectors(updatedDirectors);
+    setCurrentUser(newDirector);
+    return newDirector;
+  };
+
+  const activeDirectorId =
+    currentUser?.role === 'admin'
+      ? currentUser.id
+      : currentUser?.directorId || 'director-main';
+
   const switchRole = (role: UserRole, studentId?: string) => {
     if (role === 'admin') {
-      const director = DataStore.getDirector();
+      const director = DataStore.getDirector(activeDirectorId);
       setCurrentUser(director);
     } else {
-      const students = DataStore.getStudents();
+      const students = DataStore.getStudents(activeDirectorId);
       if (studentId) {
         const found = students.find((s) => s.id === studentId);
         if (found) {
@@ -133,6 +180,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role,
         isAdmin,
         isStudent,
+        directors,
+        activeDirectorId,
+        createDirectorAccount,
+        switchDirector,
         switchUser,
         switchRole,
         availableUsers,

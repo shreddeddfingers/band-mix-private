@@ -75,7 +75,7 @@ export function RehearsalPlanner({
   bandId,
   showCreateModalInitially = false,
 }: RehearsalPlannerProps) {
-  const { isAdmin, currentUser } = useAuth();
+  const { isAdmin, currentUser, activeDirectorId } = useAuth();
   const [events, setEvents] = useState<BandEvent[]>([]);
   const [bands, setBands] = useState<Band[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(showCreateModalInitially);
@@ -104,13 +104,13 @@ export function RehearsalPlanner({
   useEffect(() => {
     const loadData = () => {
       setEvents(DataStore.getRehearsals(bandId));
-      setBands(DataStore.getBands());
+      setBands(DataStore.getBands(activeDirectorId));
     };
 
     loadData();
     const unsubReh = subscribeToStore('rehearsals', loadData);
     return () => unsubReh();
-  }, [bandId]);
+  }, [bandId, activeDirectorId]);
 
   useEffect(() => {
     if (bandId) {

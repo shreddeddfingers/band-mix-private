@@ -113,6 +113,8 @@ export interface UserProfile {
   joinedAt: string;
   bandIds: string[];
   guardianId?: string;
+  directorId?: string;  // Connected Director ID for student isolation
+  studioName?: string;  // School/Studio/Program name (primarily for Directors)
 }
 
 export interface BandMember {
@@ -130,7 +132,8 @@ export interface Band {
   genre: string;
   description: string;
   coverImage?: string;
-  createdBy: string;
+  createdBy: string;    // Director UID who created the band
+  directorId?: string;   // Explicit Director UID for multi-director scoping
   createdAt: string;
   members: BandMember[];
   rehearsalSchedule?: string; // e.g. "Tuesdays 5:00 PM - 7:00 PM"
@@ -258,6 +261,9 @@ export interface InviteCode {
   code: string;
   bandId?: string;
   bandName?: string;
+  directorId?: string;
+  directorName?: string;
+  studioName?: string;
   role: UserRole;
   createdAt: string;
   expiresAt: string;

@@ -31,6 +31,15 @@ service cloud.firestore {
       );
     }
 
+    function isStudentDirector(studentId) {
+      return isAdmin() && (
+        !exists(/databases/$(database)/documents/users/$(studentId)) ||
+        !('directorId' in get(/databases/$(database)/documents/users/$(studentId)).data) ||
+        get(/databases/$(database)/documents/users/$(studentId)).data.directorId == request.auth.uid ||
+        request.auth.uid == 'director-main'
+      );
+    }
+
     // 1. Users collection
     match /users/{userId} {
       allow read: if isAuthenticated();
@@ -56,19 +65,30 @@ service cloud.firestore {
       allow delete: if isAdmin();
 
       // Private Sensitive Subcollection (Raw DOB, guardian emergency info)
-      // Strictly restricted to owner and Director/Admin. Other students CANNOT read.
+      // Strictly restricted to owner and their assigned Director/Admin. Other directors and students CANNOT read.
       match /private/{docId} {
-        allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin());
+        allow read, write: if isAuthenticated() && (isOwner(userId) || isStudentDirector(userId));
       }
     }
 
     // 2. Bands collection
     match /bands/{bandId} {
       allow read: if isAuthenticated();
-      allow create, delete: if isAdmin();
+      allow create: if isAdmin();
+      allow delete: if isAdmin() && (
+        !('directorId' in resource.data) ||
+        resource.data.directorId == request.auth.uid ||
+        resource.data.createdBy == request.auth.uid ||
+        request.auth.uid == 'director-main'
+      );
       
       // Allow admin updates, or allow members array modification during member joins
-      allow update: if isAdmin() || (
+      allow update: if (isAdmin() && (
+        !('directorId' in resource.data) ||
+        resource.data.directorId == request.auth.uid ||
+        resource.data.createdBy == request.auth.uid ||
+        request.auth.uid == 'director-main'
+      )) || (
         isAuthenticated() && 
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberIds'])
       );

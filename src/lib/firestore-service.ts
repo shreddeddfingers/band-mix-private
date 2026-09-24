@@ -99,9 +99,23 @@ export const FirestoreService = {
     await updateDoc(doc(firestore, 'bands', id), updates);
   },
 
+  async getStudentsByDirector(directorId: string): Promise<UserProfile[]> {
+    const firestore = getDb();
+    const q = query(collection(firestore, 'users'), where('directorId', '==', directorId));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => d.data() as UserProfile);
+  },
+
   async deleteBand(id: string): Promise<void> {
     const firestore = getDb();
     await deleteDoc(doc(firestore, 'bands', id));
+  },
+
+  async getBandsByDirector(directorId: string): Promise<Band[]> {
+    const firestore = getDb();
+    const q = query(collection(firestore, 'bands'), where('directorId', '==', directorId));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => d.data() as Band);
   },
 
   // --- REAL-TIME BAND CHAT ---
@@ -163,6 +177,13 @@ export const FirestoreService = {
   async getInvites(): Promise<InviteCode[]> {
     const firestore = getDb();
     const snap = await getDocs(collection(firestore, 'invites'));
+    return snap.docs.map((d) => d.data() as InviteCode);
+  },
+
+  async getInvitesByDirector(directorId: string): Promise<InviteCode[]> {
+    const firestore = getDb();
+    const q = query(collection(firestore, 'invites'), where('directorId', '==', directorId));
+    const snap = await getDocs(q);
     return snap.docs.map((d) => d.data() as InviteCode);
   },
 

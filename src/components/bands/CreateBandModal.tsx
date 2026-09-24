@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { DataStore } from '@/lib/data-store';
+import { useAuth } from '@/lib/auth-context';
 import { InstrumentType, UserProfile } from '@/types';
 import { InstrumentIcon, INSTRUMENT_METADATA } from '../InstrumentIcon';
 import { X, Plus, Music, Users, ShieldCheck, Check } from 'lucide-react';
@@ -18,6 +19,9 @@ export function CreateBandModal({
   onClose,
   onSuccess,
 }: CreateBandModalProps) {
+  const { currentUser, activeDirectorId } = useAuth();
+  const dirId = activeDirectorId || currentUser?.id || 'director-main';
+
   const [name, setName] = useState('');
   const [genre, setGenre] = useState('Rock / Alternative');
   const [description, setDescription] = useState('');
@@ -31,8 +35,8 @@ export function CreateBandModal({
     { studentId: string; instrument: InstrumentType }[]
   >([]);
 
-  const students = DataStore.getStudents();
-  const director = DataStore.getDirector();
+  const students = DataStore.getStudents(dirId);
+  const director = DataStore.getDirector(dirId);
 
   if (!isOpen) return null;
 
@@ -55,6 +59,7 @@ export function CreateBandModal({
       description: description.trim() || `${genre} ensemble formed under director guidance.`,
       rehearsalSchedule,
       coverImage,
+      directorId: dirId,
       initialStudentIds: assignments,
     });
 

@@ -27,7 +27,7 @@ import {
 import { clsx } from 'clsx';
 
 export default function BandsPage() {
-  const { isAdmin, currentUser, isStudent } = useAuth();
+  const { isAdmin, currentUser, isStudent, activeDirectorId } = useAuth();
   const [bands, setBands] = useState<Band[]>([]);
   const [search, setSearch] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('all');
@@ -37,11 +37,11 @@ export default function BandsPage() {
   const [historyBandId, setHistoryBandId] = useState<string | null>(null);
 
   useEffect(() => {
-    const refresh = () => setBands(DataStore.getBands());
+    const refresh = () => setBands(DataStore.getBands(activeDirectorId));
     refresh();
     const unsub = subscribeToStore('bands', refresh);
     return () => unsub();
-  }, []);
+  }, [activeDirectorId]);
 
   const genres = [
     'all',
@@ -394,7 +394,7 @@ export default function BandsPage() {
       <CreateBandModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={() => setBands(DataStore.getBands())}
+        onSuccess={() => setBands(DataStore.getBands(activeDirectorId))}
       />
       {qrBandId && (
         <QRCodeModal

@@ -9,16 +9,16 @@ import { Calendar, Music, Filter, Clock } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export default function SchedulePage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, activeDirectorId, currentUser } = useAuth();
   const [bands, setBands] = useState<Band[]>([]);
   const [selectedBandFilter, setSelectedBandFilter] = useState<string>('all');
 
   useEffect(() => {
-    const refresh = () => setBands(DataStore.getBands());
+    const refresh = () => setBands(DataStore.getBands(activeDirectorId));
     refresh();
     const unsub = subscribeToStore('bands', refresh);
     return () => unsub();
-  }, []);
+  }, [activeDirectorId]);
 
   return (
     <div className="space-y-6">
@@ -30,7 +30,7 @@ export default function SchedulePage() {
             Master Rehearsal Schedule
           </h1>
           <p className="text-sm text-studio-400 mt-1">
-            Studio-wide practice bookings, rehearsal agendas, and song setlists managed exclusively by Director Marcus Vance.
+            Studio-wide practice bookings, rehearsal agendas, and song setlists managed by Director {currentUser?.name || 'Director'}.
           </p>
         </div>
 

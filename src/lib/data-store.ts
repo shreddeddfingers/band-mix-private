@@ -29,6 +29,7 @@ const STORAGE_KEYS = {
   BANDS: 'bandmix_prod_bands',
   STUDENTS: 'bandmix_prod_students',
   DIRECTOR: 'bandmix_prod_director',
+  DIRECTORS: 'bandmix_prod_directors',
   MESSAGES: 'bandmix_prod_messages',
   REHEARSALS: 'bandmix_prod_rehearsals',
   INVITES: 'bandmix_prod_invites',
@@ -41,6 +42,9 @@ const STORAGE_KEYS = {
 // Production baseline invite pass
 const BASELINE_INVITE: InviteCode = {
   code: 'STUDIO-PASS',
+  directorId: 'director-main',
+  directorName: 'Director',
+  studioName: 'Music Studio',
   role: 'student',
   createdAt: new Date().toISOString(),
   expiresAt: new Date(Date.now() + 365 * 86400000).toISOString(),
@@ -55,6 +59,7 @@ const BASELINE_DIRECTOR: UserProfile = {
   name: 'Director',
   email: 'director@musicstudio.edu',
   role: 'admin',
+  studioName: 'Music Studio',
   avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
   instruments: ['piano', 'guitars'],
   primaryInstrument: 'piano',
@@ -120,6 +125,7 @@ export const DataStore = {
     localStorage.removeItem(STORAGE_KEYS.BANDS);
     localStorage.removeItem(STORAGE_KEYS.STUDENTS);
     localStorage.removeItem(STORAGE_KEYS.DIRECTOR);
+    localStorage.removeItem(STORAGE_KEYS.DIRECTORS);
     localStorage.removeItem(STORAGE_KEYS.MESSAGES);
     localStorage.removeItem(STORAGE_KEYS.REHEARSALS);
     localStorage.removeItem(STORAGE_KEYS.INVITES);
@@ -138,24 +144,125 @@ export const DataStore = {
   },
 
   // USERS & ROSTER
-  getDirector(): UserProfile {
+  getDirectors(): UserProfile[] {
+    const list = loadItem<UserProfile[]>(STORAGE_KEYS.DIRECTORS, []);
+    if (!list.some((d) => d.id === BASELINE_DIRECTOR.id)) {
+      list.unshift(BASELINE_DIRECTOR);
+    }
+    return list;
+  },
+
+  getDirector(id?: string): UserProfile {
+    if (id) {
+      const directors = this.getDirectors();
+      const found = directors.find((d) => d.id === id);
+      if (found) return found;
+    }
     return loadItem<UserProfile>(STORAGE_KEYS.DIRECTOR, BASELINE_DIRECTOR);
   },
 
   setDirector(director: UserProfile): void {
     saveItem(STORAGE_KEYS.DIRECTOR, director);
+    const directors = this.getDirectors();
+    const idx = directors.findIndex((d) => d.id === director.id);
+    if (idx >= 0) {
+      directors[idx] = director;
+    } else {
+      directors.push(director);
+    }
+    saveItem(STORAGE_KEYS.DIRECTORS, directors);
     if (isFirebaseConfigured) {
       FirestoreService.setUser(director).catch(console.error);
     }
     notify('students');
   },
 
-  getStudents(): UserProfile[] {
-    return loadItem<UserProfile[]>(STORAGE_KEYS.STUDENTS, []);
+  createDirector(data: {
+    name: string;
+    email: string;
+    studioName: string;
+    primaryInstrument: InstrumentType;
+    instruments?: InstrumentType[];
+    musicalStyles?: string[];
+    bio?: string;
+    avatar?: string;
+  }): UserProfile {
+    const newId = `director-${Date.now().toString(36)}`;
+    const newDirector: UserProfile = {
+      id: newId,
+      name: data.name,
+      email: data.email,
+      role: 'admin',
+      directorId: newId,
+      studioName: data.studioName,
+      primaryInstrument: data.primaryInstrument,
+      instruments:
+        data.instruments && data.instruments.length > 0
+          ? data.instruments
+          : [data.primaryInstrument],
+      musicalStyles: data.musicalStyles || ['Rock', 'Jazz', 'Pop'],
+      skillLevel: 'expert',
+      ageGroup: 'adults',
+      bio:
+        data.bio ||
+        `Band Director & Ensemble Coordinator at ${data.studioName}.`,
+      avatar:
+        data.avatar ||
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
+      joinedAt: new Date().toISOString(),
+      bandIds: [],
+    };
+
+    const directors = this.getDirectors();
+    directors.push(newDirector);
+    saveItem(STORAGE_KEYS.DIRECTORS, directors);
+    saveItem(STORAGE_KEYS.DIRECTOR, newDirector);
+
+    // Auto-create a studio invite pass for this director
+    const cleanPrefix =
+      data.studioName
+        .substring(0, 4)
+        .toUpperCase()
+        .replace(/[^A-Z]/g, '') || 'STUDIO';
+    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const studioInvite: InviteCode = {
+      code: `${cleanPrefix}-${randomSuffix}`,
+      role: 'student',
+      label: `${data.studioName} Student QR Intake Pass`,
+      directorId: newId,
+      directorName: data.name,
+      studioName: data.studioName,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 365 * 86400000).toISOString(),
+      usedCount: 0,
+      maxUses: 500,
+    };
+
+    const invites = loadItem<InviteCode[]>(STORAGE_KEYS.INVITES, [BASELINE_INVITE]);
+    saveItem(STORAGE_KEYS.INVITES, [studioInvite, ...invites]);
+
+    if (isFirebaseConfigured) {
+      FirestoreService.setUser(newDirector).catch(console.error);
+      FirestoreService.createInvite(studioInvite).catch(console.error);
+    }
+
+    notify('students');
+    notify('invites');
+    return newDirector;
   },
 
-  getAllUsers(): UserProfile[] {
-    return [this.getDirector(), ...this.getStudents()];
+  getStudents(directorId?: string): UserProfile[] {
+    const students = loadItem<UserProfile[]>(STORAGE_KEYS.STUDENTS, []);
+    if (!directorId) return students;
+    return students.filter(
+      (s) =>
+        s.directorId === directorId ||
+        (directorId === 'director-main' && (!s.directorId || s.directorId === 'director-main'))
+    );
+  },
+
+  getAllUsers(directorId?: string): UserProfile[] {
+    return [...this.getDirectors(), ...this.getStudents(directorId)];
   },
 
   getUserById(id: string): UserProfile | undefined {
@@ -190,10 +297,23 @@ export const DataStore = {
       guardianName?: string;
       guardianEmail?: string;
       guardianPhone?: string;
+      directorId?: string;
     }
   ): UserProfile {
-    const students = this.getStudents();
+    const students = loadItem<UserProfile[]>(STORAGE_KEYS.STUDENTS, []);
     const newId = `student-${Date.now().toString(36)}`;
+
+    // Resolve directorId:
+    let resolvedDirectorId = studentData.directorId;
+    if (!resolvedDirectorId && studentData.bandIdToJoin) {
+      const targetBand = this.getBand(studentData.bandIdToJoin);
+      if (targetBand) {
+        resolvedDirectorId = targetBand.directorId || targetBand.createdBy;
+      }
+    }
+    if (!resolvedDirectorId) {
+      resolvedDirectorId = this.getDirector().id || 'director-main';
+    }
 
     // Calculate exact age from DOB if supplied; DOB is NEVER stored on the public UserProfile
     let exactAge = studentData.exactAge;
@@ -216,6 +336,7 @@ export const DataStore = {
     const newStudent: UserProfile = {
       ...publicData,
       id: newId,
+      directorId: resolvedDirectorId,
       role: 'student',
       exactAge,
       ageGroup: ageGroup || 'teens',
@@ -256,12 +377,20 @@ export const DataStore = {
   },
 
   // BANDS (CRUD)
-  getBands(): Band[] {
-    return loadItem<Band[]>(STORAGE_KEYS.BANDS, []);
+  getBands(directorId?: string): Band[] {
+    const bands = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);
+    if (!directorId) return bands;
+    return bands.filter(
+      (b) =>
+        b.directorId === directorId ||
+        b.createdBy === directorId ||
+        (directorId === 'director-main' &&
+          (!b.directorId && (!b.createdBy || b.createdBy === 'director-main')))
+    );
   },
 
   getBand(id: string): Band | undefined {
-    return this.getBands().find((b) => b.id === id);
+    return loadItem<Band[]>(STORAGE_KEYS.BANDS, []).find((b) => b.id === id);
   },
 
   createBand(data: {
@@ -270,10 +399,13 @@ export const DataStore = {
     description: string;
     rehearsalSchedule?: string;
     coverImage?: string;
+    directorId?: string;
     initialStudentIds?: { studentId: string; instrument: InstrumentType }[];
   }): Band {
-    const bands = this.getBands();
-    const director = this.getDirector();
+    const bands = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);
+    const director = data.directorId
+      ? this.getDirector(data.directorId)
+      : this.getDirector();
     const newBandId = `band-${Date.now().toString(36)}`;
 
     // Director is ALWAYS mandated and locked into every band
@@ -315,6 +447,7 @@ export const DataStore = {
         data.coverImage ||
         'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=800',
       createdBy: director.id,
+      directorId: director.id,
       createdAt: new Date().toISOString(),
       status: 'active',
       members,
@@ -602,8 +735,14 @@ export const DataStore = {
   },
 
   // INVITES & QR CODES
-  getInvites(): InviteCode[] {
-    return loadItem<InviteCode[]>(STORAGE_KEYS.INVITES, [BASELINE_INVITE]);
+  getInvites(directorId?: string): InviteCode[] {
+    const all = loadItem<InviteCode[]>(STORAGE_KEYS.INVITES, [BASELINE_INVITE]);
+    if (!directorId) return all;
+    return all.filter(
+      (i) =>
+        i.directorId === directorId ||
+        (directorId === 'director-main' && (!i.directorId || i.directorId === 'director-main'))
+    );
   },
 
   getInviteByCode(code: string): InviteCode | undefined {
@@ -616,12 +755,20 @@ export const DataStore = {
     bandId?: string;
     label: string;
     maxUses?: number;
+    directorId?: string;
+    directorName?: string;
+    studioName?: string;
   }): InviteCode {
-    const invites = this.getInvites();
+    const invites = loadItem<InviteCode[]>(STORAGE_KEYS.INVITES, [BASELINE_INVITE]);
     const band = data.bandId ? this.getBand(data.bandId) : undefined;
+    const director = data.directorId ? this.getDirector(data.directorId) : this.getDirector();
+    const studioPrefix = (data.studioName || director.studioName || 'BAND')
+      .substring(0, 4)
+      .toUpperCase()
+      .replace(/[^A-Z]/g, '');
     const prefix = band
       ? band.name.substring(0, 4).toUpperCase().replace(/[^A-Z]/g, '')
-      : 'BAND';
+      : (studioPrefix || 'BAND');
     const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
     const code = `${prefix}-${randomSuffix}`;
 
@@ -631,6 +778,9 @@ export const DataStore = {
       bandName: band?.name,
       role: 'student',
       label: data.label,
+      directorId: director.id,
+      directorName: director.name,
+      studioName: data.studioName || director.studioName || 'Music Studio',
       createdAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 90 * 86400000).toISOString(),
       usedCount: 0,

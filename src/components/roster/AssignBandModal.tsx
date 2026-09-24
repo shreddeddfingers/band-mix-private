@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { UserProfile, InstrumentType, Band } from '@/types';
 import { DataStore } from '@/lib/data-store';
+import { useAuth } from '@/lib/auth-context';
 import { InstrumentIcon } from '../InstrumentIcon';
 import { X, Check, Music, UserPlus } from 'lucide-react';
 
@@ -19,12 +20,14 @@ export function AssignBandModal({
   student,
   onSuccess,
 }: AssignBandModalProps) {
+  const { activeDirectorId } = useAuth();
   const [selectedBandId, setSelectedBandId] = useState('');
   const [selectedInstrument, setSelectedInstrument] = useState<InstrumentType>(
     student?.primaryInstrument || 'drums'
   );
 
-  const bands = DataStore.getBands();
+  const dirId = student?.directorId || activeDirectorId || 'director-main';
+  const bands = DataStore.getBands(dirId);
 
   if (!isOpen || !student) return null;
 

@@ -24,7 +24,7 @@ import {
 import { clsx } from 'clsx';
 
 export default function RosterPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, activeDirectorId } = useAuth();
   const [activeView, setActiveView] = useState<'roster' | 'matching'>('roster');
   const [students, setStudents] = useState<UserProfile[]>([]);
   const [bands, setBands] = useState<Band[]>([]);
@@ -42,8 +42,8 @@ export default function RosterPage() {
 
   useEffect(() => {
     const refresh = () => {
-      setStudents(DataStore.getStudents());
-      setBands(DataStore.getBands());
+      setStudents(DataStore.getStudents(activeDirectorId));
+      setBands(DataStore.getBands(activeDirectorId));
     };
 
     refresh();
@@ -54,7 +54,7 @@ export default function RosterPage() {
       unsubStudents();
       unsubBands();
     };
-  }, []);
+  }, [activeDirectorId]);
 
   const instrumentsList: InstrumentType[] = [
     'drums',
@@ -176,8 +176,8 @@ export default function RosterPage() {
         <BandFormationAssistant
           students={students}
           onBandCreated={() => {
-            setStudents(DataStore.getStudents());
-            setBands(DataStore.getBands());
+            setStudents(DataStore.getStudents(activeDirectorId));
+            setBands(DataStore.getBands(activeDirectorId));
           }}
         />
       ) : (
@@ -510,8 +510,8 @@ export default function RosterPage() {
         onClose={() => setAssignStudent(null)}
         student={assignStudent}
         onSuccess={() => {
-          setStudents(DataStore.getStudents());
-          setBands(DataStore.getBands());
+          setStudents(DataStore.getStudents(activeDirectorId));
+          setBands(DataStore.getBands(activeDirectorId));
         }}
       />
 

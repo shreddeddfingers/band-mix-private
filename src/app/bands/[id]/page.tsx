@@ -88,7 +88,8 @@ export default function BandHubPage({
     }
   };
 
-  const availableStudents = DataStore.getStudents().filter(
+  const bandDirectorId = band.directorId || band.createdBy || 'director-main';
+  const availableStudents = DataStore.getStudents(bandDirectorId).filter(
     (s) => !band.members.some((m) => m.userId === s.id)
   );
 

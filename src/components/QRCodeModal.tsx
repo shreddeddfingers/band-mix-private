@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { X, Copy, Check, Printer, QrCode, Sparkles, Music, Share2 } from 'lucide-react';
+import { X, Copy, Check, Printer, QrCode, Sparkles, Music, Share2, Building } from 'lucide-react';
 import { DataStore } from '@/lib/data-store';
+import { useAuth } from '@/lib/auth-context';
 import { InviteCode, Band } from '@/types';
 
 interface QRCodeModalProps {
@@ -17,21 +18,26 @@ export function QRCodeModal({
   onClose,
   preselectedBandId,
 }: QRCodeModalProps) {
+  const { currentUser, activeDirectorId } = useAuth();
   const [bands, setBands] = useState<Band[]>([]);
   const [selectedBandId, setSelectedBandId] = useState<string>(preselectedBandId || '');
   const [activeCode, setActiveCode] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [origin, setOrigin] = useState('');
 
+  const dirId = activeDirectorId || currentUser?.id || 'director-main';
+  const studioName = currentUser?.studioName || 'Music Studio';
+  const directorName = currentUser?.name || 'Director';
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setOrigin(window.location.origin);
     }
-    const allBands = DataStore.getBands();
-    setBands(allBands);
+    const dirBands = DataStore.getBands(dirId);
+    setBands(dirBands);
 
-    // Find or create appropriate code
-    const existing = DataStore.getInvites();
+    // Find or create appropriate code for this director
+    const existing = DataStore.getInvites(dirId);
     if (preselectedBandId) {
       setSelectedBandId(preselectedBandId);
       const bandCode = existing.find((i) => i.bandId === preselectedBandId);
@@ -41,6 +47,9 @@ export function QRCodeModal({
         const created = DataStore.createInvite({
           bandId: preselectedBandId,
           label: 'Band Join QR',
+          directorId: dirId,
+          directorName,
+          studioName,
         });
         setActiveCode(created.code);
       }
@@ -50,18 +59,21 @@ export function QRCodeModal({
         setActiveCode(general.code);
       } else {
         const created = DataStore.createInvite({
-          label: 'General Studio Pass',
+          label: `${studioName} Student Intake Pass`,
+          directorId: dirId,
+          directorName,
+          studioName,
         });
         setActiveCode(created.code);
       }
     }
-  }, [isOpen, preselectedBandId]);
+  }, [isOpen, preselectedBandId, dirId, directorName, studioName]);
 
   if (!isOpen) return null;
 
   const handleBandSelect = (bandId: string) => {
     setSelectedBandId(bandId);
-    const existing = DataStore.getInvites();
+    const existing = DataStore.getInvites(dirId);
     if (bandId) {
       const found = existing.find((i) => i.bandId === bandId);
       if (found) {
@@ -70,6 +82,9 @@ export function QRCodeModal({
         const created = DataStore.createInvite({
           bandId,
           label: `Invite for ${bands.find((b) => b.id === bandId)?.name}`,
+          directorId: dirId,
+          directorName,
+          studioName,
         });
         setActiveCode(created.code);
       }
@@ -78,7 +93,12 @@ export function QRCodeModal({
       if (general) {
         setActiveCode(general.code);
       } else {
-        const created = DataStore.createInvite({ label: 'Studio Pass' });
+        const created = DataStore.createInvite({
+          label: `${studioName} Pass`,
+          directorId: dirId,
+          directorName,
+          studioName,
+        });
         setActiveCode(created.code);
       }
     }

@@ -89,8 +89,20 @@ function OnboardContent() {
   const [currentObsession, setCurrentObsession] = useState('');
 
   const [targetBand, setTargetBand] = useState<Band | null>(null);
+  const [invite, setInvite] = useState<any>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [createdStudentName, setCreatedStudentName] = useState('');
+
+  useEffect(() => {
+    const inv = DataStore.getInviteByCode(codeParam);
+    if (inv) {
+      setInvite(inv);
+      if (!bandIdParam && inv.bandId) {
+        const b = DataStore.getBand(inv.bandId);
+        if (b) setTargetBand(b);
+      }
+    }
+  }, [codeParam, bandIdParam]);
 
   useEffect(() => {
     if (bandIdParam) {
@@ -98,6 +110,12 @@ function OnboardContent() {
       if (b) setTargetBand(b);
     }
   }, [bandIdParam]);
+
+  const effectiveDirectorId =
+    invite?.directorId ||
+    (targetBand ? targetBand.directorId || targetBand.createdBy : undefined);
+  const effectiveDirectorName = invite?.directorName || 'Director';
+  const effectiveStudioName = invite?.studioName || 'Music Studio';
 
   const allInstruments: InstrumentType[] = [
     'drums',
@@ -184,6 +202,7 @@ function OnboardContent() {
 
     const newStudent = DataStore.createStudent({
       name: name.trim(),
+      directorId: effectiveDirectorId,
       email:
         email.trim() ||
         `${name.toLowerCase().replace(/\s+/g, '.')}@student.musicstudio.edu`,
@@ -236,7 +255,7 @@ function OnboardContent() {
         </span>
 
         <h2 className="text-3xl font-black text-white mt-4 tracking-tight">
-          Welcome to the Studio, {createdStudentName}!
+          Welcome to {effectiveStudioName}, {createdStudentName}!
         </h2>
 
         <p className="text-studio-300 text-sm mt-3 max-w-md mx-auto leading-relaxed">
@@ -247,7 +266,7 @@ function OnboardContent() {
             </>
           ) : (
             <>
-              Your profile, availability, and musical match preferences have been indexed. Director Marcus Vance will review your instruments and schedule to form compatible ensembles.
+              Your profile, availability, and musical match preferences have been indexed. Director {effectiveDirectorName} at {effectiveStudioName} will review your instruments and schedule to form compatible ensembles.
             </>
           )}
         </p>
@@ -286,7 +305,7 @@ function OnboardContent() {
           Student Musician Onboarding
         </h1>
         <p className="text-sm text-studio-400 max-w-lg mx-auto mt-2">
-          Set up your instruments, rehearsal availability, and musical interests. You will be matched with student ensembles by Director Marcus Vance.
+          Set up your instruments, rehearsal availability, and musical interests. You will be matched with student ensembles by Director {effectiveDirectorName} at {effectiveStudioName}.
         </p>
 
         {targetBand && (

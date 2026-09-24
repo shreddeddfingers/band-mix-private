@@ -26,7 +26,7 @@ import {
 import { format, parseISO } from 'date-fns';
 
 export default function DashboardPage() {
-  const { currentUser, isAdmin, isStudent } = useAuth();
+  const { currentUser, isAdmin, isStudent, activeDirectorId } = useAuth();
   const [bands, setBands] = useState<Band[]>([]);
   const [students, setStudents] = useState<UserProfile[]>([]);
   const [rehearsals, setRehearsals] = useState<RehearsalEvent[]>([]);
@@ -35,8 +35,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const refresh = () => {
-      setBands(DataStore.getBands());
-      setStudents(DataStore.getStudents());
+      setBands(DataStore.getBands(activeDirectorId));
+      setStudents(DataStore.getStudents(activeDirectorId));
       setRehearsals(DataStore.getRehearsals());
     };
 
@@ -50,7 +50,7 @@ export default function DashboardPage() {
       unsubStudents();
       unsubRehearsals();
     };
-  }, []);
+  }, [activeDirectorId]);
 
   // Filter bands for current student if in student mode
   const displayedBands = isStudent
@@ -76,7 +76,7 @@ export default function DashboardPage() {
               </span>
               {isAdmin ? (
                 <span className="text-xs px-2.5 py-1 rounded-full bg-studio-800 text-studio-300 border border-studio-700 font-mono">
-                  Director Administration
+                  {currentUser?.studioName || 'Director Administration'}
                 </span>
               ) : (
                 <span className="text-xs px-2.5 py-1 rounded-full bg-studio-800 text-studio-300 border border-studio-700">
@@ -340,7 +340,7 @@ export default function DashboardPage() {
         isOpen={isCreateBandOpen}
         onClose={() => setIsCreateBandOpen(false)}
         onSuccess={() => {
-          setBands(DataStore.getBands());
+          setBands(DataStore.getBands(activeDirectorId));
         }}
       />
       <QRCodeModal isOpen={isQrOpen} onClose={() => setIsQrOpen(false)} />
