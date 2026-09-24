@@ -2,16 +2,28 @@
 
 import {
   Band,
+  BandAnnouncement,
+  BandEvent,
+  BandEventType,
+  BandHistoryRecord,
   BandMember,
+  BandSong,
   ChatMessage,
   InstrumentType,
   InviteCode,
+  PrivateUserProfile,
   RehearsalEvent,
+  RSVPStatus,
+  SongSentiment,
+  SongSentimentSummary,
+  SongStatus,
+  SongVote,
   UserProfile,
   UserRole,
 } from '@/types';
 import { isFirebaseConfigured } from './firebase';
 import { FirestoreService } from './firestore-service';
+import { calculateExactAge, ageToAgeGroup } from './age-utils';
 
 const STORAGE_KEYS = {
   BANDS: 'bandmix_prod_bands',
@@ -20,6 +32,10 @@ const STORAGE_KEYS = {
   MESSAGES: 'bandmix_prod_messages',
   REHEARSALS: 'bandmix_prod_rehearsals',
   INVITES: 'bandmix_prod_invites',
+  PRIVATE_PROFILES: 'bandmix_prod_private_profiles',
+  SONGS: 'bandmix_prod_songs',
+  VOTES: 'bandmix_prod_song_votes',
+  ANNOUNCEMENTS: 'bandmix_prod_announcements',
 };
 
 // Production baseline invite pass
@@ -107,12 +123,18 @@ export const DataStore = {
     localStorage.removeItem(STORAGE_KEYS.MESSAGES);
     localStorage.removeItem(STORAGE_KEYS.REHEARSALS);
     localStorage.removeItem(STORAGE_KEYS.INVITES);
+    localStorage.removeItem(STORAGE_KEYS.PRIVATE_PROFILES);
+    localStorage.removeItem(STORAGE_KEYS.SONGS);
+    localStorage.removeItem(STORAGE_KEYS.VOTES);
+    localStorage.removeItem(STORAGE_KEYS.ANNOUNCEMENTS);
     notify('all');
     notify('bands');
     notify('students');
     notify('messages');
     notify('rehearsals');
     notify('invites');
+    notify('songs');
+    notify('announcements');
   },
 
   // USERS & ROSTER
@@ -140,23 +162,82 @@ export const DataStore = {
     return this.getAllUsers().find((u) => u.id === id);
   },
 
+  // Private Sensitive Profiles (DOB, guardian contact)
+  getPrivateProfiles(): Record<string, PrivateUserProfile> {
+    return loadItem<Record<string, PrivateUserProfile>>(
+      STORAGE_KEYS.PRIVATE_PROFILES,
+      {}
+    );
+  },
+
+  getPrivateProfile(userId: string): PrivateUserProfile | undefined {
+    return this.getPrivateProfiles()[userId];
+  },
+
+  setPrivateProfile(profile: PrivateUserProfile): void {
+    const all = this.getPrivateProfiles();
+    all[profile.userId] = profile;
+    saveItem(STORAGE_KEYS.PRIVATE_PROFILES, all);
+    if (isFirebaseConfigured) {
+      FirestoreService.setPrivateProfile(profile).catch(console.error);
+    }
+  },
+
   createStudent(
     studentData: Omit<UserProfile, 'id' | 'role' | 'joinedAt' | 'bandIds'> & {
       bandIdToJoin?: string;
+      dateOfBirth?: string;
+      guardianName?: string;
+      guardianEmail?: string;
+      guardianPhone?: string;
     }
   ): UserProfile {
     const students = this.getStudents();
     const newId = `student-${Date.now().toString(36)}`;
+
+    // Calculate exact age from DOB if supplied; DOB is NEVER stored on the public UserProfile
+    let exactAge = studentData.exactAge;
+    let ageGroup = studentData.ageGroup;
+    if (studentData.dateOfBirth) {
+      exactAge = calculateExactAge(studentData.dateOfBirth);
+      if (!ageGroup) {
+        ageGroup = ageToAgeGroup(exactAge);
+      }
+    }
+
+    const {
+      dateOfBirth,
+      guardianName,
+      guardianEmail,
+      guardianPhone,
+      ...publicData
+    } = studentData;
+
     const newStudent: UserProfile = {
-      ...studentData,
+      ...publicData,
       id: newId,
       role: 'student',
+      exactAge,
+      ageGroup: ageGroup || 'teens',
       joinedAt: new Date().toISOString(),
       bandIds: studentData.bandIdToJoin ? [studentData.bandIdToJoin] : [],
     };
 
     const updated = [newStudent, ...students];
     saveItem(STORAGE_KEYS.STUDENTS, updated);
+
+    // Store private sensitive profile separately
+    if (dateOfBirth || guardianEmail || guardianName) {
+      const privateProfile: PrivateUserProfile = {
+        userId: newId,
+        dateOfBirth,
+        guardianName,
+        guardianEmail,
+        guardianPhone,
+        updatedAt: new Date().toISOString(),
+      };
+      this.setPrivateProfile(privateProfile);
+    }
 
     if (isFirebaseConfigured) {
       FirestoreService.setUser(newStudent).catch(console.error);
@@ -447,45 +528,66 @@ export const DataStore = {
     date: string;
     startTime: string;
     endTime: string;
+    eventType?: BandEventType;
+    callTime?: string;
+    performanceTime?: string;
     notes?: string;
     setlist?: string[];
-  }): RehearsalEvent {
+    repertoireSongIds?: string[];
+  }): BandEvent {
     const director = this.getDirector();
     const band = this.getBand(data.bandId);
     const rehearsals = this.getRehearsals();
+    const eventType = data.eventType || 'rehearsal';
 
-    const newRehearsal: RehearsalEvent = {
-      id: `reh-${Date.now().toString(36)}`,
+    const newEvent: BandEvent = {
+      id: `evt-${Date.now().toString(36)}`,
       bandId: data.bandId,
       bandName: band?.name || 'Band Practice',
+      eventType,
       title: data.title,
       location: data.location,
       date: data.date,
       startTime: data.startTime,
       endTime: data.endTime,
+      callTime: data.callTime,
+      performanceTime: data.performanceTime,
       notes: data.notes,
       setlist: data.setlist || [],
+      repertoireSongIds: data.repertoireSongIds || [],
+      rsvps: {},
       createdBy: director.id,
       createdAt: new Date().toISOString(),
     };
 
-    const updated = [...rehearsals, newRehearsal];
+    const updated = [...rehearsals, newEvent];
     saveItem(STORAGE_KEYS.REHEARSALS, updated);
 
     if (isFirebaseConfigured) {
-      FirestoreService.createRehearsal(newRehearsal).catch(console.error);
+      FirestoreService.createRehearsal(newEvent).catch(console.error);
     }
 
-    // Auto-announce to chat
+    // Auto-announce to chat with appropriate event label
+    const eventLabel =
+      eventType === 'gig'
+        ? '🎤 LIVE GIG / CONCERT'
+        : eventType === 'showcase'
+        ? '🌟 STUDIO SHOWCASE'
+        : eventType === 'recording'
+        ? '🎙️ RECORDING SESSION'
+        : eventType === 'audition'
+        ? '📋 AUDITION'
+        : '📅 REHEARSAL';
+
     this.sendMessage(
       data.bandId,
-      `📅 REHEARSAL SCHEDULED: "${newRehearsal.title}" on ${newRehearsal.date} from ${newRehearsal.startTime} to ${newRehearsal.endTime} in ${newRehearsal.location}. Check Rehearsal tab for details!`,
+      `${eventLabel} SCHEDULED: "${newEvent.title}" on ${newEvent.date} from ${newEvent.startTime} to ${newEvent.endTime} at ${newEvent.location}. Check Schedule tab for details!`,
       director,
       true
     );
 
     notify('rehearsals');
-    return newRehearsal;
+    return newEvent;
   },
 
   deleteRehearsal(id: string): void {
@@ -558,5 +660,296 @@ export const DataStore = {
     if (isFirebaseConfigured) {
       FirestoreService.incrementInviteUse(code).catch(console.error);
     }
+  },
+
+  // --- MASTER BAND REPERTOIRE & SET LIST ---
+  getSongs(bandId?: string): BandSong[] {
+    const all = loadItem<BandSong[]>(STORAGE_KEYS.SONGS, []);
+    return bandId ? all.filter((s) => s.bandId === bandId) : all;
+  },
+
+  getSong(id: string): BandSong | undefined {
+    return this.getSongs().find((s) => s.id === id);
+  },
+
+  createSong(data: {
+    bandId: string;
+    title: string;
+    artist: string;
+    key?: string;
+    tempoBpm?: number;
+    vocalistAssignments?: string[];
+    directorNotes?: string;
+    status: SongStatus;
+    suggestedBy?: string;
+  }): BandSong {
+    const songs = this.getSongs();
+    const newSong: BandSong = {
+      ...data,
+      id: `song-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      sentimentSummary: {
+        reallyWant: 0,
+        wouldPlay: 0,
+        neutral: 0,
+        notInterested: 0,
+        totalVotes: 0,
+      },
+    };
+
+    saveItem(STORAGE_KEYS.SONGS, [newSong, ...songs]);
+    notify(`songs:${data.bandId}`);
+    notify('songs');
+
+    if (isFirebaseConfigured) {
+      FirestoreService.setSong(newSong).catch(console.error);
+    }
+
+    return newSong;
+  },
+
+  updateSong(id: string, updates: Partial<BandSong>): BandSong | undefined {
+    const songs = this.getSongs();
+    const idx = songs.findIndex((s) => s.id === id);
+    if (idx === -1) return undefined;
+
+    songs[idx] = {
+      ...songs[idx],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveItem(STORAGE_KEYS.SONGS, songs);
+    notify(`songs:${songs[idx].bandId}`);
+    notify('songs');
+
+    if (isFirebaseConfigured) {
+      FirestoreService.setSong(songs[idx]).catch(console.error);
+    }
+
+    return songs[idx];
+  },
+
+  deleteSong(id: string): void {
+    const songs = this.getSongs();
+    const target = songs.find((s) => s.id === id);
+    if (!target) return;
+
+    saveItem(
+      STORAGE_KEYS.SONGS,
+      songs.filter((s) => s.id !== id)
+    );
+    notify(`songs:${target.bandId}`);
+    notify('songs');
+
+    if (isFirebaseConfigured) {
+      FirestoreService.deleteSong(target.bandId, id).catch(console.error);
+    }
+  },
+
+  // --- ANONYMOUS SONG SENTIMENT VOTING ---
+  getVotes(songId?: string): SongVote[] {
+    const all = loadItem<SongVote[]>(STORAGE_KEYS.VOTES, []);
+    return songId ? all.filter((v) => v.songId === songId) : all;
+  },
+
+  getUserVote(songId: string, userId: string): SongVote | undefined {
+    return this.getVotes(songId).find((v) => v.userId === userId);
+  },
+
+  castSongVote(
+    songId: string,
+    bandId: string,
+    userId: string,
+    sentiment: SongSentiment
+  ): void {
+    const allVotes = loadItem<SongVote[]>(STORAGE_KEYS.VOTES, []);
+    const existingIdx = allVotes.findIndex(
+      (v) => v.songId === songId && v.userId === userId
+    );
+
+    const voteRecord: SongVote = {
+      id: `${songId}_${userId}`,
+      songId,
+      bandId,
+      userId,
+      sentiment,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (existingIdx >= 0) {
+      allVotes[existingIdx] = voteRecord;
+    } else {
+      allVotes.push(voteRecord);
+    }
+    saveItem(STORAGE_KEYS.VOTES, allVotes);
+
+    // Compute updated aggregate sentiment
+    const songVotes = allVotes.filter((v) => v.songId === songId);
+    const summary: SongSentimentSummary = {
+      reallyWant: songVotes.filter((v) => v.sentiment === 'really_want').length,
+      wouldPlay: songVotes.filter((v) => v.sentiment === 'would_play').length,
+      neutral: songVotes.filter((v) => v.sentiment === 'neutral').length,
+      notInterested: songVotes.filter((v) => v.sentiment === 'not_interested').length,
+      totalVotes: songVotes.length,
+    };
+
+    // Update song document with new aggregated summary
+    this.updateSong(songId, { sentimentSummary: summary });
+
+    if (isFirebaseConfigured) {
+      FirestoreService.submitVote(bandId, songId, voteRecord).catch(console.error);
+    }
+
+    notify(`votes:${songId}`);
+    notify(`songs:${bandId}`);
+  },
+
+  // --- PERSISTENT BAND ANNOUNCEMENTS ---
+  getAnnouncements(bandId: string): BandAnnouncement[] {
+    const all = loadItem<BandAnnouncement[]>(STORAGE_KEYS.ANNOUNCEMENTS, []);
+    return all
+      .filter((a) => a.bandId === bandId)
+      .sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  },
+
+  createAnnouncement(data: {
+    bandId: string;
+    title: string;
+    content: string;
+    authorId: string;
+    authorName: string;
+    isPinned?: boolean;
+  }): BandAnnouncement {
+    const all = loadItem<BandAnnouncement[]>(STORAGE_KEYS.ANNOUNCEMENTS, []);
+    const newAnnouncement: BandAnnouncement = {
+      ...data,
+      id: `ann-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
+      isPinned: Boolean(data.isPinned),
+      isArchived: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveItem(STORAGE_KEYS.ANNOUNCEMENTS, [newAnnouncement, ...all]);
+    notify(`announcements:${data.bandId}`);
+
+    if (isFirebaseConfigured) {
+      FirestoreService.setAnnouncement(newAnnouncement).catch(console.error);
+    }
+
+    return newAnnouncement;
+  },
+
+  updateAnnouncement(
+    id: string,
+    updates: Partial<BandAnnouncement>
+  ): BandAnnouncement | undefined {
+    const all = loadItem<BandAnnouncement[]>(STORAGE_KEYS.ANNOUNCEMENTS, []);
+    const idx = all.findIndex((a) => a.id === id);
+    if (idx === -1) return undefined;
+
+    all[idx] = {
+      ...all[idx],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveItem(STORAGE_KEYS.ANNOUNCEMENTS, all);
+    notify(`announcements:${all[idx].bandId}`);
+
+    if (isFirebaseConfigured) {
+      FirestoreService.setAnnouncement(all[idx]).catch(console.error);
+    }
+
+    return all[idx];
+  },
+
+  deleteAnnouncement(id: string): void {
+    const all = loadItem<BandAnnouncement[]>(STORAGE_KEYS.ANNOUNCEMENTS, []);
+    const target = all.find((a) => a.id === id);
+    if (!target) return;
+
+    saveItem(
+      STORAGE_KEYS.ANNOUNCEMENTS,
+      all.filter((a) => a.id !== id)
+    );
+    notify(`announcements:${target.bandId}`);
+
+    if (isFirebaseConfigured) {
+      FirestoreService.deleteAnnouncement(target.bandId, id).catch(console.error);
+    }
+  },
+
+  // --- POLYMORPHIC BAND EVENTS (Extends RehearsalEvent) ---
+  updateEventRSVP(eventId: string, userId: string, rsvp: RSVPStatus): void {
+    const events = this.getRehearsals();
+    const event = events.find((e) => e.id === eventId);
+    if (!event) return;
+
+    if (!event.rsvps) event.rsvps = {};
+    event.rsvps[userId] = rsvp;
+
+    saveItem(STORAGE_KEYS.REHEARSALS, events);
+    notify('rehearsals');
+
+    if (isFirebaseConfigured) {
+      FirestoreService.updateEventRSVP(eventId, userId, rsvp).catch(console.error);
+    }
+  },
+
+  // --- BAND HISTORY & ARCHIVING ---
+  archiveBand(bandId: string): void {
+    const band = this.getBand(bandId);
+    if (!band) return;
+
+    this.updateBand(bandId, {
+      status: 'archived',
+      archivedAt: new Date().toISOString(),
+    });
+  },
+
+  reactivateBand(bandId: string): void {
+    const band = this.getBand(bandId);
+    if (!band) return;
+
+    this.updateBand(bandId, {
+      status: 'active',
+      archivedAt: undefined,
+    });
+  },
+
+  getBandHistory(bandId: string): BandHistoryRecord | undefined {
+    const band = this.getBand(bandId);
+    if (!band) return undefined;
+
+    const songs = this.getSongs(bandId);
+    const events = this.getRehearsals(bandId);
+
+    return {
+      bandId: band.id,
+      bandName: band.name,
+      genre: band.genre,
+      status: band.status,
+      archivedAt: band.archivedAt,
+      finalLineup: band.members.map((m) => ({
+        userId: m.userId,
+        name: m.name,
+        instrument: m.instrument,
+        role: m.role,
+        joinedAt: m.joinedAt,
+      })),
+      finalRepertoire: songs.map((s) => ({
+        title: s.title,
+        artist: s.artist,
+        status: s.status,
+      })),
+      pastEventsCount: events.length,
+    };
   },
 };

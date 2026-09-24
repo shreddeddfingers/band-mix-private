@@ -8,6 +8,7 @@ import { InstrumentIcon, INSTRUMENT_METADATA } from '@/components/InstrumentIcon
 import { Badge } from '@/components/Badge';
 import { AssignBandModal } from '@/components/roster/AssignBandModal';
 import { QRCodeModal } from '@/components/QRCodeModal';
+import { BandFormationAssistant } from '@/components/matching/BandFormationAssistant';
 import {
   Users,
   Search,
@@ -24,6 +25,7 @@ import { clsx } from 'clsx';
 
 export default function RosterPage() {
   const { isAdmin } = useAuth();
+  const [activeView, setActiveView] = useState<'roster' | 'matching'>('roster');
   const [students, setStudents] = useState<UserProfile[]>([]);
   const [bands, setBands] = useState<Band[]>([]);
   const [search, setSearch] = useState('');
@@ -141,8 +143,47 @@ export default function RosterPage() {
         </div>
       </div>
 
-      {/* Filter Matrix Card */}
-      <div className="bg-studio-900 border border-studio-800 rounded-2xl p-5 space-y-4 shadow-sm">
+      {/* Sub-navigation Tabs: Directory vs Formation Assistant */}
+      <div className="flex items-center gap-2 border-b border-studio-800 pb-2">
+        <button
+          onClick={() => setActiveView('roster')}
+          className={clsx(
+            'flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition',
+            activeView === 'roster'
+              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
+              : 'text-studio-400 hover:text-white hover:bg-studio-900'
+          )}
+        >
+          <Users className="w-4 h-4" />
+          Tagged Roster Directory ({students.length})
+        </button>
+
+        <button
+          onClick={() => setActiveView('matching')}
+          className={clsx(
+            'flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition',
+            activeView === 'matching'
+              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
+              : 'text-studio-400 hover:text-white hover:bg-studio-900'
+          )}
+        >
+          <Sparkles className="w-4 h-4" />
+          Band Formation Assistant
+        </button>
+      </div>
+
+      {activeView === 'matching' ? (
+        <BandFormationAssistant
+          students={students}
+          onBandCreated={() => {
+            setStudents(DataStore.getStudents());
+            setBands(DataStore.getBands());
+          }}
+        />
+      ) : (
+        <>
+          {/* Filter Matrix Card */}
+          <div className="bg-studio-900 border border-studio-800 rounded-2xl p-5 space-y-4 shadow-sm">
         {/* Search & Clear Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="relative w-full sm:w-96">
@@ -332,9 +373,12 @@ export default function RosterPage() {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-bold text-white truncate">
-                      {student.name}
-                    </h3>
+                    <div className="flex items-center gap-1.5 truncate">
+                      <h3 className="text-base font-bold text-white truncate">
+                        {student.name}
+                      </h3>
+                      {student.pronouns && <Badge pronouns={student.pronouns} />}
+                    </div>
                     <div className="flex items-center gap-1.5 mt-1">
                       <InstrumentIcon
                         instrument={student.primaryInstrument}
@@ -356,9 +400,36 @@ export default function RosterPage() {
                 {/* Metadata Tags */}
                 <div className="space-y-2 text-xs bg-studio-950/70 p-3 rounded-xl border border-studio-800/80 mb-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-studio-400">Age Group:</span>
-                    <Badge age={student.ageGroup} />
+                    <span className="text-studio-400">Age:</span>
+                    {student.exactAge ? (
+                      <div className="flex items-center gap-1">
+                        <Badge exactAge={student.exactAge} />
+                        <span className="text-[10px] text-studio-500">
+                          ({student.ageGroup})
+                        </span>
+                      </div>
+                    ) : (
+                      <Badge age={student.ageGroup} />
+                    )}
                   </div>
+
+                  {student.availability && student.availability.length > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-studio-400">Availability:</span>
+                      <span className="text-[11px] text-amber-300 font-medium">
+                        {student.availability.map((a) => a.dayOfWeek.slice(0, 3)).join(', ')}
+                      </span>
+                    </div>
+                  )}
+
+                  {student.bandMatchProfile?.commitmentLevel && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-studio-400">Band Goal:</span>
+                      <span className="text-[11px] text-studio-300 capitalize">
+                        {student.bandMatchProfile.commitmentLevel.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                  )}
 
                   {student.instruments.length > 1 && (
                     <div className="flex items-center justify-between">
@@ -430,6 +501,8 @@ export default function RosterPage() {
           );
         })}
       </div>
+      </>
+      )}
 
       {/* Modals */}
       <AssignBandModal

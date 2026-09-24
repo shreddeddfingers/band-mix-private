@@ -11,6 +11,9 @@ import { Badge } from '@/components/Badge';
 import { BandChat } from '@/components/chat/BandChat';
 import { RehearsalPlanner } from '@/components/scheduling/RehearsalPlanner';
 import { QRCodeModal } from '@/components/QRCodeModal';
+import { BandAnnouncementsTab } from '@/components/announcements/BandAnnouncementsTab';
+import { SetlistManager } from '@/components/repertoire/SetlistManager';
+import { SongSuggestionVoting } from '@/components/repertoire/SongSuggestionVoting';
 import {
   Music,
   Calendar,
@@ -23,6 +26,8 @@ import {
   UserPlus,
   Trash2,
   Sparkles,
+  Megaphone,
+  ListMusic,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -35,7 +40,9 @@ export default function BandHubPage({
   const router = useRouter();
   const { isAdmin, currentUser } = useAuth();
   const [band, setBand] = useState<Band | null>(null);
-  const [activeTab, setActiveTab] = useState<'chat' | 'schedule' | 'roster'>('chat');
+  const [activeTab, setActiveTab] = useState<
+    'chat' | 'announcements' | 'repertoire' | 'suggestions' | 'schedule' | 'roster'
+  >('chat');
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [selectedStudentToAdd, setSelectedStudentToAdd] = useState('');
@@ -204,24 +211,63 @@ export default function BandHubPage({
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-studio-800 pb-2">
+      <div className="flex items-center gap-1.5 border-b border-studio-800 pb-2 overflow-x-auto">
         <button
           onClick={() => setActiveTab('chat')}
           className={clsx(
-            'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition',
+            'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
             activeTab === 'chat'
               ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
           <MessageSquare className="w-4 h-4" />
-          Dedicated Chat Channel
+          Chat Channel
+        </button>
+
+        <button
+          onClick={() => setActiveTab('announcements')}
+          className={clsx(
+            'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
+            activeTab === 'announcements'
+              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
+              : 'text-studio-400 hover:text-white hover:bg-studio-900'
+          )}
+        >
+          <Megaphone className="w-4 h-4" />
+          Announcements
+        </button>
+
+        <button
+          onClick={() => setActiveTab('repertoire')}
+          className={clsx(
+            'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
+            activeTab === 'repertoire'
+              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
+              : 'text-studio-400 hover:text-white hover:bg-studio-900'
+          )}
+        >
+          <ListMusic className="w-4 h-4" />
+          Master Setlist
+        </button>
+
+        <button
+          onClick={() => setActiveTab('suggestions')}
+          className={clsx(
+            'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
+            activeTab === 'suggestions'
+              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
+              : 'text-studio-400 hover:text-white hover:bg-studio-900'
+          )}
+        >
+          <Sparkles className="w-4 h-4" />
+          Song Suggestions & Voting
         </button>
 
         <button
           onClick={() => setActiveTab('schedule')}
           className={clsx(
-            'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition',
+            'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
             activeTab === 'schedule'
               ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
@@ -234,14 +280,14 @@ export default function BandHubPage({
         <button
           onClick={() => setActiveTab('roster')}
           className={clsx(
-            'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition',
+            'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
             activeTab === 'roster'
               ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
           <Users className="w-4 h-4" />
-          Member Directory ({band.members.length})
+          Roster ({band.members.length})
         </button>
       </div>
 
@@ -251,6 +297,18 @@ export default function BandHubPage({
           band={band}
           onOpenSchedulePlanner={() => setActiveTab('schedule')}
         />
+      )}
+
+      {activeTab === 'announcements' && (
+        <BandAnnouncementsTab band={band} />
+      )}
+
+      {activeTab === 'repertoire' && (
+        <SetlistManager band={band} />
+      )}
+
+      {activeTab === 'suggestions' && (
+        <SongSuggestionVoting band={band} />
       )}
 
       {activeTab === 'schedule' && (

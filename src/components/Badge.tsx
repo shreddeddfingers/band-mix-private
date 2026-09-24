@@ -5,10 +5,12 @@ import { ShieldCheck, GraduationCap, Sparkles } from 'lucide-react';
 
 interface BadgeProps {
   children?: React.ReactNode;
-  variant?: 'skill' | 'style' | 'role' | 'age' | 'status';
+  variant?: 'skill' | 'style' | 'role' | 'age' | 'status' | 'pronouns';
   skill?: SkillLevel;
   role?: UserRole;
   age?: AgeGroup;
+  exactAge?: number;
+  pronouns?: string;
   className?: string;
 }
 
@@ -18,8 +20,37 @@ export function Badge({
   skill,
   role,
   age,
+  exactAge,
+  pronouns,
   className,
 }: BadgeProps) {
+  if (pronouns) {
+    return (
+      <span
+        className={clsx(
+          'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-studio-800 text-studio-400 border border-studio-700/80',
+          className
+        )}
+        title="Preferred Pronouns (Informational)"
+      >
+        {pronouns}
+      </span>
+    );
+  }
+
+  if (typeof exactAge === 'number' && exactAge > 0) {
+    return (
+      <span
+        className={clsx(
+          'inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold font-mono bg-studio-800 text-amber-300 border border-studio-700',
+          className
+        )}
+        title={`Exact Student Age: ${exactAge}`}
+      >
+        Age {exactAge}
+      </span>
+    );
+  }
   if (role) {
     if (role === 'admin') {
       return (

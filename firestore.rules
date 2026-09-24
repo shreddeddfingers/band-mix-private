@@ -54,6 +54,12 @@ service cloud.firestore {
       );
 
       allow delete: if isAdmin();
+
+      // Private Sensitive Subcollection (Raw DOB, guardian emergency info)
+      // Strictly restricted to owner and Director/Admin. Other students CANNOT read.
+      match /private/{docId} {
+        allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      }
     }
 
     // 2. Bands collection
@@ -80,12 +86,54 @@ service cloud.firestore {
 
         allow update, delete: if isAdmin();
       }
+
+      // Persistent Announcements Subcollection
+      match /announcements/{annId} {
+        allow read: if isBandMember(bandId);
+        allow create, update, delete: if isAdmin();
+      }
+
+      // Master Repertoire & Song Suggestions Subcollection
+      match /songs/{songId} {
+        allow read: if isBandMember(bandId);
+
+        // Members can submit suggestions; Director can add directly
+        allow create: if isBandMember(bandId)
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.artist is string;
+
+        // Director has exclusive authority over repertoire status and details
+        allow update, delete: if isAdmin();
+
+        // Anonymous Preference Voting Subcollection
+        // Students can only read/write their own vote document; peers cannot inspect individual votes
+        match /votes/{userId} {
+          allow read: if isBandMember(bandId) && (request.auth.uid == userId || isAdmin());
+          allow create, update: if isBandMember(bandId)
+            && request.auth.uid == userId
+            && request.resource.data.sentiment in ['really_want', 'would_play', 'neutral', 'not_interested'];
+          allow delete: if isBandMember(bandId) && (request.auth.uid == userId || isAdmin());
+        }
+      }
     }
 
-    // 3. Rehearsal Events (Admin exclusive scheduling)
+    // 3. Rehearsal Events (Admin exclusive scheduling + authenticated student RSVP updates)
     match /rehearsals/{eventId} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if isAdmin();
+      allow create, delete: if isAdmin();
+
+      // Admin can update all fields; students can only update their own RSVP entry
+      allow update: if isAdmin() || (
+        isAuthenticated() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rsvps']) &&
+        (
+          !('rsvps' in resource.data) ?
+            request.resource.data.rsvps.keys().hasOnly([request.auth.uid]) :
+            request.resource.data.rsvps.diff(resource.data.rsvps).affectedKeys().hasOnly([request.auth.uid])
+        ) &&
+        request.resource.data.rsvps[request.auth.uid] in ['attending', 'declined', 'tentative']
+      );
     }
 
     // 4. Invites & QR passes
