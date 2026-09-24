@@ -20,10 +20,62 @@ import {
   SongVote,
   UserProfile,
   UserRole,
+  StudioBranding,
+  BrandPresetKey,
 } from '@/types';
 import { isFirebaseConfigured } from './firebase';
 import { FirestoreService } from './firestore-service';
 import { calculateExactAge, ageToAgeGroup } from './age-utils';
+
+export const BRAND_PRESETS: Record<BrandPresetKey, StudioBranding> = {
+  school_of_rock: {
+    studioName: 'School of Rock',
+    tagline: 'The Ultimate Rock & Roll Experience',
+    accentColor: '#E11D48', // Vivid Red
+    logoUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=200',
+    presetKey: 'school_of_rock',
+    badgeText: 'PERFORMANCE ROCK PROGRAM',
+    customWelcome:
+      'Welcome to School of Rock! Get ready to plug in, rehearse real songs with other musicians, and take the stage.',
+  },
+  bach_to_rock: {
+    studioName: 'Bach to Rock',
+    tagline: "America's Music School for Students of All Ages",
+    accentColor: '#2563EB', // Electric Blue
+    logoUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&q=80&w=200',
+    presetKey: 'bach_to_rock',
+    badgeText: 'CONTEMPORARY MUSIC ACADEMY',
+    customWelcome:
+      'Welcome to Bach to Rock! Experience contemporary ensemble coaching, recording, and live showcases.',
+  },
+  highland: {
+    studioName: 'Highland Music Studio',
+    tagline: 'Ensemble Performance & Modern Musician Training',
+    accentColor: '#F59E0B', // Studio Amber
+    presetKey: 'highland',
+    badgeText: 'FLAGSHIP STUDIO',
+    customWelcome:
+      'Welcome to Highland Music Studio! We help developing players build confidence and stage craft.',
+  },
+  conservatory: {
+    studioName: 'Metropolitan Conservatory',
+    tagline: 'Excellence in Ensemble Leadership & Virtuosity',
+    accentColor: '#10B981', // Emerald
+    presetKey: 'conservatory',
+    badgeText: 'PREMIER CONSERVATORY',
+    customWelcome:
+      'Welcome to Metropolitan Conservatory. Refine your musicianship and collaborative performance.',
+  },
+  custom: {
+    studioName: 'My Music Studio',
+    tagline: 'Independent Band & Music Program',
+    accentColor: '#8B5CF6', // Purple
+    presetKey: 'custom',
+    badgeText: 'INDEPENDENT STUDIO',
+    customWelcome:
+      'Welcome to our studio! Connect with directors and fellow bandmates.',
+  },
+};
 
 const STORAGE_KEYS = {
   BANDS: 'bandmix_prod_bands',
@@ -44,7 +96,9 @@ const BASELINE_INVITE: InviteCode = {
   code: 'STUDIO-PASS',
   directorId: 'director-main',
   directorName: 'Director',
-  studioName: 'Music Studio',
+  studioName: 'Highland Music Studio',
+  tagline: 'Ensemble Performance & Modern Musician Training',
+  accentColor: '#F59E0B',
   role: 'student',
   createdAt: new Date().toISOString(),
   expiresAt: new Date(Date.now() + 365 * 86400000).toISOString(),
@@ -59,8 +113,10 @@ const BASELINE_DIRECTOR: UserProfile = {
   name: 'Director',
   email: 'director@musicstudio.edu',
   role: 'admin',
-  studioName: 'Music Studio',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
+  studioName: 'Highland Music Studio',
+  branding: BRAND_PRESETS.highland,
+  avatar:
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
   instruments: ['piano', 'guitars'],
   primaryInstrument: 'piano',
   skillLevel: 'expert',
@@ -175,6 +231,57 @@ export const DataStore = {
       FirestoreService.setUser(director).catch(console.error);
     }
     notify('students');
+    notify('branding');
+  },
+
+  getStudioBranding(directorId?: string): StudioBranding {
+    const director = this.getDirector(directorId);
+    if (director.branding) {
+      return director.branding;
+    }
+    const nameLower = (director.studioName || '').toLowerCase();
+    if (nameLower.includes('school of rock')) return BRAND_PRESETS.school_of_rock;
+    if (nameLower.includes('bach to rock')) return BRAND_PRESETS.bach_to_rock;
+    if (nameLower.includes('conservatory')) return BRAND_PRESETS.conservatory;
+    return {
+      ...BRAND_PRESETS.highland,
+      studioName: director.studioName || 'Highland Music Studio',
+    };
+  },
+
+  setStudioBranding(directorId: string, branding: StudioBranding): void {
+    const director = this.getDirector(directorId);
+    if (!director) return;
+
+    const updatedDirector: UserProfile = {
+      ...director,
+      studioName: branding.studioName,
+      branding,
+    };
+    this.setDirector(updatedDirector);
+
+    // Also update existing studio invites for this director so QR cards reflect the new brand
+    const invites = loadItem<InviteCode[]>(STORAGE_KEYS.INVITES, [BASELINE_INVITE]);
+    const updatedInvites = invites.map((inv) => {
+      if (
+        inv.directorId === directorId ||
+        (directorId === 'director-main' && (!inv.directorId || inv.directorId === 'director-main'))
+      ) {
+        return {
+          ...inv,
+          studioName: branding.studioName,
+          tagline: branding.tagline,
+          accentColor: branding.accentColor,
+          logoUrl: branding.logoUrl,
+        };
+      }
+      return inv;
+    });
+    saveItem(STORAGE_KEYS.INVITES, updatedInvites);
+
+    notify('branding');
+    notify('students');
+    notify('invites');
   },
 
   createDirector(data: {
@@ -186,8 +293,19 @@ export const DataStore = {
     musicalStyles?: string[];
     bio?: string;
     avatar?: string;
+    branding?: Partial<StudioBranding>;
+    presetKey?: BrandPresetKey;
   }): UserProfile {
     const newId = `director-${Date.now().toString(36)}`;
+
+    // Resolve initial branding:
+    const preset = data.presetKey ? BRAND_PRESETS[data.presetKey] : undefined;
+    const initialBranding: StudioBranding = {
+      ...(preset || BRAND_PRESETS.custom),
+      studioName: data.studioName,
+      ...(data.branding || {}),
+    };
+
     const newDirector: UserProfile = {
       id: newId,
       name: data.name,
@@ -195,6 +313,7 @@ export const DataStore = {
       role: 'admin',
       directorId: newId,
       studioName: data.studioName,
+      branding: initialBranding,
       primaryInstrument: data.primaryInstrument,
       instruments:
         data.instruments && data.instruments.length > 0
@@ -218,7 +337,7 @@ export const DataStore = {
     saveItem(STORAGE_KEYS.DIRECTORS, directors);
     saveItem(STORAGE_KEYS.DIRECTOR, newDirector);
 
-    // Auto-create a studio invite pass for this director
+    // Auto-create a studio invite pass for this director with custom branding
     const cleanPrefix =
       data.studioName
         .substring(0, 4)
@@ -232,6 +351,9 @@ export const DataStore = {
       directorId: newId,
       directorName: data.name,
       studioName: data.studioName,
+      tagline: initialBranding.tagline,
+      accentColor: initialBranding.accentColor,
+      logoUrl: initialBranding.logoUrl,
       createdAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 365 * 86400000).toISOString(),
       usedCount: 0,
@@ -246,6 +368,7 @@ export const DataStore = {
       FirestoreService.createInvite(studioInvite).catch(console.error);
     }
 
+    notify('branding');
     notify('students');
     notify('invites');
     return newDirector;

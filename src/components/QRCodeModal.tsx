@@ -18,7 +18,7 @@ export function QRCodeModal({
   onClose,
   preselectedBandId,
 }: QRCodeModalProps) {
-  const { currentUser, activeDirectorId } = useAuth();
+  const { currentUser, activeDirectorId, activeBranding } = useAuth();
   const [bands, setBands] = useState<Band[]>([]);
   const [selectedBandId, setSelectedBandId] = useState<string>(preselectedBandId || '');
   const [activeCode, setActiveCode] = useState<string>('');
@@ -26,7 +26,10 @@ export function QRCodeModal({
   const [origin, setOrigin] = useState('');
 
   const dirId = activeDirectorId || currentUser?.id || 'director-main';
-  const studioName = currentUser?.studioName || 'Music Studio';
+  const brandColor = activeBranding?.accentColor || '#F59E0B';
+  const studioName = activeBranding?.studioName || currentUser?.studioName || 'Music Studio';
+  const tagline = activeBranding?.tagline || 'Ensemble Performance & Musician Training';
+  const logoUrl = activeBranding?.logoUrl;
   const directorName = currentUser?.name || 'Director';
 
   useEffect(() => {
@@ -170,16 +173,41 @@ export function QRCodeModal({
 
         {/* QR Code Presentation Card */}
         <div className="p-6 flex flex-col items-center">
-          <div className="p-5 bg-white rounded-2xl shadow-xl flex flex-col items-center border-4 border-amber-500/20">
+          <div
+            className="p-5 bg-white rounded-2xl shadow-xl flex flex-col items-center border-4"
+            style={{ borderColor: `${brandColor}40` }}
+          >
+            {logoUrl && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={logoUrl}
+                alt={studioName}
+                className="w-12 h-12 object-contain mb-2 rounded"
+              />
+            )}
+            <div className="text-center mb-2">
+              <div className="text-sm font-black text-slate-900 tracking-tight">
+                {studioName}
+              </div>
+              {tagline && (
+                <div className="text-[10px] text-slate-500 font-medium">
+                  {tagline}
+                </div>
+              )}
+            </div>
+
             <QRCodeSVG
               value={inviteUrl || 'https://bandmix.local/onboard'}
-              size={190}
+              size={180}
               level="H"
               includeMargin={false}
             />
             <div className="mt-3 text-center">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                Scan to Join Studio
+              <p
+                className="text-[10px] font-bold uppercase tracking-wider font-mono"
+                style={{ color: brandColor }}
+              >
+                Scan with Mobile Camera to Enroll
               </p>
               <p className="text-xs font-mono font-bold text-slate-800">
                 Code: {activeCode}
@@ -190,10 +218,10 @@ export function QRCodeModal({
           {/* Details below QR */}
           <div className="mt-4 text-center">
             <h4 className="text-sm font-semibold text-white">
-              {selectedBand ? `Join "${selectedBand.name}"` : 'Studio Student Intake'}
+              {selectedBand ? `Join "${selectedBand.name}"` : `${studioName} Musician Intake`}
             </h4>
-            <p className="text-xs text-studio-400 mt-0.5">
-              Students will set their instruments, skill levels, and musical preferences.
+            <p className="text-xs text-studio-400 mt-0.5 max-w-sm">
+              Students will pick instruments, rehearsal availability, and musical styles for director matching.
             </p>
           </div>
 

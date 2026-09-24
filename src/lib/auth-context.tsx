@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { UserProfile, UserRole } from '@/types';
-import { DataStore, subscribeToStore } from './data-store';
+import { UserProfile, UserRole, StudioBranding, BrandPresetKey } from '@/types';
+import { DataStore, subscribeToStore, BRAND_PRESETS } from './data-store';
 import { isFirebaseConfigured } from './firebase';
 import { AuthService } from './auth-service';
 import { FirestoreService } from './firestore-service';
@@ -14,6 +14,8 @@ interface AuthContextType {
   isStudent: boolean;
   directors: UserProfile[];
   activeDirectorId: string;
+  activeBranding: StudioBranding;
+  updateStudioBranding: (branding: StudioBranding) => void;
   createDirectorAccount: (data: {
     name: string;
     email: string;
@@ -23,6 +25,8 @@ interface AuthContextType {
     musicalStyles?: string[];
     bio?: string;
     avatar?: string;
+    branding?: Partial<StudioBranding>;
+    presetKey?: BrandPresetKey;
   }) => UserProfile;
   switchDirector: (directorId: string) => void;
   switchUser: (userId: string) => void;
@@ -121,6 +125,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     musicalStyles?: string[];
     bio?: string;
     avatar?: string;
+    branding?: Partial<StudioBranding>;
+    presetKey?: BrandPresetKey;
   }): UserProfile => {
     const newDirector = DataStore.createDirector(data);
     const updatedDirectors = DataStore.getDirectors();
@@ -133,6 +139,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     currentUser?.role === 'admin'
       ? currentUser.id
       : currentUser?.directorId || 'director-main';
+
+  const [activeBranding, setActiveBranding] = useState<StudioBranding>(BRAND_PRESETS.highland);
+
+  useEffect(() => {
+    const refreshBranding = () => {
+      const b = DataStore.getStudioBranding(activeDirectorId);
+      setActiveBranding(b);
+    };
+    refreshBranding();
+    const unsub = subscribeToStore('branding', refreshBranding);
+    return () => unsub();
+  }, [activeDirectorId]);
+
+  const updateStudioBranding = (branding: StudioBranding) => {
+    DataStore.setStudioBranding(activeDirectorId, branding);
+    setActiveBranding(branding);
+    if (currentUser?.role === 'admin') {
+      setCurrentUser({
+        ...currentUser,
+        studioName: branding.studioName,
+        branding,
+      });
+    }
+  };
 
   const switchRole = (role: UserRole, studentId?: string) => {
     if (role === 'admin') {
@@ -182,6 +212,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isStudent,
         directors,
         activeDirectorId,
+        activeBranding,
+        updateStudioBranding,
         createDirectorAccount,
         switchDirector,
         switchUser,

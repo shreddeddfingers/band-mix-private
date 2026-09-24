@@ -116,12 +116,19 @@ export function CreateDirectorModal({
 
           {/* Director Name */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+            <label
+              htmlFor="director-name"
+              className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5"
+            >
               <User className="w-3.5 h-3.5 text-purple-400" />
               Director Name
             </label>
             <input
+              id="director-name"
+              name="name"
               type="text"
+              autoComplete="name"
+              autoCapitalize="words"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Sarah Jenkins"
@@ -132,12 +139,19 @@ export function CreateDirectorModal({
 
           {/* Studio Name */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+            <label
+              htmlFor="director-studio-name"
+              className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5"
+            >
               <Building className="w-3.5 h-3.5 text-indigo-400" />
               Studio or School Name
             </label>
             <input
+              id="director-studio-name"
+              name="organization"
               type="text"
+              autoComplete="organization"
+              autoCapitalize="words"
               value={studioName}
               onChange={(e) => setStudioName(e.target.value)}
               placeholder="e.g. Highland School of Rock"
@@ -148,12 +162,20 @@ export function CreateDirectorModal({
 
           {/* Director Email */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+            <label
+              htmlFor="director-email"
+              className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5"
+            >
               <Mail className="w-3.5 h-3.5 text-emerald-400" />
               Director Email
             </label>
             <input
+              id="director-email"
+              name="email"
               type="email"
+              inputMode="email"
+              autoComplete="email"
+              autoCapitalize="none"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="e.g. sarah@highlandschool.edu"

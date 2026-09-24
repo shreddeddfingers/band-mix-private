@@ -94,6 +94,23 @@ export interface PrivateUserProfile {
   updatedAt: string;
 }
 
+export type BrandPresetKey =
+  | 'school_of_rock'
+  | 'bach_to_rock'
+  | 'highland'
+  | 'conservatory'
+  | 'custom';
+
+export interface StudioBranding {
+  studioName: string;
+  tagline?: string;
+  logoUrl?: string;
+  accentColor?: string; // Hex color e.g. "#E11D48"
+  presetKey?: BrandPresetKey;
+  customWelcome?: string;
+  badgeText?: string;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -115,6 +132,7 @@ export interface UserProfile {
   guardianId?: string;
   directorId?: string;  // Connected Director ID for student isolation
   studioName?: string;  // School/Studio/Program name (primarily for Directors)
+  branding?: StudioBranding; // White-label customization for directors/studios
 }
 
 export interface BandMember {
@@ -264,6 +282,9 @@ export interface InviteCode {
   directorId?: string;
   directorName?: string;
   studioName?: string;
+  tagline?: string;
+  accentColor?: string;
+  logoUrl?: string;
   role: UserRole;
   createdAt: string;
   expiresAt: string;

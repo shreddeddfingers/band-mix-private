@@ -11,19 +11,26 @@ import {
   QrCode,
   Menu,
   X,
-  PlusCircle,
+  Palette,
   Radio,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { RoleSwitcher } from './RoleSwitcher';
 import { QRCodeModal } from './QRCodeModal';
+import { StudioBrandingModal } from './branding/StudioBrandingModal';
 import { clsx } from 'clsx';
 
 export function Navbar() {
   const pathname = usePathname();
-  const { isAdmin, role } = useAuth();
+  const { isAdmin, role, activeBranding } = useAuth();
   const [isQrOpen, setIsQrOpen] = useState(false);
+  const [isBrandingOpen, setIsBrandingOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const brandColor = activeBranding?.accentColor || '#F59E0B';
+  const brandName = activeBranding?.studioName || 'BANDMIX';
+  const brandBadge = activeBranding?.badgeText || 'STUDIO PLATFORM';
 
   const navLinks = [
     { href: '/', label: 'Overview', icon: Layers },
@@ -39,15 +46,33 @@ export function Navbar() {
           {/* Logo & Platform Name */}
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-amp-orange flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
-                <Radio className="w-5 h-5 text-slate-950 stroke-[2.5]" />
-              </div>
+              {activeBranding?.logoUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={activeBranding.logoUrl}
+                  alt={brandName}
+                  className="w-9 h-9 rounded-xl object-cover border border-studio-700 shadow-md group-hover:scale-105 transition-transform"
+                />
+              ) : (
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-950 font-black shadow-lg group-hover:scale-105 transition-transform"
+                  style={{
+                    backgroundColor: brandColor,
+                    boxShadow: `0 10px 15px -3px ${brandColor}33`,
+                  }}
+                >
+                  <Radio className="w-5 h-5 text-slate-950 stroke-[2.5]" />
+                </div>
+              )}
               <div>
                 <span className="font-black text-lg tracking-tight text-white flex items-center gap-1.5">
-                  BAND<span className="text-amber-400">MIX</span>
+                  {brandName}
                 </span>
-                <span className="text-[10px] tracking-wider uppercase text-studio-400 font-semibold block -mt-1">
-                  Studio Platform
+                <span
+                  className="text-[9px] tracking-wider uppercase font-semibold block -mt-1 font-mono"
+                  style={{ color: brandColor }}
+                >
+                  {brandBadge}
                 </span>
               </div>
             </Link>
@@ -79,7 +104,19 @@ export function Navbar() {
           </div>
 
           {/* Right actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            {/* White-Label Branding Customizer (Director Only) */}
+            {isAdmin && (
+              <button
+                onClick={() => setIsBrandingOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border shadow-sm text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/30"
+                title="White-Label Studio Branding (School of Rock, Bach to Rock, etc.)"
+              >
+                <Palette className="w-3.5 h-3.5 text-purple-400" />
+                <span className="hidden sm:inline">Brand Studio</span>
+              </button>
+            )}
+
             {/* QR Code Action (Director / Admin quick tool) */}
             <button
               onClick={() => setIsQrOpen(true)}
@@ -140,6 +177,12 @@ export function Navbar() {
 
       {/* Dynamic QR Modal */}
       <QRCodeModal isOpen={isQrOpen} onClose={() => setIsQrOpen(false)} />
+
+      {/* Studio White-Label Customizer Modal */}
+      <StudioBrandingModal
+        isOpen={isBrandingOpen}
+        onClose={() => setIsBrandingOpen(false)}
+      />
     </>
   );
 }
