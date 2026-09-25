@@ -285,6 +285,7 @@ export const DataStore = {
   },
 
   createDirector(data: {
+    id?: string;
     name: string;
     email: string;
     studioName: string;
@@ -296,7 +297,7 @@ export const DataStore = {
     branding?: Partial<StudioBranding>;
     presetKey?: BrandPresetKey;
   }): UserProfile {
-    const newId = `director-${Date.now().toString(36)}`;
+    const newId = data.id || `director-${Date.now().toString(36)}`;
 
     // Resolve initial branding:
     const preset = data.presetKey ? BRAND_PRESETS[data.presetKey] : undefined;

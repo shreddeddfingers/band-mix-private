@@ -21,13 +21,15 @@ interface AuthContextType {
     email: string;
     studioName: string;
     primaryInstrument: any;
+    password?: string;
     instruments?: any[];
     musicalStyles?: string[];
     bio?: string;
     avatar?: string;
     branding?: Partial<StudioBranding>;
     presetKey?: BrandPresetKey;
-  }) => UserProfile;
+  }) => Promise<UserProfile>;
+  signInWithEmailPassword: (email: string, pass: string) => Promise<UserProfile>;
   switchDirector: (directorId: string) => void;
   switchUser: (userId: string) => void;
   switchRole: (role: UserRole, studentId?: string) => void;
@@ -116,23 +118,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const createDirectorAccount = (data: {
+  const createDirectorAccount = async (data: {
     name: string;
     email: string;
     studioName: string;
     primaryInstrument: any;
+    password?: string;
     instruments?: any[];
     musicalStyles?: string[];
     bio?: string;
     avatar?: string;
     branding?: Partial<StudioBranding>;
     presetKey?: BrandPresetKey;
-  }): UserProfile => {
-    const newDirector = DataStore.createDirector(data);
+  }): Promise<UserProfile> => {
+    let authUid: string | undefined;
+    if (isFirebaseActive && data.password) {
+      try {
+        const user = await AuthService.signUpWithEmail(data.email, data.password);
+        authUid = user.uid;
+      } catch (err: any) {
+        if (err?.code === 'auth/email-already-in-use') {
+          try {
+            const user = await AuthService.signInWithEmail(data.email, data.password);
+            authUid = user.uid;
+          } catch {
+            // continue with local registration
+          }
+        }
+      }
+    }
+
+    const newDirector = DataStore.createDirector({
+      ...data,
+      id: authUid,
+    });
+
     const updatedDirectors = DataStore.getDirectors();
     setDirectors(updatedDirectors);
     setCurrentUser(newDirector);
+    DataStore.setDirector(newDirector);
     return newDirector;
+  };
+
+  const signInWithEmailPassword = async (email: string, pass: string): Promise<UserProfile> => {
+    if (isFirebaseActive) {
+      const fbUser = await AuthService.signInWithEmail(email, pass);
+      const profile = await AuthService.syncUserProfile(fbUser);
+      setCurrentUser(profile);
+      return profile;
+    } else {
+      const allDirs = DataStore.getDirectors();
+      const found = allDirs.find((d) => d.email.toLowerCase() === email.toLowerCase());
+      if (found) {
+        setCurrentUser(found);
+        DataStore.setDirector(found);
+        return found;
+      }
+      throw new Error('No director account found with this email.');
+    }
   };
 
   const activeDirectorId =
@@ -215,6 +258,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         activeBranding,
         updateStudioBranding,
         createDirectorAccount,
+        signInWithEmailPassword,
         switchDirector,
         switchUser,
         switchRole,
