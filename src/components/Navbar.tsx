@@ -28,7 +28,7 @@ export function Navbar() {
   const [isBrandingOpen, setIsBrandingOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const brandColor = activeBranding?.accentColor || '#F59E0B';
+  const brandColor = activeBranding?.accentColor || activeBranding?.brandColor || '#F59E0B';
   const brandName = activeBranding?.studioName || 'BANDMIX';
   const brandBadge = activeBranding?.badgeText || 'STUDIO PLATFORM';
 
@@ -51,7 +51,7 @@ export function Navbar() {
                 <img
                   src={activeBranding.logoUrl}
                   alt={brandName}
-                  className="w-9 h-9 rounded-xl object-cover border border-studio-700 shadow-md group-hover:scale-105 transition-transform"
+                  className="w-9 h-9 rounded-xl object-cover border border-studio-700 shadow-md group-hover:scale-105 transition-transform bg-studio-900"
                 />
               ) : (
                 <div
@@ -109,10 +109,15 @@ export function Navbar() {
             {isAdmin && (
               <button
                 onClick={() => setIsBrandingOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border shadow-sm text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/30"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border shadow-sm"
+                style={{
+                  backgroundColor: `${brandColor}18`,
+                  borderColor: `${brandColor}40`,
+                  color: brandColor,
+                }}
                 title="White-Label Studio Branding (School of Rock, Bach to Rock, etc.)"
               >
-                <Palette className="w-3.5 h-3.5 text-purple-400" />
+                <Palette className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Brand Studio</span>
               </button>
             )}

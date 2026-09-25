@@ -107,7 +107,7 @@ export default function DashboardPage() {
                 <>
                   <button
                     onClick={() => setIsCreateBandOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-bold shadow-lg shadow-amber-500/20 transition"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-[var(--brand-contrast-text)] text-xs sm:text-sm font-bold shadow-lg shadow-amber-500/20 transition"
                   >
                     <Plus className="w-4 h-4 stroke-[3]" />
                     Create New Band
@@ -131,7 +131,7 @@ export default function DashboardPage() {
                 <>
                   <Link
                     href="/bands"
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-bold transition"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-[var(--brand-contrast-text)] text-xs sm:text-sm font-bold transition"
                   >
                     <Music className="w-4 h-4" />
                     My Band Hub

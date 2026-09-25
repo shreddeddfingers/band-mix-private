@@ -218,7 +218,7 @@ export default function BandHubPage({
           className={clsx(
             'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
             activeTab === 'chat'
-              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
+              ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
@@ -231,7 +231,7 @@ export default function BandHubPage({
           className={clsx(
             'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
             activeTab === 'announcements'
-              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
+              ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
@@ -244,7 +244,7 @@ export default function BandHubPage({
           className={clsx(
             'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
             activeTab === 'repertoire'
-              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
+              ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
@@ -257,7 +257,7 @@ export default function BandHubPage({
           className={clsx(
             'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
             activeTab === 'suggestions'
-              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
+              ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
@@ -270,7 +270,7 @@ export default function BandHubPage({
           className={clsx(
             'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
             activeTab === 'schedule'
-              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
+              ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
@@ -283,7 +283,7 @@ export default function BandHubPage({
           className={clsx(
             'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
             activeTab === 'roster'
-              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
+              ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >

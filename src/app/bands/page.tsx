@@ -117,7 +117,7 @@ export default function BandsPage() {
         {isAdmin && (
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold shadow-lg shadow-amber-500/20 transition shrink-0"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-[var(--brand-contrast-text)] text-sm font-bold shadow-lg shadow-amber-500/20 transition shrink-0"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             Create Band

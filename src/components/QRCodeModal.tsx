@@ -26,7 +26,7 @@ export function QRCodeModal({
   const [origin, setOrigin] = useState('');
 
   const dirId = activeDirectorId || currentUser?.id || 'director-main';
-  const brandColor = activeBranding?.accentColor || '#F59E0B';
+  const brandColor = activeBranding?.accentColor || activeBranding?.brandColor || '#F59E0B';
   const studioName = activeBranding?.studioName || currentUser?.studioName || 'Music Studio';
   const tagline = activeBranding?.tagline || 'Ensemble Performance & Musician Training';
   const logoUrl = activeBranding?.logoUrl;

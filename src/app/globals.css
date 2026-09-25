@@ -5,6 +5,45 @@
 :root {
   --background: #0b0f17;
   --foreground: #f6f7f9;
+
+  /* Dynamic Brand Theme Tokens (defaults to Highland Studio Amber) */
+  --brand-rgb: 245 158 11;
+  --brand-rgb-hover: 217 119 6;
+  --brand-color: #F59E0B;
+  --brand-hover: #D97706;
+  --brand-light: rgba(var(--brand-rgb), 0.15);
+  --brand-surface: rgba(var(--brand-rgb), 0.12);
+  --brand-surface-hover: rgba(var(--brand-rgb), 0.2);
+  --brand-border: rgba(var(--brand-rgb), 0.35);
+  --brand-glow: 0 10px 25px -5px rgba(var(--brand-rgb), 0.35);
+  --brand-text: rgb(var(--brand-rgb));
+  --brand-contrast-text: #020617;
+}
+
+/* Brand Theme Utility Helpers */
+.btn-brand-primary {
+  background-color: var(--brand-color) !important;
+  color: var(--brand-contrast-text) !important;
+  font-weight: 800;
+  box-shadow: 0 10px 25px -5px rgba(var(--brand-rgb), 0.3);
+  transition: all 0.2s ease;
+}
+.btn-brand-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 12px 28px -5px rgba(var(--brand-rgb), 0.45);
+}
+
+.tab-brand-active {
+  background-color: var(--brand-color) !important;
+  color: var(--brand-contrast-text) !important;
+  font-weight: 800;
+  box-shadow: 0 4px 15px -3px rgba(var(--brand-rgb), 0.35);
+}
+
+.badge-brand {
+  background-color: rgba(var(--brand-rgb), 0.15) !important;
+  border: 1px solid rgba(var(--brand-rgb), 0.35) !important;
+  color: var(--brand-color) !important;
 }
 
 body {

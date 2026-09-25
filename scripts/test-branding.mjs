@@ -208,4 +208,31 @@ for (const item of requiredAutofillTokens) {
   console.log(`  ✓ Checked ${item.field}: autoComplete="${item.token}" (type="${item.type}")`);
 }
 
-console.log('\n🎉 ALL WHITE-LABEL BRANDING & AUTOFILL TESTS PASSED SUCCESSFULLY!');
+// TEST 6: Dynamic CSS Variable & Contrast Text Calculation
+console.log('Test 6: Dynamic CSS variables and contrast text resolution');
+function hexToRgb(hex) {
+  let clean = hex.replace('#', '').trim();
+  if (clean.length === 3) clean = clean.split('').map((c) => c + c).join('');
+  const num = parseInt(clean, 16);
+  return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
+function getContrastTextColor(r, g, b) {
+  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return luminance > 0.55 ? '#020617' : '#ffffff';
+}
+
+// School of Rock Crimson Red (#E11D48) -> Should require white contrast text
+const sorRgb = hexToRgb('#E11D48');
+assert.strictEqual(getContrastTextColor(sorRgb.r, sorRgb.g, sorRgb.b), '#ffffff');
+
+// Bach to Rock Electric Blue (#2563EB) -> Should require white contrast text
+const b2rRgb = hexToRgb('#2563EB');
+assert.strictEqual(getContrastTextColor(b2rRgb.r, b2rRgb.g, b2rRgb.b), '#ffffff');
+
+// Studio Amber Gold (#F59E0B) -> Should require dark slate contrast text
+const amberRgb = hexToRgb('#F59E0B');
+assert.strictEqual(getContrastTextColor(amberRgb.r, amberRgb.g, amberRgb.b), '#020617');
+
+console.log('  ✓ Contrast text accurately calculated: School of Rock (#ffffff), Bach to Rock (#ffffff), Amber (#020617)\n');
+
+console.log('🎉 ALL WHITE-LABEL BRANDING & AUTOFILL TESTS PASSED SUCCESSFULLY!');

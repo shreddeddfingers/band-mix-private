@@ -135,7 +135,7 @@ export default function RosterPage() {
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setIsQrOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-bold shadow-lg shadow-amber-500/20 transition"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-[var(--brand-contrast-text)] text-xs sm:text-sm font-bold shadow-lg shadow-amber-500/20 transition"
           >
             <QrCode className="w-4 h-4" />
             Dynamic QR Intake
@@ -150,7 +150,7 @@ export default function RosterPage() {
           className={clsx(
             'flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition',
             activeView === 'roster'
-              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
+              ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
@@ -163,7 +163,7 @@ export default function RosterPage() {
           className={clsx(
             'flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition',
             activeView === 'matching'
-              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
+              ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >

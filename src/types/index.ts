@@ -106,6 +106,7 @@ export interface StudioBranding {
   tagline?: string;
   logoUrl?: string;
   accentColor?: string; // Hex color e.g. "#E11D48"
+  brandColor?: string;  // Alias for accentColor
   presetKey?: BrandPresetKey;
   customWelcome?: string;
   badgeText?: string;

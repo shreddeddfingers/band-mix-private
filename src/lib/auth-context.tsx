@@ -39,6 +39,52 @@ interface AuthContextType {
   isFirebaseActive: boolean;
 }
 
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  let clean = hex.replace('#', '').trim();
+  if (clean.length === 3) {
+    clean = clean.split('').map((c) => c + c).join('');
+  }
+  const num = parseInt(clean, 16);
+  if (isNaN(num)) return { r: 245, g: 158, b: 11 };
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255,
+  };
+}
+
+function getContrastTextColor(r: number, g: number, b: number): string {
+  // ITU-R BT.709 perceived luminance
+  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return luminance > 0.55 ? '#020617' : '#ffffff';
+}
+
+function applyBrandCssTheme(branding?: StudioBranding) {
+  if (typeof document === 'undefined') return;
+  const hex = branding?.accentColor || branding?.brandColor || '#F59E0B';
+  const { r, g, b } = hexToRgb(hex);
+
+  // Darker shade for hover
+  const hoverR = Math.max(0, Math.floor(r * 0.88));
+  const hoverG = Math.max(0, Math.floor(g * 0.88));
+  const hoverB = Math.max(0, Math.floor(b * 0.88));
+
+  const contrastText = getContrastTextColor(r, g, b);
+
+  const root = document.documentElement;
+  root.style.setProperty('--brand-rgb', `${r} ${g} ${b}`);
+  root.style.setProperty('--brand-rgb-hover', `${hoverR} ${hoverG} ${hoverB}`);
+  root.style.setProperty('--brand-color', hex);
+  root.style.setProperty('--brand-hover', `rgb(${hoverR}, ${hoverG}, ${hoverB})`);
+  root.style.setProperty('--brand-light', `rgba(${r}, ${g}, ${b}, 0.15)`);
+  root.style.setProperty('--brand-surface', `rgba(${r}, ${g}, ${b}, 0.12)`);
+  root.style.setProperty('--brand-surface-hover', `rgba(${r}, ${g}, ${b}, 0.2)`);
+  root.style.setProperty('--brand-border', `rgba(${r}, ${g}, ${b}, 0.35)`);
+  root.style.setProperty('--brand-glow', `0 10px 25px -5px rgba(${r}, ${g}, ${b}, 0.35)`);
+  root.style.setProperty('--brand-text', hex);
+  root.style.setProperty('--brand-contrast-text', contrastText);
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -189,15 +235,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const refreshBranding = () => {
       const b = DataStore.getStudioBranding(activeDirectorId);
       setActiveBranding(b);
+      applyBrandCssTheme(b);
     };
     refreshBranding();
     const unsub = subscribeToStore('branding', refreshBranding);
     return () => unsub();
   }, [activeDirectorId]);
 
+  useEffect(() => {
+    applyBrandCssTheme(activeBranding);
+  }, [activeBranding]);
+
   const updateStudioBranding = (branding: StudioBranding) => {
     DataStore.setStudioBranding(activeDirectorId, branding);
     setActiveBranding(branding);
+    applyBrandCssTheme(branding);
     if (currentUser?.role === 'admin') {
       setCurrentUser({
         ...currentUser,

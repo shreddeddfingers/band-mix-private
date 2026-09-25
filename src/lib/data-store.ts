@@ -271,7 +271,7 @@ export const DataStore = {
           ...inv,
           studioName: branding.studioName,
           tagline: branding.tagline,
-          accentColor: branding.accentColor,
+          accentColor: branding.accentColor || branding.brandColor,
           logoUrl: branding.logoUrl,
         };
       }
