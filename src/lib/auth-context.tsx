@@ -96,6 +96,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // If Firebase Auth is configured, subscribe to live auth changes
     let unsubAuth: (() => void) | undefined;
+    let unsubRemoteUsers: (() => void) | undefined;
+    let unsubRemoteBands: (() => void) | undefined;
+    let unsubRemoteInvites: (() => void) | undefined;
 
     if (isFirebaseActive) {
       unsubAuth = AuthService.onAuthStateChanged(async (firebaseUser) => {
@@ -108,27 +111,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setCurrentUser(director);
         }
       });
+
+      // Real-time Firestore sync across devices
+      try {
+        unsubRemoteUsers = FirestoreService.subscribeUsers((remoteUsers) => {
+          const remoteStudents = remoteUsers.filter((u) => u.role === 'student');
+          const remoteDirectors = remoteUsers.filter((u) => u.role === 'admin');
+          DataStore.mergeRemoteStudents(remoteStudents);
+          DataStore.mergeRemoteDirectors(remoteDirectors);
+        });
+
+        unsubRemoteBands = FirestoreService.subscribeBands((remoteBands) => {
+          DataStore.mergeRemoteBands(remoteBands);
+        });
+
+        unsubRemoteInvites = FirestoreService.subscribeInvites((remoteInvites) => {
+          DataStore.mergeRemoteInvites(remoteInvites);
+        });
+      } catch (err) {
+        console.warn('Real-time cloud sync subscription failed:', err);
+      }
     }
 
     // Refresh available users from store
-    const refreshUsers = async () => {
+    const refreshUsers = () => {
       const allDirectors = DataStore.getDirectors();
       setDirectors(allDirectors);
-
-      if (isFirebaseActive) {
-        try {
-          const remoteUsers = await FirestoreService.getAllUsers();
-          if (remoteUsers.length > 0) {
-            setAvailableUsers(remoteUsers);
-            return;
-          }
-        } catch {
-          // Fall back to local store
-        }
-      }
-
       const all = DataStore.getAllUsers();
       setAvailableUsers(all);
+
       if (!currentUser) {
         const director = DataStore.getDirector();
         setCurrentUser(director);
@@ -144,6 +155,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       unsubAuth?.();
+      unsubRemoteUsers?.();
+      unsubRemoteBands?.();
+      unsubRemoteInvites?.();
       unsubStudents();
       unsubBands();
     };

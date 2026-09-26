@@ -4,6 +4,8 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { DataStore } from '@/lib/data-store';
+import { FirestoreService } from '@/lib/firestore-service';
+import { isFirebaseConfigured } from '@/lib/firebase';
 import {
   InstrumentType,
   SkillLevel,
@@ -91,23 +93,60 @@ function OnboardContent() {
   const [targetBand, setTargetBand] = useState<Band | null>(null);
   const [invite, setInvite] = useState<any>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdStudentName, setCreatedStudentName] = useState('');
 
   useEffect(() => {
-    const inv = DataStore.getInviteByCode(codeParam);
-    if (inv) {
-      setInvite(inv);
-      if (!bandIdParam && inv.bandId) {
-        const b = DataStore.getBand(inv.bandId);
-        if (b) setTargetBand(b);
+    let isCancelled = false;
+
+    const resolveInvite = async () => {
+      // 1. Check local store
+      const inv = DataStore.getInviteByCode(codeParam);
+      if (inv) {
+        setInvite(inv);
+        if (!bandIdParam && inv.bandId) {
+          const b = DataStore.getBand(inv.bandId);
+          if (b) setTargetBand(b);
+        }
+        return;
       }
-    }
+
+      // 2. Fetch remote invite from Firestore (cross-device scanning)
+      if (isFirebaseConfigured && codeParam) {
+        try {
+          const remoteInv = await FirestoreService.getInvite(codeParam);
+          if (remoteInv && !isCancelled) {
+            setInvite(remoteInv);
+            if (!bandIdParam && remoteInv.bandId) {
+              const remoteBand = await FirestoreService.getBand(remoteInv.bandId);
+              if (remoteBand && !isCancelled) {
+                setTargetBand(remoteBand);
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('Could not resolve remote invite pass:', err);
+        }
+      }
+    };
+
+    resolveInvite();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [codeParam, bandIdParam]);
 
   useEffect(() => {
     if (bandIdParam) {
       const b = DataStore.getBand(bandIdParam);
-      if (b) setTargetBand(b);
+      if (b) {
+        setTargetBand(b);
+      } else if (isFirebaseConfigured) {
+        FirestoreService.getBand(bandIdParam).then((remoteB) => {
+          if (remoteB) setTargetBand(remoteB);
+        }).catch(console.error);
+      }
     }
   }, [bandIdParam]);
 
@@ -218,55 +257,65 @@ function OnboardContent() {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || isSubmitting) return;
 
-    const fallbackAvatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(
-      name
-    )}`;
+    setIsSubmitting(true);
+    try {
+      const fallbackAvatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(
+        name
+      )}`;
 
-    const newStudent = DataStore.createStudent({
-      name: name.trim(),
-      directorId: effectiveDirectorId,
-      email:
-        email.trim() ||
-        `${name.toLowerCase().replace(/\s+/g, '.')}@student.musicstudio.edu`,
-      pronouns: pronouns.trim() || undefined,
-      avatar: fallbackAvatar,
-      instruments: Array.from(
-        new Set([primaryInstrument, ...secondaryInstruments])
-      ),
-      primaryInstrument,
-      skillLevel,
-      ageGroup,
-      musicalStyles: selectedStyles,
-      bio:
-        bio.trim() ||
-        `Excited to play ${primaryInstrument} and collaborate with bands!`,
-      bandIdToJoin: targetBand?.id,
-      availability,
-      bandMatchProfile: {
-        hobbies: selectedHobbies,
-        musicalGoals: selectedGoals,
-        commitmentLevel,
-        socialStyle,
-        preferredEnvironment,
-        currentObsession: currentObsession.trim() || undefined,
-      },
-      // Restricted personal fields stored in private document:
-      dateOfBirth: dateOfBirth || undefined,
-      guardianEmail: guardianEmail.trim() || undefined,
-      guardianPhone: guardianPhone.trim() || undefined,
-    });
+      const newStudent = DataStore.createStudent({
+        name: name.trim(),
+        directorId: effectiveDirectorId,
+        email:
+          email.trim() ||
+          `${name.toLowerCase().replace(/\s+/g, '.')}@student.musicstudio.edu`,
+        pronouns: pronouns.trim() || undefined,
+        avatar: fallbackAvatar,
+        instruments: Array.from(
+          new Set([primaryInstrument, ...secondaryInstruments])
+        ),
+        primaryInstrument,
+        skillLevel,
+        ageGroup,
+        musicalStyles: selectedStyles,
+        bio:
+          bio.trim() ||
+          `Excited to play ${primaryInstrument} and collaborate with bands!`,
+        bandIdToJoin: targetBand?.id,
+        availability,
+        bandMatchProfile: {
+          hobbies: selectedHobbies,
+          musicalGoals: selectedGoals,
+          commitmentLevel,
+          socialStyle,
+          preferredEnvironment,
+          currentObsession: currentObsession.trim() || undefined,
+        },
+        // Restricted personal fields stored in private document:
+        dateOfBirth: dateOfBirth || undefined,
+        guardianEmail: guardianEmail.trim() || undefined,
+        guardianPhone: guardianPhone.trim() || undefined,
+      });
 
-    DataStore.incrementInviteUse(codeParam);
+      // Explicitly await cloud save to guarantee it is in Firestore before displaying success
+      if (isFirebaseConfigured) {
+        await FirestoreService.setUser(newStudent).catch(console.error);
+      }
 
-    setCreatedStudentName(newStudent.name);
-    setIsSuccess(true);
+      DataStore.incrementInviteUse(codeParam);
 
-    // Switch perspective to the newly created student
-    switchUser(newStudent.id);
+      setCreatedStudentName(newStudent.name);
+      setIsSuccess(true);
+
+      // Switch perspective to the newly created student
+      switchUser(newStudent.id);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSuccess) {
@@ -1010,11 +1059,19 @@ function OnboardContent() {
         <div className="pt-4 border-t border-studio-800">
           <button
             type="submit"
+            disabled={isSubmitting}
             style={{ backgroundColor: brandColor }}
-            className="w-full py-4 rounded-2xl text-slate-950 font-black text-sm tracking-wide uppercase transition hover:brightness-110 shadow-xl flex items-center justify-center gap-2"
+            className={clsx(
+              "w-full py-4 rounded-2xl text-slate-950 font-black text-sm tracking-wide uppercase transition hover:brightness-110 shadow-xl flex items-center justify-center gap-2",
+              isSubmitting && "opacity-75 cursor-not-allowed"
+            )}
           >
-            <Sparkles className="w-4 h-4" />
-            {isExpressMode ? 'Complete Instant Enrollment' : 'Complete Full Registration'}
+            <Sparkles className={clsx("w-4 h-4", isSubmitting && "animate-spin")} />
+            {isSubmitting
+              ? 'Finalizing Enrollment...'
+              : isExpressMode
+              ? 'Complete Instant Enrollment'
+              : 'Complete Full Registration'}
           </button>
         </div>
       </form>

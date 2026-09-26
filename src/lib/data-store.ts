@@ -381,8 +381,110 @@ export const DataStore = {
     return students.filter(
       (s) =>
         s.directorId === directorId ||
-        (directorId === 'director-main' && (!s.directorId || s.directorId === 'director-main'))
+        !s.directorId ||
+        s.directorId === 'director-main'
     );
+  },
+
+  mergeRemoteStudents(remoteStudents: UserProfile[]): void {
+    if (!remoteStudents || remoteStudents.length === 0) return;
+    const local = loadItem<UserProfile[]>(STORAGE_KEYS.STUDENTS, []);
+    let changed = false;
+    const merged = [...local];
+
+    for (const remote of remoteStudents) {
+      const idx = merged.findIndex((s) => s.id === remote.id);
+      if (idx >= 0) {
+        if (JSON.stringify(merged[idx]) !== JSON.stringify(remote)) {
+          merged[idx] = { ...merged[idx], ...remote };
+          changed = true;
+        }
+      } else {
+        merged.unshift(remote);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      saveItem(STORAGE_KEYS.STUDENTS, merged);
+      notify('students');
+    }
+  },
+
+  mergeRemoteDirectors(remoteDirectors: UserProfile[]): void {
+    if (!remoteDirectors || remoteDirectors.length === 0) return;
+    const local = loadItem<UserProfile[]>(STORAGE_KEYS.DIRECTORS, []);
+    let changed = false;
+    const merged = [...local];
+
+    for (const remote of remoteDirectors) {
+      const idx = merged.findIndex((d) => d.id === remote.id);
+      if (idx >= 0) {
+        if (JSON.stringify(merged[idx]) !== JSON.stringify(remote)) {
+          merged[idx] = { ...merged[idx], ...remote };
+          changed = true;
+        }
+      } else {
+        merged.push(remote);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      saveItem(STORAGE_KEYS.DIRECTORS, merged);
+      notify('branding');
+      notify('students');
+    }
+  },
+
+  mergeRemoteBands(remoteBands: Band[]): void {
+    if (!remoteBands || remoteBands.length === 0) return;
+    const local = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);
+    let changed = false;
+    const merged = [...local];
+
+    for (const remote of remoteBands) {
+      const idx = merged.findIndex((b) => b.id === remote.id);
+      if (idx >= 0) {
+        if (JSON.stringify(merged[idx]) !== JSON.stringify(remote)) {
+          merged[idx] = { ...merged[idx], ...remote };
+          changed = true;
+        }
+      } else {
+        merged.unshift(remote);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      saveItem(STORAGE_KEYS.BANDS, merged);
+      notify('bands');
+    }
+  },
+
+  mergeRemoteInvites(remoteInvites: InviteCode[]): void {
+    if (!remoteInvites || remoteInvites.length === 0) return;
+    const local = loadItem<InviteCode[]>(STORAGE_KEYS.INVITES, [BASELINE_INVITE]);
+    let changed = false;
+    const merged = [...local];
+
+    for (const remote of remoteInvites) {
+      const idx = merged.findIndex((i) => i.code.toUpperCase() === remote.code.toUpperCase());
+      if (idx >= 0) {
+        if (JSON.stringify(merged[idx]) !== JSON.stringify(remote)) {
+          merged[idx] = { ...merged[idx], ...remote };
+          changed = true;
+        }
+      } else {
+        merged.unshift(remote);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      saveItem(STORAGE_KEYS.INVITES, merged);
+      notify('invites');
+    }
   },
 
   getAllUsers(directorId?: string): UserProfile[] {

@@ -36,6 +36,24 @@ function getDb() {
   return db;
 }
 
+// Recursively strips undefined values so Firestore setDoc/updateDoc never fails on optional properties
+export function stripUndefined<T>(obj: T): T {
+  if (obj === null || obj === undefined) return obj;
+  if (Array.isArray(obj)) {
+    return obj.map(stripUndefined) as unknown as T;
+  }
+  if (typeof obj === 'object') {
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        cleaned[key] = stripUndefined(value);
+      }
+    }
+    return cleaned;
+  }
+  return obj;
+}
+
 export const FirestoreService = {
   // --- USERS & ROSTER ---
   async getUser(uid: string): Promise<UserProfile | null> {
@@ -50,14 +68,31 @@ export const FirestoreService = {
     return snap.docs.map((d) => d.data() as UserProfile);
   },
 
+  subscribeUsers(callback: (users: UserProfile[]) => void): Unsubscribe {
+    const firestore = getDb();
+    const col = collection(firestore, 'users');
+    return onSnapshot(
+      col,
+      (snapshot) => {
+        const users = snapshot.docs.map((d) => d.data() as UserProfile);
+        callback(users);
+      },
+      (err) => {
+        console.warn('Error subscribing to users in Firestore:', err);
+      }
+    );
+  },
+
   async setUser(profile: UserProfile): Promise<void> {
     const firestore = getDb();
-    await setDoc(doc(firestore, 'users', profile.id), profile, { merge: true });
+    const cleaned = stripUndefined(profile);
+    await setDoc(doc(firestore, 'users', profile.id), cleaned, { merge: true });
   },
 
   async updateUser(uid: string, updates: Partial<UserProfile>): Promise<void> {
     const firestore = getDb();
-    await updateDoc(doc(firestore, 'users', uid), updates);
+    const cleaned = stripUndefined(updates);
+    await updateDoc(doc(firestore, 'users', uid), cleaned);
   },
 
   // Private Sensitive Profile (DOB, guardian contact) stored separately at /users/{uid}/private/profile
@@ -69,9 +104,10 @@ export const FirestoreService = {
 
   async setPrivateProfile(privateProfile: PrivateUserProfile): Promise<void> {
     const firestore = getDb();
+    const cleaned = stripUndefined(privateProfile);
     await setDoc(
       doc(firestore, `users/${privateProfile.userId}/private`, 'profile'),
-      privateProfile,
+      cleaned,
       { merge: true }
     );
   },
@@ -83,6 +119,21 @@ export const FirestoreService = {
     return snap.docs.map((d) => d.data() as Band);
   },
 
+  subscribeBands(callback: (bands: Band[]) => void): Unsubscribe {
+    const firestore = getDb();
+    const col = collection(firestore, 'bands');
+    return onSnapshot(
+      col,
+      (snapshot) => {
+        const bands = snapshot.docs.map((d) => d.data() as Band);
+        callback(bands);
+      },
+      (err) => {
+        console.warn('Error subscribing to bands in Firestore:', err);
+      }
+    );
+  },
+
   async getBand(id: string): Promise<Band | null> {
     const firestore = getDb();
     const snap = await getDoc(doc(firestore, 'bands', id));
@@ -91,12 +142,14 @@ export const FirestoreService = {
 
   async setBand(band: Band): Promise<void> {
     const firestore = getDb();
-    await setDoc(doc(firestore, 'bands', band.id), band);
+    const cleaned = stripUndefined(band);
+    await setDoc(doc(firestore, 'bands', band.id), cleaned);
   },
 
   async updateBand(id: string, updates: Partial<Band>): Promise<void> {
     const firestore = getDb();
-    await updateDoc(doc(firestore, 'bands', id), updates);
+    const cleaned = stripUndefined(updates);
+    await updateDoc(doc(firestore, 'bands', id), cleaned);
   },
 
   async getStudentsByDirector(directorId: string): Promise<UserProfile[]> {
@@ -159,7 +212,8 @@ export const FirestoreService = {
 
   async createRehearsal(rehearsal: RehearsalEvent): Promise<void> {
     const firestore = getDb();
-    await setDoc(doc(firestore, 'rehearsals', rehearsal.id), rehearsal);
+    const cleaned = stripUndefined(rehearsal);
+    await setDoc(doc(firestore, 'rehearsals', rehearsal.id), cleaned);
   },
 
   async deleteRehearsal(id: string): Promise<void> {
@@ -180,6 +234,21 @@ export const FirestoreService = {
     return snap.docs.map((d) => d.data() as InviteCode);
   },
 
+  subscribeInvites(callback: (invites: InviteCode[]) => void): Unsubscribe {
+    const firestore = getDb();
+    const col = collection(firestore, 'invites');
+    return onSnapshot(
+      col,
+      (snapshot) => {
+        const invites = snapshot.docs.map((d) => d.data() as InviteCode);
+        callback(invites);
+      },
+      (err) => {
+        console.warn('Error subscribing to invites in Firestore:', err);
+      }
+    );
+  },
+
   async getInvitesByDirector(directorId: string): Promise<InviteCode[]> {
     const firestore = getDb();
     const q = query(collection(firestore, 'invites'), where('directorId', '==', directorId));
@@ -189,7 +258,8 @@ export const FirestoreService = {
 
   async createInvite(invite: InviteCode): Promise<void> {
     const firestore = getDb();
-    await setDoc(doc(firestore, 'invites', invite.code.toUpperCase()), invite);
+    const cleaned = stripUndefined(invite);
+    await setDoc(doc(firestore, 'invites', invite.code.toUpperCase()), cleaned);
   },
 
   async incrementInviteUse(code: string): Promise<void> {
@@ -210,9 +280,10 @@ export const FirestoreService = {
 
   async setAnnouncement(announcement: BandAnnouncement): Promise<void> {
     const firestore = getDb();
+    const cleaned = stripUndefined(announcement);
     await setDoc(
       doc(firestore, `bands/${announcement.bandId}/announcements`, announcement.id),
-      announcement
+      cleaned
     );
   },
 
@@ -231,7 +302,8 @@ export const FirestoreService = {
 
   async setSong(song: BandSong): Promise<void> {
     const firestore = getDb();
-    await setDoc(doc(firestore, `bands/${song.bandId}/songs`, song.id), song);
+    const cleaned = stripUndefined(song);
+    await setDoc(doc(firestore, `bands/${song.bandId}/songs`, song.id), cleaned);
   },
 
   async deleteSong(bandId: string, songId: string): Promise<void> {
@@ -242,9 +314,10 @@ export const FirestoreService = {
   // --- ANONYMOUS SONG VOTES ---
   async submitVote(bandId: string, songId: string, vote: SongVote): Promise<void> {
     const firestore = getDb();
+    const cleaned = stripUndefined(vote);
     await setDoc(
       doc(firestore, `bands/${bandId}/songs/${songId}/votes`, vote.userId),
-      vote
+      cleaned
     );
   },
 
