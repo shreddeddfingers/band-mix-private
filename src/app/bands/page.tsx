@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { DataStore, subscribeToStore } from '@/lib/data-store';
+import { isFirebaseConfigured } from '@/lib/firebase';
+import { FirestoreService } from '@/lib/firestore-service';
 import { Band } from '@/types';
 import { InstrumentIcon } from '@/components/InstrumentIcon';
 import { CreateBandModal } from '@/components/bands/CreateBandModal';
@@ -39,14 +41,34 @@ export default function BandsPage() {
   const [historyBandId, setHistoryBandId] = useState<string | null>(null);
 
   useEffect(() => {
-    const refresh = () => setBands(DataStore.getBands(activeDirectorId));
+    const refresh = () => {
+      let b = isStudent ? DataStore.getBands() : DataStore.getBands(activeDirectorId);
+      if (b.length === 0) b = DataStore.getBands();
+      setBands(b);
+    };
     refresh();
     const unsub = subscribeToStore('bands', refresh);
     return () => unsub();
-  }, [activeDirectorId]);
+  }, [activeDirectorId, isStudent]);
+
+  useEffect(() => {
+    if (isStudent && isFirebaseConfigured) {
+      FirestoreService.getBands()
+        .then((remoteBands) => {
+          if (remoteBands && remoteBands.length > 0) {
+            DataStore.mergeRemoteBands(remoteBands);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [isStudent]);
 
   const visibleBands = isStudent
-    ? bands.filter((b) => b.members.some((m) => m.userId === currentUser?.id))
+    ? DataStore.getBands().filter(
+        (b) =>
+          b.members?.some((m) => m.userId === currentUser?.id) ||
+          (currentUser?.bandIds && currentUser.bandIds.includes(b.id))
+      )
     : bands;
 
   // Direct students straight to their band page

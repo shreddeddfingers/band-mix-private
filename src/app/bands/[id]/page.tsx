@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { DataStore, subscribeToStore } from '@/lib/data-store';
+import { isFirebaseConfigured } from '@/lib/firebase';
+import { FirestoreService } from '@/lib/firestore-service';
 import { Band, InstrumentType, UserProfile } from '@/types';
 import { InstrumentIcon } from '@/components/InstrumentIcon';
 import { Badge } from '@/components/Badge';
@@ -58,6 +60,15 @@ export default function BandHubPage({
       const b = DataStore.getBand(resolvedParams.id);
       if (b) {
         setBand({ ...b });
+      } else if (isFirebaseConfigured) {
+        FirestoreService.getBand(resolvedParams.id)
+          .then((remoteB) => {
+            if (remoteB) {
+              DataStore.mergeRemoteBands([remoteB]);
+              setBand({ ...remoteB });
+            }
+          })
+          .catch(console.error);
       }
     };
 
@@ -74,11 +85,17 @@ export default function BandHubPage({
     );
   }
 
-  const isMember = band.members.some((m) => m.userId === currentUser?.id);
+  const isMember =
+    band.members?.some((m) => m.userId === currentUser?.id) ||
+    Boolean(currentUser?.bandIds && currentUser.bandIds.includes(band.id));
 
   if (!isAdmin && !isMember) {
     const studentBands = currentUser
-      ? DataStore.getBands().filter((b) => b.members.some((m) => m.userId === currentUser.id))
+      ? DataStore.getBands().filter(
+          (b) =>
+            b.members?.some((m) => m.userId === currentUser.id) ||
+            (currentUser.bandIds && currentUser.bandIds.includes(b.id))
+        )
       : [];
     const myBand = studentBands[0];
 

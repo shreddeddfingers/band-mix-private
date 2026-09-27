@@ -72,7 +72,8 @@ export function LoginModal({
       // Find band
       const bands = DataStore.getBands();
       const myBand = bands.find((b) =>
-        b.members.some((m) => m.userId === student.id)
+        b.members?.some((m) => m.userId === student.id) ||
+        (student.bandIds && student.bandIds.includes(b.id))
       );
 
       if (myBand) {
@@ -116,7 +117,8 @@ export function LoginModal({
       onClose();
       const bands = DataStore.getBands();
       const myBand = bands.find((b) =>
-        b.members.some((m) => m.userId === student.id)
+        b.members?.some((m) => m.userId === student.id) ||
+        (student.bandIds && student.bandIds.includes(b.id))
       );
       if (myBand) {
         router.push(`/bands/${myBand.id}`);

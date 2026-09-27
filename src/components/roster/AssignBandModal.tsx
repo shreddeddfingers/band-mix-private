@@ -1,11 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { UserProfile, InstrumentType, Band } from '@/types';
-import { DataStore } from '@/lib/data-store';
+import { DataStore, subscribeToStore } from '@/lib/data-store';
+import { FirestoreService } from '@/lib/firestore-service';
+import { isFirebaseConfigured } from '@/lib/firebase';
 import { useAuth } from '@/lib/auth-context';
 import { InstrumentIcon } from '../InstrumentIcon';
-import { X, Check, Music, UserPlus } from 'lucide-react';
+import { X, Check, Music, UserPlus, Loader2, AlertCircle, Plus } from 'lucide-react';
 
 interface AssignBandModalProps {
   isOpen: boolean;
@@ -21,23 +24,85 @@ export function AssignBandModal({
   onSuccess,
 }: AssignBandModalProps) {
   const { activeDirectorId, isAdmin } = useAuth();
+  const [bands, setBands] = useState<Band[]>([]);
   const [selectedBandId, setSelectedBandId] = useState('');
-  const [selectedInstrument, setSelectedInstrument] = useState<InstrumentType>(
-    student?.primaryInstrument || 'drums'
-  );
+  const [selectedInstrument, setSelectedInstrument] = useState<InstrumentType>('drums');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const dirId = student?.directorId || activeDirectorId || 'director-main';
-  const bands = DataStore.getBands(dirId);
+  // Sync available bands reactively
+  useEffect(() => {
+    const refreshBands = () => {
+      let available = DataStore.getBands(activeDirectorId);
+      if (available.length === 0) {
+        available = DataStore.getBands();
+      }
+      setBands(available);
+    };
+
+    if (isOpen) {
+      refreshBands();
+
+      // Proactively pull remote Firestore bands to guarantee newly created bands from any device are present
+      if (isFirebaseConfigured) {
+        FirestoreService.getBands()
+          .then((remoteBands) => {
+            if (remoteBands && remoteBands.length > 0) {
+              DataStore.mergeRemoteBands(remoteBands);
+              refreshBands();
+            }
+          })
+          .catch((err) => console.warn('Could not sync remote bands for AssignBandModal:', err));
+      }
+    }
+
+    const unsub = subscribeToStore('bands', refreshBands);
+    return () => unsub();
+  }, [isOpen, activeDirectorId]);
+
+  // Reset form selections on student change or modal open
+  useEffect(() => {
+    if (student) {
+      setSelectedBandId('');
+      setSelectedInstrument(student.primaryInstrument || 'drums');
+      setErrorMsg(null);
+    }
+  }, [student, isOpen]);
 
   if (!isOpen || !isAdmin || !student) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAdmin || !selectedBandId) return;
+    if (!isAdmin || !selectedBandId || !student) return;
 
-    DataStore.addMemberToBand(selectedBandId, student, selectedInstrument);
-    if (onSuccess) onSuccess();
-    onClose();
+    setIsSubmitting(true);
+    setErrorMsg(null);
+
+    try {
+      DataStore.addMemberToBand(selectedBandId, student, selectedInstrument);
+
+      // Force cloud sync to guarantee immediate persistence across all student devices
+      if (isFirebaseConfigured) {
+        const updatedBand = DataStore.getBand(selectedBandId);
+        if (updatedBand) {
+          await FirestoreService.setBand(updatedBand).catch(console.error);
+        }
+        const updatedBandIds = Array.from(
+          new Set([...(student.bandIds || []), selectedBandId])
+        );
+        await FirestoreService.updateUser(student.id, {
+          bandIds: updatedBandIds,
+        }).catch(console.error);
+      }
+
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (err: any) {
+      console.error('Failed to assign member to band:', err);
+      setErrorMsg(err?.message || 'Failed to assign student to ensemble.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const instrumentOptions: InstrumentType[] = [
@@ -53,6 +118,7 @@ export function AssignBandModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-md bg-studio-900 border border-studio-700/80 rounded-2xl shadow-2xl overflow-hidden">
+        {/* Header */}
         <div className="p-5 pb-4 border-b border-studio-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
@@ -73,34 +139,68 @@ export function AssignBandModal({
           </button>
         </div>
 
+        {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {errorMsg && (
+            <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
           <div>
-            <label className="block text-xs font-semibold text-studio-300 uppercase tracking-wider mb-1.5">
-              Select Band
-            </label>
-            <select
-              value={selectedBandId}
-              onChange={(e) => setSelectedBandId(e.target.value)}
-              required
-              className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
-            >
-              <option value="">-- Choose an Ensemble --</option>
-              {bands.map((band) => {
-                const isAlreadyIn = band.members.some(
-                  (m) => m.userId === student.id
-                );
-                return (
-                  <option
-                    key={band.id}
-                    value={band.id}
-                    disabled={isAlreadyIn}
-                  >
-                    {band.name} ({band.members.length} members)
-                    {isAlreadyIn ? ' - Already enrolled' : ''}
-                  </option>
-                );
-              })}
-            </select>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-studio-300 uppercase tracking-wider">
+                Select Band
+              </label>
+              <span className="text-[11px] text-studio-400">
+                {bands.length} {bands.length === 1 ? 'ensemble' : 'ensembles'} available
+              </span>
+            </div>
+
+            {bands.length === 0 ? (
+              <div className="p-4 rounded-xl bg-studio-950 border border-studio-800 text-center space-y-2">
+                <Music className="w-6 h-6 text-studio-500 mx-auto" />
+                <p className="text-xs text-studio-300 font-medium">
+                  No active bands found in your studio.
+                </p>
+                <p className="text-[11px] text-studio-500">
+                  Please create a band first so students can be enrolled.
+                </p>
+                <Link
+                  href="/bands"
+                  onClick={onClose}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 text-xs font-bold hover:bg-amber-400 transition"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Create Band
+                </Link>
+              </div>
+            ) : (
+              <select
+                value={selectedBandId}
+                onChange={(e) => setSelectedBandId(e.target.value)}
+                required
+                className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+              >
+                <option value="">-- Choose an Ensemble --</option>
+                {bands.map((band) => {
+                  const isAlreadyIn =
+                    band.members?.some((m) => m.userId === student.id) ||
+                    (student.bandIds && student.bandIds.includes(band.id));
+                  return (
+                    <option
+                      key={band.id}
+                      value={band.id}
+                      disabled={isAlreadyIn}
+                    >
+                      {band.name} ({band.genre}) - {band.members?.length || 0} members
+                      {isAlreadyIn ? ' [Already enrolled]' : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            )}
           </div>
 
           <div>
@@ -130,17 +230,27 @@ export function AssignBandModal({
             <button
               type="button"
               onClick={onClose}
+              disabled={isSubmitting}
               className="px-4 py-2 rounded-xl text-studio-400 hover:text-white text-xs font-semibold"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={!selectedBandId}
+              disabled={!selectedBandId || isSubmitting}
               className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 text-xs font-bold transition flex items-center gap-1.5"
             >
-              <Check className="w-4 h-4 stroke-[3]" />
-              Confirm Assignment
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Enrolling...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 stroke-[3]" />
+                  Confirm Assignment
+                </>
+              )}
             </button>
           </div>
         </form>

@@ -197,9 +197,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // 2. If not found locally, query remote Firestore
     if (!student && isFirebaseConfigured) {
-      student = await FirestoreService.findStudentByEmailOrName(query);
-      if (student) {
-        DataStore.mergeRemoteStudents([student]);
+      try {
+        student = await FirestoreService.findStudentByEmailOrName(query);
+        if (student) {
+          DataStore.mergeRemoteStudents([student]);
+        }
+      } catch (fsErr) {
+        console.warn('Firestore student lookup error:', fsErr);
       }
     }
 
@@ -207,6 +211,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(
         `No student musician profile found for "${query}". Please check your spelling or register via a student intake pass.`
       );
+    }
+
+    // 3. Immediately pull all bands from Firestore so the student has their assigned bands on this device
+    if (isFirebaseConfigured) {
+      try {
+        const remoteBands = await FirestoreService.getBands();
+        if (remoteBands && remoteBands.length > 0) {
+          DataStore.mergeRemoteBands(remoteBands);
+        }
+      } catch (err) {
+        console.warn('Error fetching remote bands during student login:', err);
+      }
     }
 
     DataStore.setActiveUserId(student.id);

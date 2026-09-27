@@ -411,8 +411,10 @@ export default function RosterPage() {
       {/* Roster Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredStudents.map((student) => {
-          const studentBands = bands.filter((b) =>
-            b.members.some((m) => m.userId === student.id)
+          const studentBands = bands.filter(
+            (b) =>
+              b.members?.some((m) => m.userId === student.id) ||
+              (student.bandIds && student.bandIds.includes(b.id))
           );
 
           return (

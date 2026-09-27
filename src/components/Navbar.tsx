@@ -54,13 +54,23 @@ export function Navbar() {
       return;
     }
     const update = () => {
-      const allBands = DataStore.getBands(activeDirectorId);
-      setStudentBands(allBands.filter((b) => b.members.some((m) => m.userId === currentUser.id)));
+      const allBands = DataStore.getBands();
+      setStudentBands(
+        allBands.filter(
+          (b) =>
+            b.members?.some((m) => m.userId === currentUser.id) ||
+            (currentUser.bandIds && currentUser.bandIds.includes(b.id))
+        )
+      );
     };
     update();
-    const unsub = subscribeToStore('bands', update);
-    return () => unsub();
-  }, [isAdmin, currentUser, activeDirectorId]);
+    const unsubBands = subscribeToStore('bands', update);
+    const unsubStudents = subscribeToStore('students', update);
+    return () => {
+      unsubBands();
+      unsubStudents();
+    };
+  }, [isAdmin, currentUser]);
 
   const brandColor = activeBranding?.accentColor || activeBranding?.brandColor || '#F59E0B';
   const brandName = activeBranding?.studioName || 'BANDMIX';

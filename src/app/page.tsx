@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { DataStore, subscribeToStore } from '@/lib/data-store';
+import { isFirebaseConfigured } from '@/lib/firebase';
+import { FirestoreService } from '@/lib/firestore-service';
 import { Band, RehearsalEvent, UserProfile } from '@/types';
 import { InstrumentIcon } from '@/components/InstrumentIcon';
 import { Badge } from '@/components/Badge';
@@ -41,7 +43,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const refresh = () => {
-      setBands(DataStore.getBands(activeDirectorId));
+      let b = isStudent ? DataStore.getBands() : DataStore.getBands(activeDirectorId);
+      if (b.length === 0) b = DataStore.getBands();
+      setBands(b);
       setStudents(DataStore.getStudents(activeDirectorId));
       setRehearsals(DataStore.getRehearsals());
     };
@@ -56,11 +60,27 @@ export default function DashboardPage() {
       unsubStudents();
       unsubRehearsals();
     };
-  }, [activeDirectorId]);
+  }, [activeDirectorId, isStudent]);
+
+  useEffect(() => {
+    if (isStudent && isFirebaseConfigured) {
+      FirestoreService.getBands()
+        .then((remoteBands) => {
+          if (remoteBands && remoteBands.length > 0) {
+            DataStore.mergeRemoteBands(remoteBands);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [isStudent]);
 
   // Filter bands for current student if in student mode
   const displayedBands = isStudent
-    ? bands.filter((b) => b.members.some((m) => m.userId === currentUser?.id))
+    ? DataStore.getBands().filter(
+        (b) =>
+          b.members?.some((m) => m.userId === currentUser?.id) ||
+          (currentUser?.bandIds && currentUser.bandIds.includes(b.id))
+      )
     : bands;
 
   const upcomingRehearsals = isStudent

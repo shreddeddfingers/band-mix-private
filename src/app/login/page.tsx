@@ -55,7 +55,8 @@ export default function LoginPage() {
       const student = await loginStudent(studentQuery.trim());
       const bands = DataStore.getBands();
       const myBand = bands.find((b) =>
-        b.members.some((m) => m.userId === student.id)
+        b.members?.some((m) => m.userId === student.id) ||
+        (student.bandIds && student.bandIds.includes(b.id))
       );
 
       if (myBand) {
@@ -97,7 +98,8 @@ export default function LoginPage() {
       const student = await loginStudent(studentId);
       const bands = DataStore.getBands();
       const myBand = bands.find((b) =>
-        b.members.some((m) => m.userId === student.id)
+        b.members?.some((m) => m.userId === student.id) ||
+        (student.bandIds && student.bandIds.includes(b.id))
       );
       if (myBand) {
         router.push(`/bands/${myBand.id}`);

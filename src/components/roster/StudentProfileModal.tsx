@@ -160,8 +160,10 @@ export function StudentProfileModal({
       : undefined);
 
   // Student's enrolled bands
-  const enrolledBands = bands.filter((b) =>
-    b.members.some((m) => m.userId === student.id)
+  const enrolledBands = bands.filter(
+    (b) =>
+      b.members?.some((m) => m.userId === student.id) ||
+      (student.bandIds && student.bandIds.includes(b.id))
   );
 
   const matchProfile = student.bandMatchProfile;

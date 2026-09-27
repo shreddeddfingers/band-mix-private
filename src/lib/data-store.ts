@@ -851,13 +851,17 @@ export const DataStore = {
   getBands(directorId?: string): Band[] {
     const bands = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);
     if (!directorId) return bands;
-    return bands.filter(
+    const filtered = bands.filter(
       (b) =>
         b.directorId === directorId ||
         b.createdBy === directorId ||
-        (directorId === 'director-main' &&
-          (!b.directorId && (!b.createdBy || b.createdBy === 'director-main')))
+        !b.directorId ||
+        b.directorId === 'director-main' ||
+        b.createdBy === 'director-main' ||
+        directorId === 'director-main'
     );
+    // If directorId filter yielded nothing but bands exist in store, fallback to all bands
+    return filtered.length > 0 ? filtered : bands;
   },
 
   getBand(id: string): Band | undefined {
@@ -874,9 +878,8 @@ export const DataStore = {
     initialStudentIds?: { studentId: string; instrument: InstrumentType }[];
   }): Band {
     const bands = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);
-    const director = data.directorId
-      ? this.getDirector(data.directorId)
-      : this.getDirector();
+    const dirId = data.directorId || 'director-main';
+    const director = this.getDirector(dirId);
     const newBandId = `band-${Date.now().toString(36)}`;
 
     // Director is ALWAYS mandated and locked into every band
@@ -904,8 +907,17 @@ export const DataStore = {
             avatar: student.avatar,
             joinedAt: new Date().toISOString(),
           });
+          if (!student.bandIds) student.bandIds = [];
+          if (!student.bandIds.includes(newBandId)) {
+            student.bandIds.push(newBandId);
+          }
+          if (isFirebaseConfigured) {
+            FirestoreService.updateUser(student.id, { bandIds: student.bandIds }).catch(console.error);
+          }
         }
       });
+      saveItem(STORAGE_KEYS.STUDENTS, allStudents);
+      notify('students');
     }
 
     const newBand: Band = {
@@ -922,6 +934,7 @@ export const DataStore = {
       createdAt: new Date().toISOString(),
       status: 'active',
       members,
+      memberIds: members.map((m) => m.userId),
     };
 
     saveItem(STORAGE_KEYS.BANDS, [newBand, ...bands]);
@@ -994,33 +1007,41 @@ export const DataStore = {
     const band = bands.find((b) => b.id === bandId);
     if (!band) return;
 
-    if (band.members.some((m) => m.userId === student.id)) return;
+    if (!band.members) {
+      band.members = [];
+    }
 
-    band.members.push({
-      userId: student.id,
-      name: student.name,
-      role: 'member',
-      instrument,
-      avatar: student.avatar,
-      joinedAt: new Date().toISOString(),
-    });
+    const existingIdx = band.members.findIndex((m) => m.userId === student.id);
+    if (existingIdx >= 0) {
+      band.members[existingIdx].instrument = instrument;
+    } else {
+      band.members.push({
+        userId: student.id,
+        name: student.name,
+        role: 'member',
+        instrument,
+        avatar: student.avatar,
+        joinedAt: new Date().toISOString(),
+      });
+    }
 
+    band.memberIds = band.members.map((m) => m.userId);
     saveItem(STORAGE_KEYS.BANDS, bands);
 
     // Update student's bandIds list
     const students = this.getStudents();
     const studentObj = students.find((s) => s.id === student.id);
-    if (studentObj && !studentObj.bandIds.includes(bandId)) {
-      studentObj.bandIds.push(bandId);
+    if (studentObj) {
+      if (!studentObj.bandIds) studentObj.bandIds = [];
+      if (!studentObj.bandIds.includes(bandId)) {
+        studentObj.bandIds.push(bandId);
+      }
       saveItem(STORAGE_KEYS.STUDENTS, students);
       notify('students');
     }
 
     if (isFirebaseConfigured) {
-      FirestoreService.updateBand(bandId, {
-        members: band.members,
-        memberIds: band.members.map((m) => m.userId),
-      }).catch(console.error);
+      FirestoreService.setBand(band).catch(console.error);
       if (studentObj) {
         FirestoreService.updateUser(student.id, { bandIds: studentObj.bandIds }).catch(console.error);
       }
