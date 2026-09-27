@@ -90,6 +90,7 @@ const STORAGE_KEYS = {
   SONGS: 'bandmix_prod_songs',
   VOTES: 'bandmix_prod_song_votes',
   ANNOUNCEMENTS: 'bandmix_prod_announcements',
+  ACTIVE_USER_ID: 'bandmix_active_user_id',
 };
 
 // Production baseline invite pass
@@ -525,6 +526,49 @@ export const DataStore = {
 
   getUserById(id: string): UserProfile | undefined {
     return this.getAllUsers().find((u) => u.id === id);
+  },
+
+  getActiveUserId(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(STORAGE_KEYS.ACTIVE_USER_ID);
+  },
+
+  setActiveUserId(userId: string | null): void {
+    if (typeof window === 'undefined') return;
+    if (userId) {
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_USER_ID, userId);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.ACTIVE_USER_ID);
+    }
+  },
+
+  findStudentByEmailOrName(queryStr: string): UserProfile | null {
+    const clean = queryStr.trim().toLowerCase();
+    if (!clean) return null;
+    const students = this.getStudents();
+    return (
+      students.find(
+        (s) =>
+          s.email.toLowerCase() === clean ||
+          s.name.toLowerCase() === clean ||
+          s.name.toLowerCase().startsWith(clean) ||
+          s.id.toLowerCase() === clean
+      ) || null
+    );
+  },
+
+  findDirectorByEmail(emailStr: string): UserProfile | null {
+    const clean = emailStr.trim().toLowerCase();
+    if (!clean) return null;
+    const directors = this.getDirectors();
+    return (
+      directors.find(
+        (d) =>
+          d.email.toLowerCase() === clean ||
+          d.name.toLowerCase() === clean ||
+          d.id.toLowerCase() === clean
+      ) || null
+    );
   },
 
   // Private Sensitive Profiles (DOB, guardian contact)

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { DataStore, subscribeToStore } from '@/lib/data-store';
 import { UserProfile, InstrumentType, SkillLevel, AgeGroup, Band } from '@/types';
@@ -29,6 +30,7 @@ import {
 import { clsx } from 'clsx';
 
 export default function RosterPage() {
+  const router = useRouter();
   const { isAdmin, currentUser, activeDirectorId } = useAuth();
   const [activeView, setActiveView] = useState<'roster' | 'matching'>('roster');
   const [students, setStudents] = useState<UserProfile[]>([]);
@@ -63,6 +65,17 @@ export default function RosterPage() {
       unsubBands();
     };
   }, [activeDirectorId]);
+
+  useEffect(() => {
+    if (!isAdmin && currentUser?.role === 'student') {
+      const studentBands = DataStore.getBands().filter((b) =>
+        b.members.some((m) => m.userId === currentUser.id)
+      );
+      if (studentBands.length > 0) {
+        router.replace(`/bands/${studentBands[0].id}`);
+      }
+    }
+  }, [isAdmin, currentUser, router]);
 
   if (!isAdmin) {
     const studentBands = currentUser

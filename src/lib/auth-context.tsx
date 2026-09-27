@@ -9,7 +9,7 @@ import { FirestoreService } from './firestore-service';
 
 interface AuthContextType {
   currentUser: UserProfile | null;
-  role: UserRole;
+  role: UserRole | 'guest';
   isAdmin: boolean;
   isStudent: boolean;
   directors: UserProfile[];
@@ -30,6 +30,8 @@ interface AuthContextType {
     presetKey?: BrandPresetKey;
   }) => Promise<UserProfile>;
   signInWithEmailPassword: (email: string, pass: string) => Promise<UserProfile>;
+  loginStudent: (query: string) => Promise<UserProfile>;
+  loginDirector: (email: string, password?: string) => Promise<UserProfile>;
   switchDirector: (directorId: string) => void;
   switchUser: (userId: string) => void;
   switchRole: (role: UserRole, studentId?: string) => void;
@@ -105,11 +107,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubAuth = AuthService.onAuthStateChanged(async (firebaseUser) => {
         if (firebaseUser) {
           const profile = await AuthService.syncUserProfile(firebaseUser);
+          DataStore.setActiveUserId(profile.id);
           setCurrentUser(profile);
-        } else {
-          // If logged out from Firebase, default to local director
-          const director = DataStore.getDirector();
-          setCurrentUser(director);
         }
       });
 
@@ -134,24 +133,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Refresh available users from store
+    // Refresh available users from store and restore active session
     const refreshUsers = () => {
       const allDirectors = DataStore.getDirectors();
       setDirectors(allDirectors);
       const all = DataStore.getAllUsers();
       setAvailableUsers(all);
 
-      if (!currentUser) {
-        const director = DataStore.getDirector();
-        setCurrentUser(director);
-      } else {
+      const activeUserId = DataStore.getActiveUserId();
+      if (activeUserId) {
+        const found = all.find((u) => u.id === activeUserId);
+        if (found) {
+          setCurrentUser(found);
+          return;
+        }
+      }
+
+      if (currentUser) {
         const updated = all.find((u) => u.id === currentUser.id);
         if (updated) {
           setCurrentUser(updated);
         } else if (currentUser.role === 'student') {
-          // If the currently viewed student profile was deleted, switch back to director
-          const director = DataStore.getDirector();
-          setCurrentUser(director);
+          DataStore.setActiveUserId(null);
+          setCurrentUser(null);
         }
       }
     };
@@ -173,6 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const switchUser = (userId: string) => {
     const user = availableUsers.find((u) => u.id === userId);
     if (user) {
+      DataStore.setActiveUserId(user.id);
       setCurrentUser(user);
     }
   };
@@ -180,9 +185,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const switchDirector = (directorId: string) => {
     const director = directors.find((d) => d.id === directorId) || DataStore.getDirector(directorId);
     if (director) {
+      DataStore.setActiveUserId(director.id);
       setCurrentUser(director);
       DataStore.setDirector(director);
     }
+  };
+
+  const loginStudent = async (query: string): Promise<UserProfile> => {
+    // 1. Try local data store first
+    let student = DataStore.findStudentByEmailOrName(query);
+
+    // 2. If not found locally, query remote Firestore
+    if (!student && isFirebaseConfigured) {
+      student = await FirestoreService.findStudentByEmailOrName(query);
+      if (student) {
+        DataStore.mergeRemoteStudents([student]);
+      }
+    }
+
+    if (!student) {
+      throw new Error(
+        `No student musician profile found for "${query}". Please check your spelling or register via a student intake pass.`
+      );
+    }
+
+    DataStore.setActiveUserId(student.id);
+    setCurrentUser(student);
+    return student;
+  };
+
+  const loginDirector = async (
+    email: string,
+    password?: string
+  ): Promise<UserProfile> => {
+    if (isFirebaseActive && password) {
+      const fbUser = await AuthService.signInWithEmail(email, password);
+      const profile = await AuthService.syncUserProfile(fbUser);
+      DataStore.setActiveUserId(profile.id);
+      setCurrentUser(profile);
+      return profile;
+    }
+
+    let director = DataStore.findDirectorByEmail(email);
+    if (!director && isFirebaseConfigured) {
+      director = await FirestoreService.findDirectorByEmail(email);
+      if (director) {
+        DataStore.mergeRemoteDirectors([director]);
+      }
+    }
+
+    if (!director) {
+      const defaultDir = DataStore.getDirector();
+      if (defaultDir.email.toLowerCase() === email.trim().toLowerCase()) {
+        director = defaultDir;
+      }
+    }
+
+    if (!director) {
+      throw new Error(
+        `No Band Director account found with email "${email}". Please verify your email or register a new director profile.`
+      );
+    }
+
+    DataStore.setActiveUserId(director.id);
+    DataStore.setDirector(director);
+    setCurrentUser(director);
+    return director;
   };
 
   const createDirectorAccount = async (data: {
@@ -309,10 +377,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     if (isFirebaseActive) {
-      await AuthService.signOut();
+      try {
+        await AuthService.signOut();
+      } catch (err) {
+        console.warn('Firebase signOut error:', err);
+      }
     }
-    const director = DataStore.getDirector();
-    setCurrentUser(director);
+    DataStore.setActiveUserId(null);
+    setCurrentUser(null);
   };
 
   const updateUserAvatar = (avatarUrl: string, targetUserId?: string) => {
@@ -324,9 +396,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const role = currentUser?.role || 'admin';
-  const isAdmin = role === 'admin';
-  const isStudent = role === 'student';
+  const role: UserRole | 'guest' = currentUser?.role || 'guest';
+  const isAdmin = currentUser?.role === 'admin';
+  const isStudent = currentUser?.role === 'student';
 
   return (
     <AuthContext.Provider
@@ -341,6 +413,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updateStudioBranding,
         createDirectorAccount,
         signInWithEmailPassword,
+        loginStudent,
+        loginDirector,
         switchDirector,
         switchUser,
         switchRole,

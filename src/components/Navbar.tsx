@@ -15,6 +15,8 @@ import {
   Radio,
   Sparkles,
   Camera,
+  LogOut,
+  LogIn,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { DataStore, subscribeToStore } from '@/lib/data-store';
@@ -23,6 +25,8 @@ import { RoleSwitcher } from './RoleSwitcher';
 import { QRCodeModal } from './QRCodeModal';
 import { StudioBrandingModal } from './branding/StudioBrandingModal';
 import { ChangeAvatarModal } from './profile/ChangeAvatarModal';
+import { LoginModal } from './auth/LoginModal';
+import { StudentProfileModal } from './roster/StudentProfileModal';
 import { clsx } from 'clsx';
 
 export function Navbar() {
@@ -34,11 +38,14 @@ export function Navbar() {
     activeDirectorId,
     activeBranding,
     updateUserAvatar,
+    signOut,
   } = useAuth();
   const [studentBands, setStudentBands] = useState<Band[]>([]);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isBrandingOpen, setIsBrandingOpen] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isStudentProfileOpen, setIsStudentProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -57,7 +64,7 @@ export function Navbar() {
 
   const brandColor = activeBranding?.accentColor || activeBranding?.brandColor || '#F59E0B';
   const brandName = activeBranding?.studioName || 'BANDMIX';
-  const brandBadge = activeBranding?.badgeText || (isAdmin ? 'STUDIO PLATFORM' : 'STUDENT PORTAL');
+  const brandBadge = activeBranding?.badgeText || (isAdmin ? 'STUDIO PLATFORM' : isStudent ? 'STUDENT PORTAL' : 'STUDIO PORTAL');
 
   const navLinks = isAdmin
     ? [
@@ -66,15 +73,15 @@ export function Navbar() {
         { href: '/roster', label: 'Student Roster', icon: Users },
         { href: '/schedule', label: 'Schedule', icon: Calendar },
       ]
-    : studentBands.length === 1
+    : isStudent && studentBands.length > 0
     ? [{ href: `/bands/${studentBands[0].id}`, label: 'My Band', icon: Music }]
-    : [{ href: '/bands', label: studentBands.length > 1 ? 'My Bands' : 'My Band', icon: Music }];
+    : [];
 
   const logoHref = isAdmin
     ? '/'
-    : studentBands.length === 1
+    : isStudent && studentBands.length > 0
     ? `/bands/${studentBands[0].id}`
-    : '/bands';
+    : '/';
 
   return (
     <>
@@ -171,33 +178,96 @@ export function Navbar() {
               </button>
             )}
 
-            {/* Role & Perspective Switcher */}
-            <RoleSwitcher />
+            {/* Guest Actions (Not Logged In) */}
+            {!currentUser && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsLoginOpen(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition shadow-sm"
+                >
+                  <LogIn className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Log In</span>
+                </button>
+                <Link
+                  href="/onboard"
+                  className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-studio-850 hover:bg-studio-800 text-studio-200 hover:text-white text-xs font-semibold border border-studio-700 transition"
+                >
+                  <span>Intake Pass</span>
+                </Link>
+              </div>
+            )}
 
-            {/* Current User Avatar / Quick Change Photo */}
-            {currentUser && (
-              <button
-                type="button"
-                onClick={() => setIsAvatarModalOpen(true)}
-                className="relative group p-0.5 rounded-full border border-studio-700 hover:border-amber-400 transition shrink-0"
-                title={`Change profile picture (${currentUser.name})`}
-                aria-label="Change profile picture"
-              >
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-studio-800">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={currentUser.avatar}
-                    alt={currentUser.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                </div>
-                <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                  <Camera className="w-3.5 h-3.5 text-amber-300" />
-                </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-studio-950 border border-studio-700 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 transition">
-                  <Camera className="w-2 h-2" />
-                </div>
-              </button>
+            {/* Band Director Perspective Tools (Admin Only) */}
+            {isAdmin && currentUser && (
+              <>
+                <RoleSwitcher />
+                <button
+                  type="button"
+                  onClick={() => setIsAvatarModalOpen(true)}
+                  className="relative group p-0.5 rounded-full border border-studio-700 hover:border-amber-400 transition shrink-0"
+                  title={`Change profile picture (${currentUser.name})`}
+                  aria-label="Change profile picture"
+                >
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-studio-800">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={currentUser.avatar}
+                      alt={currentUser.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-studio-950 border border-studio-700 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 transition">
+                    <Camera className="w-2 h-2" />
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => signOut()}
+                  className="p-2 rounded-xl text-studio-400 hover:text-rose-400 hover:bg-studio-900 border border-transparent hover:border-studio-800 transition shrink-0"
+                  title="Sign Out / Switch Director"
+                  aria-label="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </>
+            )}
+
+            {/* Student Musician Perspective (Student Only - strictly isolated, no RoleSwitcher) */}
+            {isStudent && currentUser && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsStudentProfileOpen(true)}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-studio-900 hover:bg-studio-800 border border-studio-700 text-xs font-semibold text-white transition group shrink-0"
+                  title="View & Edit My Profile"
+                >
+                  <div className="relative w-6 h-6 rounded-full overflow-hidden bg-studio-800 border border-studio-600 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={currentUser.avatar}
+                      alt={currentUser.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="truncate max-w-[100px] sm:max-w-[130px]">
+                    {currentUser.name}
+                  </span>
+                  <span className="hidden sm:inline text-[10px] text-amber-400 font-normal">
+                    Profile
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => signOut()}
+                  className="p-2 rounded-xl text-studio-400 hover:text-rose-400 hover:bg-studio-900 border border-transparent hover:border-studio-800 transition shrink-0"
+                  title="Log Out"
+                  aria-label="Log Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </>
             )}
 
             {/* Mobile menu trigger */}
@@ -214,8 +284,63 @@ export function Navbar() {
         {/* Mobile menu dropdown */}
         {mobileMenuOpen && (
           <div className="md:hidden px-4 pt-2 pb-4 border-t border-studio-800 bg-studio-950 space-y-1 animate-in fade-in slide-in-from-top-2 duration-150">
-            {/* User Profile Card inside mobile menu */}
-            {currentUser && (
+            {/* Guest Menu Options */}
+            {!currentUser && (
+              <div className="pt-1 pb-2 border-b border-studio-800/80 mb-2 space-y-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsLoginOpen(true);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs shadow-sm"
+                >
+                  <LogIn className="w-3.5 h-3.5 stroke-[2.5]" />
+                  Log In to Band Account
+                </button>
+                <Link
+                  href="/onboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-studio-900 text-studio-200 font-semibold text-xs border border-studio-700"
+                >
+                  Enter Student Intake Pass
+                </Link>
+              </div>
+            )}
+
+            {/* Student Profile Card in Mobile Menu */}
+            {isStudent && currentUser && (
+              <div className="pt-1 pb-2 border-b border-studio-800/80 mb-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsStudentProfileOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-studio-900 border border-studio-800 hover:border-amber-500/50 transition text-left"
+                >
+                  <div className="relative w-9 h-9 rounded-full overflow-hidden bg-studio-800 border border-studio-700 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={currentUser.avatar}
+                      alt={currentUser.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-bold text-white truncate">
+                      {currentUser.name}
+                    </div>
+                    <div className="text-[11px] text-amber-400 font-medium">
+                      View &amp; Edit My Profile →
+                    </div>
+                  </div>
+                </button>
+              </div>
+            )}
+
+            {/* Director Profile Card in Mobile Menu */}
+            {isAdmin && currentUser && (
               <div className="pt-1 pb-2 border-b border-studio-800/80 mb-2">
                 <button
                   type="button"
@@ -232,16 +357,13 @@ export function Navbar() {
                       alt={currentUser.name}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <Camera className="w-3 h-3 text-white" />
-                    </div>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-xs font-bold text-white truncate">
                       {currentUser.name}
                     </div>
                     <div className="text-[11px] text-amber-400 flex items-center gap-1 font-medium">
-                      <Camera className="w-3 h-3" /> Change Profile Picture
+                      <Camera className="w-3 h-3" /> Change Director Photo
                     </div>
                   </div>
                 </button>
@@ -299,18 +421,37 @@ export function Navbar() {
                 </button>
               </div>
             )}
+
+            {/* Sign Out in Mobile Menu */}
+            {currentUser && (
+              <div className="pt-2 mt-2 border-t border-studio-800/80">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    signOut();
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-rose-400 hover:bg-rose-500/10 transition text-left"
+                >
+                  <LogOut className="w-4 h-4 text-rose-400" />
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
         )}
       </header>
 
-      {/* Dynamic QR Modal */}
-      <QRCodeModal isOpen={isQrOpen} onClose={() => setIsQrOpen(false)} />
+      {/* Dynamic QR Modal (Admin Only) */}
+      {isAdmin && <QRCodeModal isOpen={isQrOpen} onClose={() => setIsQrOpen(false)} />}
 
-      {/* Studio White-Label Customizer Modal */}
-      <StudioBrandingModal
-        isOpen={isBrandingOpen}
-        onClose={() => setIsBrandingOpen(false)}
-      />
+      {/* Studio White-Label Customizer Modal (Admin Only) */}
+      {isAdmin && (
+        <StudioBrandingModal
+          isOpen={isBrandingOpen}
+          onClose={() => setIsBrandingOpen(false)}
+        />
+      )}
 
       {/* Profile Picture Change Modal */}
       {currentUser && (
@@ -321,6 +462,25 @@ export function Navbar() {
           userName={currentUser.name}
           onSave={(newAvatarUrl) => {
             updateUserAvatar(newAvatarUrl);
+          }}
+        />
+      )}
+
+      {/* Universal Sign In / Log In Modal */}
+      <LoginModal
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+      />
+
+      {/* Student's Own Profile Modal (Accessible directly from navbar) */}
+      {isStudent && currentUser && (
+        <StudentProfileModal
+          isOpen={isStudentProfileOpen}
+          onClose={() => setIsStudentProfileOpen(false)}
+          student={currentUser}
+          bands={studentBands}
+          onStudentUpdated={(updated) => {
+            updateUserAvatar(updated.avatar);
           }}
         />
       )}

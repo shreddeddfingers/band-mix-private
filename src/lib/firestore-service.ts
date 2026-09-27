@@ -72,6 +72,35 @@ export const FirestoreService = {
       .filter((u) => !u.isDeleted && !u.deleted);
   },
 
+  async findStudentByEmailOrName(queryStr: string): Promise<UserProfile | null> {
+    const clean = queryStr.trim().toLowerCase();
+    if (!clean) return null;
+    const users = await this.getAllUsers();
+    return (
+      users.find(
+        (u) =>
+          u.role === 'student' &&
+          (u.email.toLowerCase() === clean ||
+            u.name.toLowerCase() === clean ||
+            u.name.toLowerCase().startsWith(clean) ||
+            u.id.toLowerCase() === clean)
+      ) || null
+    );
+  },
+
+  async findDirectorByEmail(emailStr: string): Promise<UserProfile | null> {
+    const clean = emailStr.trim().toLowerCase();
+    if (!clean) return null;
+    const users = await this.getAllUsers();
+    return (
+      users.find(
+        (u) =>
+          u.role === 'admin' &&
+          (u.email.toLowerCase() === clean || u.name.toLowerCase() === clean)
+      ) || null
+    );
+  },
+
   subscribeUsers(callback: (users: UserProfile[]) => void): Unsubscribe {
     const firestore = getDb();
     const col = collection(firestore, 'users');

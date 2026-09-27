@@ -10,6 +10,7 @@ import { InstrumentIcon } from '@/components/InstrumentIcon';
 import { Badge } from '@/components/Badge';
 import { CreateBandModal } from '@/components/bands/CreateBandModal';
 import { QRCodeModal } from '@/components/QRCodeModal';
+import { LoginModal } from '@/components/auth/LoginModal';
 import {
   Music,
   Users,
@@ -23,17 +24,20 @@ import {
   Radio,
   Sparkles,
   MessageSquare,
+  LogIn,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { currentUser, isAdmin, isStudent, activeDirectorId } = useAuth();
+  const { currentUser, isAdmin, isStudent, activeDirectorId, activeBranding } = useAuth();
   const [bands, setBands] = useState<Band[]>([]);
   const [students, setStudents] = useState<UserProfile[]>([]);
   const [rehearsals, setRehearsals] = useState<RehearsalEvent[]>([]);
   const [isCreateBandOpen, setIsCreateBandOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [loginDefaultRole, setLoginDefaultRole] = useState<'student' | 'admin'>('student');
 
   useEffect(() => {
     const refresh = () => {
@@ -71,6 +75,100 @@ export default function DashboardPage() {
       router.replace(`/bands/${displayedBands[0].id}`);
     }
   }, [isStudent, displayedBands, router]);
+
+  // Guest / Unauthenticated Portal View
+  if (!currentUser) {
+    return (
+      <div className="py-8 sm:py-16 max-w-3xl mx-auto space-y-8 animate-in fade-in duration-300">
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            <Radio className="w-3.5 h-3.5 text-amber-400" />
+            Studio Band Portal
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+            Welcome to {activeBranding?.studioName || 'BandMix'}
+          </h1>
+          <p className="text-sm sm:text-base text-studio-400 max-w-lg mx-auto">
+            {activeBranding?.tagline ||
+              'The ensemble platform for student musicians and band directors.'}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          {/* Card 1: Student Musician */}
+          <div className="p-6 rounded-3xl bg-studio-900 border border-studio-800 hover:border-amber-500/50 transition-all flex flex-col justify-between space-y-5 shadow-xl">
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <Music className="w-6 h-6" />
+              </div>
+              <h2 className="text-xl font-bold text-white">Student Musician</h2>
+              <p className="text-xs text-studio-400 leading-relaxed">
+                Log in to access your band rehearsal hub, setlists, song suggestions, and chat with your bandmates.
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginDefaultRole('student');
+                  setIsLoginModalOpen(true);
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold shadow-lg shadow-amber-500/20 transition"
+              >
+                <span>Student Sign In</span>
+                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+              </button>
+              <Link
+                href="/onboard"
+                className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-studio-950 hover:bg-studio-800 text-studio-300 hover:text-white text-xs font-semibold border border-studio-800 transition"
+              >
+                <span>New Student? Use Intake Pass →</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 2: Band Director */}
+          <div className="p-6 rounded-3xl bg-studio-900 border border-studio-800 hover:border-amber-500/50 transition-all flex flex-col justify-between space-y-5 shadow-xl">
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <h2 className="text-xl font-bold text-white">Band Director</h2>
+              <p className="text-xs text-studio-400 leading-relaxed">
+                Log in to coordinate rehearsals, match musicians into ensembles, manage student intake, and oversee band chats.
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginDefaultRole('admin');
+                  setIsLoginModalOpen(true);
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-studio-800 hover:bg-studio-700 text-white text-sm font-bold border border-studio-700 transition"
+              >
+                <span>Director Sign In</span>
+                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+              </button>
+              <div className="text-center">
+                <span className="text-[11px] text-studio-500">
+                  Secured director portal for studio leaders
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+          defaultRole={loginDefaultRole}
+        />
+      </div>
+    );
+  }
 
   if (isStudent) {
     if (displayedBands.length > 0) {

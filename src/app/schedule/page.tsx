@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { DataStore, subscribeToStore } from '@/lib/data-store';
 import { Band, RehearsalEvent } from '@/types';
@@ -10,6 +11,7 @@ import { Calendar, Music, Filter, Clock, Lock } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export default function SchedulePage() {
+  const router = useRouter();
   const { isAdmin, activeDirectorId, currentUser } = useAuth();
   const [bands, setBands] = useState<Band[]>([]);
   const [selectedBandFilter, setSelectedBandFilter] = useState<string>('all');
@@ -20,6 +22,17 @@ export default function SchedulePage() {
     const unsub = subscribeToStore('bands', refresh);
     return () => unsub();
   }, [activeDirectorId]);
+
+  useEffect(() => {
+    if (!isAdmin && currentUser?.role === 'student') {
+      const studentBands = DataStore.getBands().filter((b) =>
+        b.members.some((m) => m.userId === currentUser.id)
+      );
+      if (studentBands.length > 0) {
+        router.replace(`/bands/${studentBands[0].id}`);
+      }
+    }
+  }, [isAdmin, currentUser, router]);
 
   if (!isAdmin) {
     const studentBands = currentUser

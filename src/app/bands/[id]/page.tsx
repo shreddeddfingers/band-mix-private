@@ -477,14 +477,18 @@ export default function BandHubPage({
                         </div>
                       </div>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => setViewProfileStudent(studentDetails)}
-                      className="w-full mt-1.5 py-1.5 px-2 rounded-xl bg-studio-950 hover:bg-studio-800 border border-studio-800 hover:border-amber-500/40 text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition flex items-center justify-center gap-1.5"
-                    >
-                      <Sparkles className="w-3 h-3 text-amber-400" />
-                      View Questionnaire & Profile
-                    </button>
+                    {(isAdmin || member.userId === currentUser?.id) && (
+                      <button
+                        type="button"
+                        onClick={() => setViewProfileStudent(studentDetails)}
+                        className="w-full mt-1.5 py-1.5 px-2 rounded-xl bg-studio-950 hover:bg-studio-800 border border-studio-800 hover:border-amber-500/40 text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition flex items-center justify-center gap-1.5"
+                      >
+                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        {member.userId === currentUser?.id
+                          ? 'View & Edit My Profile'
+                          : 'View Questionnaire & Profile'}
+                      </button>
+                    )}
                   </div>
                 )}
 
