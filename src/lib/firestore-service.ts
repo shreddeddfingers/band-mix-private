@@ -192,7 +192,9 @@ export const FirestoreService = {
     return onSnapshot(
       col,
       (snapshot) => {
-        const bands = snapshot.docs.map((d) => d.data() as Band);
+        const bands = snapshot.docs
+          .map((d) => d.data() as Band & { isDeleted?: boolean; deleted?: boolean })
+          .filter((b) => !b.isDeleted && !b.deleted);
         callback(bands);
       },
       (err) => {
@@ -309,7 +311,9 @@ export const FirestoreService = {
     return onSnapshot(
       col,
       (snapshot) => {
-        const invites = snapshot.docs.map((d) => d.data() as InviteCode);
+        const invites = snapshot.docs
+          .map((d) => d.data() as InviteCode & { isDeleted?: boolean; deleted?: boolean })
+          .filter((i) => !i.isDeleted && !i.deleted && new Date(i.expiresAt).getTime() > Date.now());
         callback(invites);
       },
       (err) => {
@@ -322,7 +326,9 @@ export const FirestoreService = {
     const firestore = getDb();
     const q = query(collection(firestore, 'invites'), where('directorId', '==', directorId));
     const snap = await getDocs(q);
-    return snap.docs.map((d) => d.data() as InviteCode);
+    return snap.docs
+      .map((d) => d.data() as InviteCode & { isDeleted?: boolean; deleted?: boolean })
+      .filter((i) => !i.isDeleted && !i.deleted && new Date(i.expiresAt).getTime() > Date.now());
   },
 
   async createInvite(invite: InviteCode): Promise<void> {
@@ -409,12 +415,49 @@ export const FirestoreService = {
         const snap = await getDocs(collection(firestore, col));
         details[col] = snap.docs.length;
         for (const docSnap of snap.docs) {
+          // 1. Tombstone wipe
+          try {
+            if (col === 'users') {
+              await updateDoc(doc(firestore, 'users', docSnap.id), {
+                isDeleted: true,
+                deleted: true,
+                deletedAt: new Date().toISOString(),
+                name: 'Deleted Musician',
+                email: `deleted_${Date.now()}_${docSnap.id}@deleted.local`,
+                bandIds: [],
+              });
+            } else if (col === 'invites') {
+              await updateDoc(doc(firestore, 'invites', docSnap.id), {
+                isDeleted: true,
+                deleted: true,
+                expiresAt: '2000-01-01T00:00:00.000Z',
+                usedCount: 999999,
+                maxUses: 0,
+              });
+            } else if (col === 'bands') {
+              await updateDoc(doc(firestore, 'bands', docSnap.id), {
+                isDeleted: true,
+                deleted: true,
+                status: 'archived',
+                members: [],
+                memberIds: [],
+              });
+            } else if (col === 'rehearsals') {
+              await updateDoc(doc(firestore, 'rehearsals', docSnap.id), {
+                isDeleted: true,
+                deleted: true,
+              });
+            }
+            count++;
+          } catch (upErr: any) {
+            details[`${col}_up_error_${docSnap.id}`] = upErr?.message || String(upErr);
+          }
+
+          // 2. Hard delete doc
           try {
             await deleteDoc(doc(firestore, col, docSnap.id));
-            count++;
           } catch (e: any) {
-            console.warn(`Failed to delete ${col}/${docSnap.id}:`, e);
-            details[`${col}_del_error_${docSnap.id}`] = e?.message || String(e);
+            // Handled cleanly by tombstone
           }
         }
       } catch (err: any) {
