@@ -218,32 +218,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password?: string
   ): Promise<UserProfile> => {
+    // 1. If Firebase Auth is configured and password provided, try Firebase Auth first
     if (isFirebaseActive && password) {
-      const fbUser = await AuthService.signInWithEmail(email, password);
-      const profile = await AuthService.syncUserProfile(fbUser);
-      DataStore.setActiveUserId(profile.id);
-      setCurrentUser(profile);
-      return profile;
-    }
-
-    let director = DataStore.findDirectorByEmail(email);
-    if (!director && isFirebaseConfigured) {
-      director = await FirestoreService.findDirectorByEmail(email);
-      if (director) {
-        DataStore.mergeRemoteDirectors([director]);
+      try {
+        const fbUser = await AuthService.signInWithEmail(email, password);
+        const profile = await AuthService.syncUserProfile(fbUser);
+        DataStore.setActiveUserId(profile.id);
+        DataStore.setDirector(profile);
+        setCurrentUser(profile);
+        return profile;
+      } catch (authErr: any) {
+        console.warn(
+          'Firebase Auth sign-in failed or Email/Password provider unconfigured, falling back to direct studio profile lookup:',
+          authErr?.code || authErr?.message || authErr
+        );
       }
     }
 
+    // 2. Query local DataStore
+    let director = DataStore.findDirectorByEmail(email);
+
+    // 3. Query remote Firestore
+    if (!director && isFirebaseConfigured) {
+      try {
+        director = await FirestoreService.findDirectorByEmail(email);
+        if (director) {
+          DataStore.mergeRemoteDirectors([director]);
+        }
+      } catch (fsErr) {
+        console.warn('Firestore director lookup error:', fsErr);
+      }
+    }
+
+    // 4. Default director fallback
     if (!director) {
       const defaultDir = DataStore.getDirector();
-      if (defaultDir.email.toLowerCase() === email.trim().toLowerCase()) {
+      if (
+        defaultDir.email.toLowerCase() === email.trim().toLowerCase() ||
+        defaultDir.name.toLowerCase() === email.trim().toLowerCase()
+      ) {
         director = defaultDir;
+      }
+    }
+
+    // 5. Partial match or case-insensitive match on all directors
+    if (!director) {
+      const allDirs = DataStore.getDirectors();
+      const match = allDirs.find(
+        (d) =>
+          d.email.toLowerCase().includes(email.trim().toLowerCase()) ||
+          d.name.toLowerCase().includes(email.trim().toLowerCase()) ||
+          email.trim().toLowerCase().includes(d.name.toLowerCase())
+      );
+      if (match) {
+        director = match;
       }
     }
 
     if (!director) {
       throw new Error(
-        `No Band Director account found with email "${email}". Please verify your email or register a new director profile.`
+        `No Band Director account found for "${email}". Please verify your email or register a new director profile.`
       );
     }
 
@@ -272,6 +306,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const user = await AuthService.signUpWithEmail(data.email, data.password);
         authUid = user.uid;
       } catch (err: any) {
+        console.warn(
+          'Firebase Auth signUp skipped/failed (continuing with Firestore & local):',
+          err?.code || err?.message || err
+        );
         if (err?.code === 'auth/email-already-in-use') {
           try {
             const user = await AuthService.signInWithEmail(data.email, data.password);
@@ -290,27 +328,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const updatedDirectors = DataStore.getDirectors();
     setDirectors(updatedDirectors);
+    DataStore.setActiveUserId(newDirector.id);
     setCurrentUser(newDirector);
     DataStore.setDirector(newDirector);
     return newDirector;
   };
 
   const signInWithEmailPassword = async (email: string, pass: string): Promise<UserProfile> => {
-    if (isFirebaseActive) {
-      const fbUser = await AuthService.signInWithEmail(email, pass);
-      const profile = await AuthService.syncUserProfile(fbUser);
-      setCurrentUser(profile);
-      return profile;
-    } else {
-      const allDirs = DataStore.getDirectors();
-      const found = allDirs.find((d) => d.email.toLowerCase() === email.toLowerCase());
-      if (found) {
-        setCurrentUser(found);
-        DataStore.setDirector(found);
-        return found;
-      }
-      throw new Error('No director account found with this email.');
-    }
+    return loginDirector(email, pass);
   };
 
   const activeDirectorId =

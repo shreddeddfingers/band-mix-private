@@ -96,7 +96,11 @@ export const FirestoreService = {
       users.find(
         (u) =>
           u.role === 'admin' &&
-          (u.email.toLowerCase() === clean || u.name.toLowerCase() === clean)
+          (u.email.toLowerCase() === clean ||
+            u.name.toLowerCase() === clean ||
+            u.id.toLowerCase() === clean ||
+            u.email.toLowerCase().startsWith(clean) ||
+            u.name.toLowerCase().includes(clean))
       ) || null
     );
   },
