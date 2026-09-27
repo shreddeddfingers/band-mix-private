@@ -93,12 +93,28 @@ const STORAGE_KEYS = {
   ACTIVE_USER_ID: 'bandmix_active_user_id',
 };
 
+// Schema revision to guarantee all client browsers wipe stale data on upgrade
+const STORE_REVISION_KEY = 'bandmix_schema_revision';
+const CURRENT_REVISION = 'v3_fresh_start';
+
+if (typeof window !== 'undefined') {
+  try {
+    const rev = localStorage.getItem(STORE_REVISION_KEY);
+    if (rev !== CURRENT_REVISION) {
+      localStorage.clear();
+      localStorage.setItem(STORE_REVISION_KEY, CURRENT_REVISION);
+    }
+  } catch (e) {
+    console.error('Storage revision check error:', e);
+  }
+}
+
 // Production baseline invite pass
 const BASELINE_INVITE: InviteCode = {
   code: 'STUDIO-PASS',
   directorId: 'director-main',
   directorName: 'Director',
-  studioName: 'Highland Music Studio',
+  studioName: 'BandMix Studio',
   tagline: 'Ensemble Performance & Modern Musician Training',
   accentColor: '#F59E0B',
   role: 'student',
@@ -115,7 +131,7 @@ const BASELINE_DIRECTOR: UserProfile = {
   name: 'Director',
   email: 'director@musicstudio.edu',
   role: 'admin',
-  studioName: 'Highland Music Studio',
+  studioName: 'BandMix Studio',
   branding: BRAND_PRESETS.highland,
   avatar:
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
@@ -180,18 +196,8 @@ export const DataStore = {
   // Purge all stored records and reset to clean production baseline
   purgeAllData(): void {
     if (typeof window === 'undefined') return;
-    localStorage.removeItem(STORAGE_KEYS.BANDS);
-    localStorage.removeItem(STORAGE_KEYS.STUDENTS);
-    localStorage.removeItem(STORAGE_KEYS.DELETED_STUDENTS);
-    localStorage.removeItem(STORAGE_KEYS.DIRECTOR);
-    localStorage.removeItem(STORAGE_KEYS.DIRECTORS);
-    localStorage.removeItem(STORAGE_KEYS.MESSAGES);
-    localStorage.removeItem(STORAGE_KEYS.REHEARSALS);
-    localStorage.removeItem(STORAGE_KEYS.INVITES);
-    localStorage.removeItem(STORAGE_KEYS.PRIVATE_PROFILES);
-    localStorage.removeItem(STORAGE_KEYS.SONGS);
-    localStorage.removeItem(STORAGE_KEYS.VOTES);
-    localStorage.removeItem(STORAGE_KEYS.ANNOUNCEMENTS);
+    localStorage.clear();
+    localStorage.setItem(STORE_REVISION_KEY, CURRENT_REVISION);
     notify('all');
     notify('bands');
     notify('students');
@@ -200,24 +206,24 @@ export const DataStore = {
     notify('invites');
     notify('songs');
     notify('announcements');
+    notify('branding');
   },
 
   // USERS & ROSTER
   getDirectors(): UserProfile[] {
-    const list = loadItem<UserProfile[]>(STORAGE_KEYS.DIRECTORS, []);
-    if (!list.some((d) => d.id === BASELINE_DIRECTOR.id)) {
-      list.unshift(BASELINE_DIRECTOR);
-    }
-    return list;
+    return loadItem<UserProfile[]>(STORAGE_KEYS.DIRECTORS, []);
   },
 
   getDirector(id?: string): UserProfile {
+    const directors = this.getDirectors();
     if (id) {
-      const directors = this.getDirectors();
       const found = directors.find((d) => d.id === id);
       if (found) return found;
     }
-    return loadItem<UserProfile>(STORAGE_KEYS.DIRECTOR, BASELINE_DIRECTOR);
+    const stored = loadItem<UserProfile | null>(STORAGE_KEYS.DIRECTOR, null);
+    if (stored) return stored;
+    if (directors.length > 0) return directors[0];
+    return BASELINE_DIRECTOR;
   },
 
   setDirector(director: UserProfile): void {
@@ -239,16 +245,16 @@ export const DataStore = {
 
   getStudioBranding(directorId?: string): StudioBranding {
     const director = this.getDirector(directorId);
-    if (director.branding) {
+    if (director?.branding) {
       return director.branding;
     }
-    const nameLower = (director.studioName || '').toLowerCase();
+    const nameLower = (director?.studioName || '').toLowerCase();
     if (nameLower.includes('school of rock')) return BRAND_PRESETS.school_of_rock;
     if (nameLower.includes('bach to rock')) return BRAND_PRESETS.bach_to_rock;
     if (nameLower.includes('conservatory')) return BRAND_PRESETS.conservatory;
     return {
       ...BRAND_PRESETS.highland,
-      studioName: director.studioName || 'Highland Music Studio',
+      studioName: director?.studioName || 'BandMix Studio',
     };
   },
 
@@ -364,7 +370,7 @@ export const DataStore = {
       maxUses: 500,
     };
 
-    const invites = loadItem<InviteCode[]>(STORAGE_KEYS.INVITES, [BASELINE_INVITE]);
+    const invites = loadItem<InviteCode[]>(STORAGE_KEYS.INVITES, []);
     saveItem(STORAGE_KEYS.INVITES, [studioInvite, ...invites]);
 
     if (isFirebaseConfigured) {
@@ -497,7 +503,7 @@ export const DataStore = {
 
   mergeRemoteInvites(remoteInvites: InviteCode[]): void {
     if (!remoteInvites || remoteInvites.length === 0) return;
-    const local = loadItem<InviteCode[]>(STORAGE_KEYS.INVITES, [BASELINE_INVITE]);
+    const local = loadItem<InviteCode[]>(STORAGE_KEYS.INVITES, []);
     let changed = false;
     const merged = [...local];
 
@@ -1235,7 +1241,7 @@ export const DataStore = {
 
   // INVITES & QR CODES
   getInvites(directorId?: string): InviteCode[] {
-    const all = loadItem<InviteCode[]>(STORAGE_KEYS.INVITES, [BASELINE_INVITE]);
+    const all = loadItem<InviteCode[]>(STORAGE_KEYS.INVITES, []);
     if (!directorId) return all;
     return all.filter(
       (i) =>
@@ -1258,7 +1264,7 @@ export const DataStore = {
     directorName?: string;
     studioName?: string;
   }): InviteCode {
-    const invites = loadItem<InviteCode[]>(STORAGE_KEYS.INVITES, [BASELINE_INVITE]);
+    const invites = loadItem<InviteCode[]>(STORAGE_KEYS.INVITES, []);
     const band = data.bandId ? this.getBand(data.bandId) : undefined;
     const director = data.directorId ? this.getDirector(data.directorId) : this.getDirector();
     const studioPrefix = (data.studioName || director.studioName || 'BAND')

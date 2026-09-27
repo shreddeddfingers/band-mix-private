@@ -11,6 +11,7 @@ import { Band, RehearsalEvent, UserProfile } from '@/types';
 import { InstrumentIcon } from '@/components/InstrumentIcon';
 import { Badge } from '@/components/Badge';
 import { CreateBandModal } from '@/components/bands/CreateBandModal';
+import { CreateDirectorModal } from '@/components/directors/CreateDirectorModal';
 import { QRCodeModal } from '@/components/QRCodeModal';
 import { LoginModal } from '@/components/auth/LoginModal';
 import {
@@ -37,6 +38,7 @@ export default function DashboardPage() {
   const [students, setStudents] = useState<UserProfile[]>([]);
   const [rehearsals, setRehearsals] = useState<RehearsalEvent[]>([]);
   const [isCreateBandOpen, setIsCreateBandOpen] = useState(false);
+  const [isCreateDirectorModalOpen, setIsCreateDirectorModalOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginDefaultRole, setLoginDefaultRole] = useState<'student' | 'admin'>('student');
@@ -167,16 +169,19 @@ export default function DashboardPage() {
                   setLoginDefaultRole('admin');
                   setIsLoginModalOpen(true);
                 }}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-studio-800 hover:bg-studio-700 text-white text-sm font-bold border border-studio-700 transition"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold shadow-lg shadow-purple-600/20 transition"
               >
                 <span>Director Sign In</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </button>
-              <div className="text-center">
-                <span className="text-[11px] text-studio-500">
-                  Secured director portal for studio leaders
-                </span>
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreateDirectorModalOpen(true)}
+                className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-studio-950 hover:bg-studio-800 text-purple-300 hover:text-white text-xs font-semibold border border-purple-500/30 transition"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                <span>New Director? Create Account →</span>
+              </button>
             </div>
           </div>
         </div>
@@ -185,6 +190,11 @@ export default function DashboardPage() {
           isOpen={isLoginModalOpen}
           onClose={() => setIsLoginModalOpen(false)}
           defaultRole={loginDefaultRole}
+        />
+
+        <CreateDirectorModal
+          isOpen={isCreateDirectorModalOpen}
+          onClose={() => setIsCreateDirectorModalOpen(false)}
         />
       </div>
     );

@@ -397,4 +397,27 @@ export const FirestoreService = {
       [`rsvps.${userId}`]: rsvp,
     });
   },
+
+  // --- FULL PURGE (For clean studio resets) ---
+  async purgeAllRemoteData(): Promise<{ success: boolean; deletedCount: number }> {
+    const firestore = getDb();
+    const cols = ['users', 'bands', 'invites', 'rehearsals'];
+    let count = 0;
+    for (const col of cols) {
+      try {
+        const snap = await getDocs(collection(firestore, col));
+        for (const docSnap of snap.docs) {
+          try {
+            await deleteDoc(doc(firestore, col, docSnap.id));
+            count++;
+          } catch (e) {
+            console.warn(`Failed to delete ${col}/${docSnap.id}:`, e);
+          }
+        }
+      } catch (err) {
+        console.warn(`Failed to query collection ${col}:`, err);
+      }
+    }
+    return { success: true, deletedCount: count };
+  },
 };
