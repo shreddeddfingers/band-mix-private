@@ -20,7 +20,7 @@ export function AssignBandModal({
   student,
   onSuccess,
 }: AssignBandModalProps) {
-  const { activeDirectorId } = useAuth();
+  const { activeDirectorId, isAdmin } = useAuth();
   const [selectedBandId, setSelectedBandId] = useState('');
   const [selectedInstrument, setSelectedInstrument] = useState<InstrumentType>(
     student?.primaryInstrument || 'drums'
@@ -29,11 +29,11 @@ export function AssignBandModal({
   const dirId = student?.directorId || activeDirectorId || 'director-main';
   const bands = DataStore.getBands(dirId);
 
-  if (!isOpen || !student) return null;
+  if (!isOpen || !isAdmin || !student) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedBandId) return;
+    if (!isAdmin || !selectedBandId) return;
 
     DataStore.addMemberToBand(selectedBandId, student, selectedInstrument);
     if (onSuccess) onSuccess();

@@ -187,6 +187,15 @@ export function RehearsalPlanner({
     DataStore.updateEventRSVP(eventId, currentUser.id, rsvp);
   };
 
+  const plannerDirector = (bandId ? (() => {
+    const b = DataStore.getBand(bandId);
+    return b?.directorId ? DataStore.getDirector(b.directorId) : null;
+  })() : null) || (isAdmin && currentUser ? currentUser : DataStore.getDirector(activeDirectorId));
+  const rawPlannerName = plannerDirector?.name || 'Director';
+  const plannerDirectorName = rawPlannerName.toLowerCase().startsWith('director')
+    ? rawPlannerName
+    : `Director ${rawPlannerName}`;
+
   return (
     <div className="space-y-6">
       {/* Top Banner / Actions */}
@@ -202,7 +211,7 @@ export function RehearsalPlanner({
             </span>
           </div>
           <p className="text-xs text-studio-400 mt-1">
-            Rehearsals, live concerts, and showcase call-times managed by Director Marcus Vance with student RSVP tracking.
+            Rehearsals, live concerts, and showcase call-times managed by {plannerDirectorName} with student RSVP tracking.
           </p>
         </div>
 

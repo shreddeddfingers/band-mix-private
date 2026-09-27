@@ -43,7 +43,7 @@ export function BandAnnouncementsTab({ band }: BandAnnouncementsTabProps) {
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim() || !currentUser) return;
+    if (!isAdmin || !title.trim() || !content.trim() || !currentUser) return;
 
     DataStore.createAnnouncement({
       bandId: band.id,
@@ -71,6 +71,15 @@ export function BandAnnouncementsTab({ band }: BandAnnouncementsTabProps) {
       DataStore.deleteAnnouncement(id);
     }
   };
+
+  const bandDir =
+    (band.directorId ? DataStore.getDirector(band.directorId) : null) ||
+    (band.createdBy ? DataStore.getDirector(band.createdBy) : null) ||
+    (isAdmin && currentUser ? currentUser : DataStore.getDirector());
+  const rawDirName = bandDir?.name || 'Director';
+  const directorLabel = rawDirName.toLowerCase().startsWith('director')
+    ? rawDirName
+    : `Director ${rawDirName}`;
 
   return (
     <div className="space-y-6">
@@ -108,7 +117,7 @@ export function BandAnnouncementsTab({ band }: BandAnnouncementsTabProps) {
           <Megaphone className="w-10 h-10 text-studio-600 mx-auto mb-2" />
           <h4 className="font-bold text-white text-sm">No announcements yet</h4>
           <p className="text-xs max-w-sm mx-auto mt-1">
-            Official communications from Director Marcus Vance will be posted here.
+            Official communications from {directorLabel} will be posted here.
           </p>
         </div>
       ) : (

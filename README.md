@@ -15,7 +15,7 @@
   - Organized into student roles with assigned instrument badges.
   - Communicate within band chat channels and discuss availability; cannot schedule or modify rehearsal events directly.
 - **Perspective Switcher**:
-  - Live role switcher in the navbar allowing instant preview between Director Marcus Vance and diverse student musicians.
+  - Live role switcher in the navbar allowing instant preview between Band Director and diverse student musicians.
 
 ### 2. Onboarding & Tagged Roster System
 - **Dynamic QR-Based Onboarding (`/onboard`)**:

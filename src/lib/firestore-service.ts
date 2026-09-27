@@ -95,6 +95,16 @@ export const FirestoreService = {
     await updateDoc(doc(firestore, 'users', uid), cleaned);
   },
 
+  async deleteUser(uid: string): Promise<void> {
+    const firestore = getDb();
+    await deleteDoc(doc(firestore, 'users', uid));
+    try {
+      await deleteDoc(doc(firestore, `users/${uid}/private`, 'profile'));
+    } catch {
+      // ignore
+    }
+  },
+
   // Private Sensitive Profile (DOB, guardian contact) stored separately at /users/{uid}/private/profile
   async getPrivateProfile(uid: string): Promise<PrivateUserProfile | null> {
     const firestore = getDb();

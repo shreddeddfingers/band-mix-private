@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { DataStore, subscribeToStore } from '@/lib/data-store';
 import { Band, RehearsalEvent, UserProfile } from '@/types';
@@ -26,6 +27,7 @@ import {
 import { format, parseISO } from 'date-fns';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { currentUser, isAdmin, isStudent, activeDirectorId } = useAuth();
   const [bands, setBands] = useState<Band[]>([]);
   const [students, setStudents] = useState<UserProfile[]>([]);
@@ -62,6 +64,35 @@ export default function DashboardPage() {
         displayedBands.some((b) => b.id === r.bandId)
       )
     : rehearsals;
+
+  // Direct students to their band page
+  useEffect(() => {
+    if (isStudent && displayedBands.length > 0) {
+      router.replace(`/bands/${displayedBands[0].id}`);
+    }
+  }, [isStudent, displayedBands, router]);
+
+  if (isStudent) {
+    if (displayedBands.length > 0) {
+      return (
+        <div className="py-20 text-center">
+          <p className="text-studio-400">Loading your band hub...</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="py-20 text-center max-w-lg mx-auto space-y-4">
+        <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto">
+          <Music className="w-8 h-8" />
+        </div>
+        <h2 className="text-2xl font-black text-white">Welcome, {currentUser?.name}!</h2>
+        <p className="text-sm text-studio-400 leading-relaxed">
+          You are not currently enrolled in any bands. When your band director assigns you to an ensemble, your dedicated band page with chat, announcements, setlists, and rehearsals will appear here.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">

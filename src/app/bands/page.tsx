@@ -43,15 +43,19 @@ export default function BandsPage() {
     return () => unsub();
   }, [activeDirectorId]);
 
+  const visibleBands = isStudent
+    ? bands.filter((b) => b.members.some((m) => m.userId === currentUser?.id))
+    : bands;
+
   const genres = [
     'all',
-    ...Array.from(new Set(bands.map((b) => b.genre.split('/')[0].trim()))),
+    ...Array.from(new Set(visibleBands.map((b) => b.genre.split('/')[0].trim()))),
   ];
 
-  const activeCount = bands.filter((b) => b.status !== 'archived').length;
-  const archivedCount = bands.filter((b) => b.status === 'archived').length;
+  const activeCount = visibleBands.filter((b) => b.status !== 'archived').length;
+  const archivedCount = visibleBands.filter((b) => b.status === 'archived').length;
 
-  const filteredBands = bands.filter((band) => {
+  const filteredBands = visibleBands.filter((band) => {
     const matchesSearch =
       band.name.toLowerCase().includes(search.toLowerCase()) ||
       band.genre.toLowerCase().includes(search.toLowerCase()) ||
@@ -107,10 +111,12 @@ export default function BandsPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2.5">
             <Music className="w-7 h-7 text-amber-400" />
-            Bands & Ensembles
+            {isStudent ? 'My Ensembles' : 'Bands & Ensembles'}
           </h1>
           <p className="text-sm text-studio-400 mt-1">
-            Organized student bands with instrument rosters, dedicated chat channels, and rehearsal schedules.
+            {isStudent
+              ? 'Your enrolled ensemble with instrument rosters, rehearsal schedules, and dedicated chat channel.'
+              : 'Organized student bands with instrument rosters, dedicated chat channels, and rehearsal schedules.'}
           </p>
         </div>
 
@@ -223,8 +229,21 @@ export default function BandsPage() {
       </div>
 
       {/* Band Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredBands.map((band) => {
+      {filteredBands.length === 0 ? (
+        <div className="py-16 text-center bg-studio-900 border border-studio-800 rounded-2xl p-8 space-y-3">
+          <Music className="w-10 h-10 text-studio-600 mx-auto" />
+          <h3 className="font-bold text-white text-base">
+            {isStudent ? 'No Ensembles Assigned' : 'No Bands Found'}
+          </h3>
+          <p className="text-xs text-studio-400 max-w-sm mx-auto">
+            {isStudent
+              ? 'You are not currently enrolled in any bands. When your director assigns you to an ensemble, your band will appear here.'
+              : 'No bands matched your search filters.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredBands.map((band) => {
           const isMember = band.members.some((m) => m.userId === currentUser?.id);
           const isArchived = band.status === 'archived';
 
@@ -389,6 +408,7 @@ export default function BandsPage() {
           );
         })}
       </div>
+      )}
 
       {/* Modals */}
       <CreateBandModal

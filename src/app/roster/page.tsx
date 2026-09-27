@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { DataStore, subscribeToStore } from '@/lib/data-store';
 import { UserProfile, InstrumentType, SkillLevel, AgeGroup, Band } from '@/types';
@@ -20,11 +21,14 @@ import {
   Layers,
   GraduationCap,
   X,
+  Lock,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export default function RosterPage() {
-  const { isAdmin, activeDirectorId } = useAuth();
+  const { isAdmin, currentUser, activeDirectorId } = useAuth();
   const [activeView, setActiveView] = useState<'roster' | 'matching'>('roster');
   const [students, setStudents] = useState<UserProfile[]>([]);
   const [bands, setBands] = useState<Band[]>([]);
@@ -38,6 +42,7 @@ export default function RosterPage() {
 
   // Modals
   const [assignStudent, setAssignStudent] = useState<UserProfile | null>(null);
+  const [studentToDelete, setStudentToDelete] = useState<UserProfile | null>(null);
   const [isQrOpen, setIsQrOpen] = useState(false);
 
   useEffect(() => {
@@ -55,6 +60,43 @@ export default function RosterPage() {
       unsubBands();
     };
   }, [activeDirectorId]);
+
+  if (!isAdmin) {
+    const studentBands = currentUser
+      ? DataStore.getBands().filter((b) => b.members.some((m) => m.userId === currentUser.id))
+      : [];
+    const myBand = studentBands[0];
+
+    return (
+      <div className="py-20 text-center max-w-md mx-auto space-y-4">
+        <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mx-auto">
+          <Lock className="w-8 h-8" />
+        </div>
+        <h2 className="text-2xl font-black text-white">Director Access Only</h2>
+        <p className="text-sm text-studio-400 leading-relaxed">
+          The studio roster, matching engine, and student intake tools are restricted to band directors. Student musicians only have access to their assigned band.
+        </p>
+        <div className="pt-2">
+          {myBand ? (
+            <Link
+              href={`/bands/${myBand.id}`}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-bold transition shadow-lg shadow-amber-500/20"
+            >
+              <Music className="w-4 h-4" />
+              Go to My Band ({myBand.name})
+            </Link>
+          ) : (
+            <Link
+              href="/bands"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-studio-800 hover:bg-studio-700 text-white text-xs sm:text-sm font-semibold transition"
+            >
+              Back to Ensembles
+            </Link>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const instrumentsList: InstrumentType[] = [
     'drums',
@@ -485,15 +527,24 @@ export default function RosterPage() {
                 </div>
               </div>
 
-              {/* Action Button */}
+              {/* Action Buttons */}
               {isAdmin && (
-                <div className="pt-3 border-t border-studio-800">
+                <div className="pt-3 border-t border-studio-800 flex items-center gap-2">
                   <button
                     onClick={() => setAssignStudent(student)}
-                    className="w-full py-2 rounded-xl bg-studio-800 hover:bg-amber-500 hover:text-slate-950 text-studio-200 text-xs font-bold transition flex items-center justify-center gap-1.5"
+                    className="flex-1 py-2 rounded-xl bg-studio-800 hover:bg-amber-500 hover:text-slate-950 text-studio-200 text-xs font-bold transition flex items-center justify-center gap-1.5"
                   >
                     <UserPlus className="w-3.5 h-3.5" />
                     Assign to Band
+                  </button>
+
+                  <button
+                    onClick={() => setStudentToDelete(student)}
+                    className="p-2 rounded-xl bg-studio-950 hover:bg-rose-500/20 border border-studio-800 hover:border-rose-500/40 text-studio-400 hover:text-rose-400 text-xs transition"
+                    title={`Remove ${student.name} from studio roster`}
+                    aria-label={`Remove ${student.name}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               )}
@@ -516,6 +567,92 @@ export default function RosterPage() {
       />
 
       <QRCodeModal isOpen={isQrOpen} onClose={() => setIsQrOpen(false)} />
+
+      {/* Remove Student Confirmation Modal */}
+      {studentToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md bg-studio-900 border border-studio-700 rounded-2xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">
+                  Remove Student from Studio
+                </h3>
+                <p className="text-xs text-studio-400">
+                  Permanently remove student account and records.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-studio-950 border border-studio-800 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl overflow-hidden bg-studio-800 border border-studio-700 shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={studentToDelete.avatar}
+                  alt={studentToDelete.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="min-w-0">
+                <div className="font-bold text-white text-sm truncate">
+                  {studentToDelete.name}
+                </div>
+                <div className="text-xs text-studio-400 flex items-center gap-1.5 capitalize">
+                  <InstrumentIcon instrument={studentToDelete.primaryInstrument} size="xs" />
+                  <span>{studentToDelete.primaryInstrument}</span>
+                  <span>•</span>
+                  <span>{studentToDelete.skillLevel}</span>
+                </div>
+              </div>
+            </div>
+
+            {bands.some((b) => b.members.some((m) => m.userId === studentToDelete.id)) && (
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Ensemble Notice:</strong> This student is currently in{' '}
+                  <strong>
+                    {bands
+                      .filter((b) => b.members.some((m) => m.userId === studentToDelete.id))
+                      .map((b) => b.name)
+                      .join(', ')}
+                  </strong>
+                  . Removing them will take them off those band rosters automatically.
+                </span>
+              </div>
+            )}
+
+            <p className="text-xs text-studio-400 leading-relaxed">
+              Use this if a student has quit the band program, or if an account was mistakenly registered with a typo or wrong name.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-studio-800">
+              <button
+                type="button"
+                onClick={() => setStudentToDelete(null)}
+                className="px-4 py-2 rounded-xl text-studio-400 hover:text-white text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  DataStore.deleteStudent(studentToDelete.id);
+                  setStudentToDelete(null);
+                  setStudents(DataStore.getStudents(activeDirectorId));
+                  setBands(DataStore.getBands(activeDirectorId));
+                }}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Remove Student
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

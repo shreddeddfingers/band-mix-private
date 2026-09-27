@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -16,6 +16,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { DataStore, subscribeToStore } from '@/lib/data-store';
+import { Band } from '@/types';
 import { RoleSwitcher } from './RoleSwitcher';
 import { QRCodeModal } from './QRCodeModal';
 import { StudioBrandingModal } from './branding/StudioBrandingModal';
@@ -23,21 +25,46 @@ import { clsx } from 'clsx';
 
 export function Navbar() {
   const pathname = usePathname();
-  const { isAdmin, role, activeBranding } = useAuth();
+  const { isAdmin, isStudent, currentUser, activeDirectorId, activeBranding } = useAuth();
+  const [studentBands, setStudentBands] = useState<Band[]>([]);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isBrandingOpen, setIsBrandingOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  useEffect(() => {
+    if (isAdmin || !currentUser) {
+      setStudentBands([]);
+      return;
+    }
+    const update = () => {
+      const allBands = DataStore.getBands(activeDirectorId);
+      setStudentBands(allBands.filter((b) => b.members.some((m) => m.userId === currentUser.id)));
+    };
+    update();
+    const unsub = subscribeToStore('bands', update);
+    return () => unsub();
+  }, [isAdmin, currentUser, activeDirectorId]);
+
   const brandColor = activeBranding?.accentColor || activeBranding?.brandColor || '#F59E0B';
   const brandName = activeBranding?.studioName || 'BANDMIX';
-  const brandBadge = activeBranding?.badgeText || 'STUDIO PLATFORM';
+  const brandBadge = activeBranding?.badgeText || (isAdmin ? 'STUDIO PLATFORM' : 'STUDENT PORTAL');
 
-  const navLinks = [
-    { href: '/', label: 'Overview', icon: Layers },
-    { href: '/bands', label: 'Bands', icon: Music },
-    { href: '/roster', label: 'Student Roster', icon: Users },
-    { href: '/schedule', label: 'Schedule', icon: Calendar },
-  ];
+  const navLinks = isAdmin
+    ? [
+        { href: '/', label: 'Overview', icon: Layers },
+        { href: '/bands', label: 'Bands', icon: Music },
+        { href: '/roster', label: 'Student Roster', icon: Users },
+        { href: '/schedule', label: 'Schedule', icon: Calendar },
+      ]
+    : studentBands.length === 1
+    ? [{ href: `/bands/${studentBands[0].id}`, label: 'My Band', icon: Music }]
+    : [{ href: '/bands', label: studentBands.length > 1 ? 'My Bands' : 'My Band', icon: Music }];
+
+  const logoHref = isAdmin
+    ? '/'
+    : studentBands.length === 1
+    ? `/bands/${studentBands[0].id}`
+    : '/bands';
 
   return (
     <>
@@ -45,7 +72,7 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           {/* Logo & Platform Name */}
           <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2.5 group">
+            <Link href={logoHref} className="flex items-center gap-2.5 group">
               {activeBranding?.logoUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
@@ -123,19 +150,16 @@ export function Navbar() {
             )}
 
             {/* QR Code Action (Director / Admin quick tool) */}
-            <button
-              onClick={() => setIsQrOpen(true)}
-              className={clsx(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border shadow-sm',
-                isAdmin
-                  ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30'
-                  : 'bg-studio-800 hover:bg-studio-700 text-studio-300 border-studio-700'
-              )}
-              title="Generate Dynamic Onboarding QR Code"
-            >
-              <QrCode className="w-4 h-4 text-amber-400" />
-              <span className="hidden sm:inline">QR Onboard</span>
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setIsQrOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border shadow-sm bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30"
+                title="Generate Dynamic Onboarding QR Code"
+              >
+                <QrCode className="w-4 h-4 text-amber-400" />
+                <span className="hidden sm:inline">QR Onboard</span>
+              </button>
+            )}
 
             {/* Role & Perspective Switcher */}
             <RoleSwitcher />

@@ -9,6 +9,7 @@ import {
   GroupCompatibilityReport,
 } from '@/lib/matching-engine';
 import { DataStore } from '@/lib/data-store';
+import { useAuth } from '@/lib/auth-context';
 import {
   Users,
   Calendar,
@@ -36,6 +37,7 @@ export function BandFormationAssistant({
   students,
   onBandCreated,
 }: BandFormationAssistantProps) {
+  const { currentUser, isAdmin } = useAuth();
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [bandName, setBandName] = useState('New Ensemble');
   const [genre, setGenre] = useState('Rock / Alternative');
@@ -96,6 +98,13 @@ export function BandFormationAssistant({
     setSelectedStudentIds([]);
     if (onBandCreated) onBandCreated(newBand);
   };
+
+  if (!isAdmin) return null;
+
+  const rawDirName = currentUser?.name || 'Director';
+  const directorLabel = rawDirName.toLowerCase().startsWith('director')
+    ? rawDirName
+    : `Director ${rawDirName}`;
 
   return (
     <div className="space-y-6">
@@ -487,7 +496,7 @@ export function BandFormationAssistant({
 
             <h3 className="text-xl font-black text-white">Ensemble Formed!</h3>
             <p className="text-xs text-studio-300 leading-relaxed">
-              <strong>{createdBand.name}</strong> ({createdBand.genre}) has been registered with {createdBand.members.length} members. Dedicated chat channel initialized and Director Marcus Vance is locked in.
+              <strong>{createdBand.name}</strong> ({createdBand.genre}) has been registered with {createdBand.members.length} members. Dedicated chat channel initialized and {directorLabel} is locked in.
             </p>
 
             <button

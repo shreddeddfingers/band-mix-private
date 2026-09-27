@@ -18,7 +18,7 @@ export function QRCodeModal({
   onClose,
   preselectedBandId,
 }: QRCodeModalProps) {
-  const { currentUser, activeDirectorId, activeBranding } = useAuth();
+  const { currentUser, activeDirectorId, activeBranding, isAdmin } = useAuth();
   const [bands, setBands] = useState<Band[]>([]);
   const [selectedBandId, setSelectedBandId] = useState<string>(preselectedBandId || '');
   const [activeCode, setActiveCode] = useState<string>('');
@@ -33,6 +33,7 @@ export function QRCodeModal({
   const directorName = currentUser?.name || 'Director';
 
   useEffect(() => {
+    if (!isOpen || !isAdmin) return;
     if (typeof window !== 'undefined') {
       setOrigin(window.location.origin);
     }
@@ -122,6 +123,8 @@ export function QRCodeModal({
   };
 
   const selectedBand = bands.find((b) => b.id === selectedBandId);
+
+  if (!isOpen || !isAdmin) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">

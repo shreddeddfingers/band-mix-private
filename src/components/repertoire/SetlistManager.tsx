@@ -93,7 +93,7 @@ export function SetlistManager({ band }: SetlistManagerProps) {
 
   const handleAddSong = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !artist.trim()) return;
+    if (!isAdmin || !title.trim() || !artist.trim()) return;
 
     DataStore.createSong({
       bandId: band.id,

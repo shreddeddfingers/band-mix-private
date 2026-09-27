@@ -602,6 +602,52 @@ export const DataStore = {
     return newStudent;
   },
 
+  deleteStudent(studentId: string): void {
+    const director = this.getDirector();
+    if (studentId === director.id) return; // Cannot delete director
+
+    // 1. Remove from local students list
+    const students = loadItem<UserProfile[]>(STORAGE_KEYS.STUDENTS, []);
+    const filteredStudents = students.filter((s) => s.id !== studentId);
+    saveItem(STORAGE_KEYS.STUDENTS, filteredStudents);
+
+    // 2. Remove private profile if any
+    const privateProfiles = loadItem<Record<string, PrivateUserProfile>>(
+      STORAGE_KEYS.PRIVATE_PROFILES,
+      {}
+    );
+    if (privateProfiles[studentId]) {
+      delete privateProfiles[studentId];
+      saveItem(STORAGE_KEYS.PRIVATE_PROFILES, privateProfiles);
+    }
+
+    // 3. Remove student from all bands
+    const bands = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);
+    let bandsChanged = false;
+    for (const b of bands) {
+      const hasMember = b.members.some((m) => m.userId === studentId);
+      if (hasMember) {
+        b.members = b.members.filter((m) => m.userId !== studentId);
+        bandsChanged = true;
+        if (isFirebaseConfigured) {
+          FirestoreService.updateBand(b.id, { members: b.members }).catch(console.error);
+        }
+      }
+    }
+    if (bandsChanged) {
+      saveItem(STORAGE_KEYS.BANDS, bands);
+      notify('bands');
+    }
+
+    // 4. Remote delete from Firestore if configured
+    if (isFirebaseConfigured) {
+      FirestoreService.deleteUser(studentId).catch(console.error);
+    }
+
+    // 5. Notify listeners
+    notify('students');
+  },
+
   // BANDS (CRUD)
   getBands(directorId?: string): Band[] {
     const bands = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);

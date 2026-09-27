@@ -69,6 +69,45 @@ export default function BandHubPage({
     );
   }
 
+  const isMember = band.members.some((m) => m.userId === currentUser?.id);
+
+  if (!isAdmin && !isMember) {
+    const studentBands = currentUser
+      ? DataStore.getBands().filter((b) => b.members.some((m) => m.userId === currentUser.id))
+      : [];
+    const myBand = studentBands[0];
+
+    return (
+      <div className="py-20 text-center max-w-md mx-auto space-y-4">
+        <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mx-auto">
+          <ShieldCheck className="w-8 h-8" />
+        </div>
+        <h2 className="text-2xl font-black text-white">Access Restricted</h2>
+        <p className="text-sm text-studio-400 leading-relaxed">
+          You are not enrolled in <strong>{band.name}</strong>. Student musicians are only permitted to access their assigned band and band page.
+        </p>
+        <div className="pt-2">
+          {myBand ? (
+            <Link
+              href={`/bands/${myBand.id}`}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-bold transition shadow-lg shadow-amber-500/20"
+            >
+              <Music className="w-4 h-4" />
+              Go to My Band ({myBand.name})
+            </Link>
+          ) : (
+            <Link
+              href="/bands"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-studio-800 hover:bg-studio-700 text-white text-xs sm:text-sm font-semibold transition"
+            >
+              Back to Ensembles
+            </Link>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   const handleRemoveMember = (userId: string, memberName: string) => {
     if (!isAdmin) return;
     if (confirm(`Remove ${memberName} from this band?`)) {
@@ -78,7 +117,7 @@ export default function BandHubPage({
 
   const handleAddMember = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedStudentToAdd) return;
+    if (!isAdmin || !selectedStudentToAdd) return;
 
     const student = DataStore.getUserById(selectedStudentToAdd);
     if (student) {
@@ -95,15 +134,17 @@ export default function BandHubPage({
 
   return (
     <div className="space-y-6">
-      {/* Back button */}
-      <div>
-        <Link
-          href="/bands"
-          className="inline-flex items-center gap-1.5 text-xs text-studio-400 hover:text-white transition font-medium"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to All Bands
-        </Link>
-      </div>
+      {/* Back button (directors or students with multiple bands) */}
+      {isAdmin && (
+        <div>
+          <Link
+            href="/bands"
+            className="inline-flex items-center gap-1.5 text-xs text-studio-400 hover:text-white transition font-medium"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to All Bands
+          </Link>
+        </div>
+      )}
 
       {/* Band Hero Banner */}
       <div className="relative rounded-3xl bg-studio-900 border border-studio-800 overflow-hidden shadow-2xl">
@@ -375,6 +416,35 @@ export default function BandHubPage({
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {isAdmin && member.role !== 'director' && (
+                  <div className="pt-2 border-t border-studio-800 flex items-center justify-between text-xs">
+                    <button
+                      onClick={() => handleRemoveMember(member.userId, member.name)}
+                      className="text-studio-400 hover:text-amber-300 font-medium transition"
+                    >
+                      Remove from Band
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (
+                          confirm(
+                            `Permanently remove "${member.name}" from the studio roster? This deletes their account and removes them from all ensembles.`
+                          )
+                        ) {
+                          DataStore.deleteStudent(member.userId);
+                          const updated = DataStore.getBand(band.id);
+                          if (updated) setBand({ ...updated });
+                        }
+                      }}
+                      className="text-studio-500 hover:text-rose-400 font-medium transition flex items-center gap-1"
+                      title="Permanently remove student from studio roster"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Delete Account
+                    </button>
                   </div>
                 )}
               </div>

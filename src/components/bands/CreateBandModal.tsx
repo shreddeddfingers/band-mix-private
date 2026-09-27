@@ -19,7 +19,7 @@ export function CreateBandModal({
   onClose,
   onSuccess,
 }: CreateBandModalProps) {
-  const { currentUser, activeDirectorId } = useAuth();
+  const { currentUser, activeDirectorId, isAdmin } = useAuth();
   const dirId = activeDirectorId || currentUser?.id || 'director-main';
 
   const [name, setName] = useState('');
@@ -38,7 +38,7 @@ export function CreateBandModal({
   const students = DataStore.getStudents(dirId);
   const director = DataStore.getDirector(dirId);
 
-  if (!isOpen) return null;
+  if (!isOpen || !isAdmin) return null;
 
   const handleToggleStudent = (student: UserProfile, instrument: InstrumentType) => {
     const existingIndex = assignments.findIndex((a) => a.studentId === student.id);
@@ -51,7 +51,7 @@ export function CreateBandModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!isAdmin || !name.trim()) return;
 
     const created = DataStore.createBand({
       name: name.trim(),

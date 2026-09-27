@@ -57,6 +57,16 @@ export function BandChat({ band, onOpenSchedulePlanner }: BandChatProps) {
     DataStore.sendMessage(band.id, text, currentUser);
   };
 
+  const bandDirector =
+    (band.directorId ? DataStore.getDirector(band.directorId) : null) ||
+    (band.createdBy ? DataStore.getDirector(band.createdBy) : null) ||
+    (isAdmin && currentUser ? currentUser : DataStore.getDirector());
+
+  const rawDirectorName = bandDirector?.name || 'Director';
+  const directorLabel = rawDirectorName.toLowerCase().startsWith('director')
+    ? rawDirectorName
+    : `Director ${rawDirectorName}`;
+
   return (
     <div className="flex flex-col h-[650px] bg-studio-950 border border-studio-800 rounded-2xl overflow-hidden shadow-xl">
       {/* Channel Header */}
@@ -103,7 +113,7 @@ export function BandChat({ band, onOpenSchedulePlanner }: BandChatProps) {
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
           <span>
-            <strong>Director Oversight Active:</strong> Director Marcus Vance is locked into this channel to coordinate rehearsals and monitor student communication.
+            <strong>Director Oversight Active:</strong> {directorLabel} is locked into this channel to coordinate rehearsals and monitor student communication.
           </span>
         </div>
       </div>
