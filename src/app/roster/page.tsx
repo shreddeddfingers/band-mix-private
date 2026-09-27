@@ -8,6 +8,7 @@ import { UserProfile, InstrumentType, SkillLevel, AgeGroup, Band } from '@/types
 import { InstrumentIcon, INSTRUMENT_METADATA } from '@/components/InstrumentIcon';
 import { Badge } from '@/components/Badge';
 import { AssignBandModal } from '@/components/roster/AssignBandModal';
+import { StudentProfileModal } from '@/components/roster/StudentProfileModal';
 import { QRCodeModal } from '@/components/QRCodeModal';
 import { BandFormationAssistant } from '@/components/matching/BandFormationAssistant';
 import {
@@ -41,6 +42,7 @@ export default function RosterPage() {
   const [selectedStyle, setSelectedStyle] = useState<string>('all');
 
   // Modals
+  const [viewProfileStudent, setViewProfileStudent] = useState<UserProfile | null>(null);
   const [assignStudent, setAssignStudent] = useState<UserProfile | null>(null);
   const [studentToDelete, setStudentToDelete] = useState<UserProfile | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -407,19 +409,23 @@ export default function RosterPage() {
             >
               <div>
                 {/* Top: Avatar & Name */}
-                <div className="flex items-start gap-3.5 mb-3.5">
-                  <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-studio-800 border-2 border-studio-700 shrink-0">
+                <div
+                  onClick={() => setViewProfileStudent(student)}
+                  className="flex items-start gap-3.5 mb-3.5 cursor-pointer group"
+                  title="Click to view full questionnaire responses and exact age"
+                >
+                  <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-studio-800 border-2 border-studio-700 group-hover:border-amber-500 transition shrink-0 shadow-md">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={student.avatar}
                       alt={student.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 truncate">
-                      <h3 className="text-base font-bold text-white truncate">
+                      <h3 className="text-base font-bold text-white group-hover:text-amber-300 transition truncate">
                         {student.name}
                       </h3>
                       {student.pronouns && <Badge pronouns={student.pronouns} />}
@@ -432,6 +438,9 @@ export default function RosterPage() {
                       />
                       <Badge skill={student.skillLevel} />
                     </div>
+                    <span className="text-[10px] text-amber-400 font-medium group-hover:underline mt-0.5 inline-block">
+                      View Questionnaire &rarr;
+                    </span>
                   </div>
                 </div>
 
@@ -534,11 +543,21 @@ export default function RosterPage() {
               {isAdmin && (
                 <div className="pt-3 border-t border-studio-800 flex items-center gap-2">
                   <button
+                    onClick={() => setViewProfileStudent(student)}
+                    className="flex-1 py-2 rounded-xl bg-studio-950 hover:bg-studio-800 border border-studio-800 hover:border-amber-500/40 text-studio-200 hover:text-white text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                    title="View complete intake questionnaire answers and profile"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    Questionnaire & Profile
+                  </button>
+
+                  <button
                     onClick={() => setAssignStudent(student)}
-                    className="flex-1 py-2 rounded-xl bg-studio-800 hover:bg-amber-500 hover:text-slate-950 text-studio-200 text-xs font-bold transition flex items-center justify-center gap-1.5"
+                    className="py-2 px-3 rounded-xl bg-studio-800 hover:bg-amber-500 hover:text-slate-950 text-studio-200 text-xs font-bold transition flex items-center justify-center gap-1.5"
+                    title="Assign to Band"
                   >
                     <UserPlus className="w-3.5 h-3.5" />
-                    Assign to Band
+                    Assign
                   </button>
 
                   <button
@@ -559,6 +578,19 @@ export default function RosterPage() {
       )}
 
       {/* Modals */}
+      <StudentProfileModal
+        isOpen={Boolean(viewProfileStudent)}
+        onClose={() => setViewProfileStudent(null)}
+        student={viewProfileStudent}
+        bands={bands}
+        onAssignBand={(student) => setAssignStudent(student)}
+        onDeleteStudent={(student) => setStudentToDelete(student)}
+        onStudentUpdated={(updated) => {
+          setStudents(DataStore.getStudents(activeDirectorId));
+          setViewProfileStudent(updated);
+        }}
+      />
+
       <AssignBandModal
         isOpen={Boolean(assignStudent)}
         onClose={() => setAssignStudent(null)}

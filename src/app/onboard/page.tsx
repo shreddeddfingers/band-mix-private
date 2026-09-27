@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { DataStore } from '@/lib/data-store';
 import { FirestoreService } from '@/lib/firestore-service';
 import { isFirebaseConfigured } from '@/lib/firebase';
+import { calculateExactAge, ageToAgeGroup } from '@/lib/age-utils';
 import {
   InstrumentType,
   SkillLevel,
@@ -47,6 +48,7 @@ function OnboardContent() {
   const [email, setEmail] = useState('');
   const [pronouns, setPronouns] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
+  const [exactAgeInput, setExactAgeInput] = useState('');
   const [guardianEmail, setGuardianEmail] = useState('');
   const [guardianPhone, setGuardianPhone] = useState('');
 
@@ -267,6 +269,11 @@ function OnboardContent() {
         name
       )}`;
 
+      const parsedAge = exactAgeInput ? parseInt(exactAgeInput, 10) : undefined;
+      const calculatedDobAge = dateOfBirth ? calculateExactAge(dateOfBirth) : undefined;
+      const resolvedExactAge = !isNaN(parsedAge as number) && (parsedAge as number) > 0 ? parsedAge : calculatedDobAge;
+      const resolvedAgeGroup = resolvedExactAge ? ageToAgeGroup(resolvedExactAge) : ageGroup;
+
       const newStudent = DataStore.createStudent({
         name: name.trim(),
         directorId: effectiveDirectorId,
@@ -280,7 +287,8 @@ function OnboardContent() {
         ),
         primaryInstrument,
         skillLevel,
-        ageGroup,
+        exactAge: resolvedExactAge,
+        ageGroup: resolvedAgeGroup,
         musicalStyles: selectedStyles,
         bio:
           bio.trim() ||
@@ -578,7 +586,7 @@ function OnboardContent() {
 
           {!isExpressMode && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label
                     htmlFor="student-bday"
@@ -587,7 +595,7 @@ function OnboardContent() {
                     <span>Date of Birth</span>
                     <span className="text-[10px] text-amber-400/90 font-medium flex items-center gap-1">
                       <Lock className="w-3 h-3 text-amber-400" />
-                      Restricted PII
+                      Private
                     </span>
                   </label>
                   <input
@@ -596,11 +604,51 @@ function OnboardContent() {
                     type="date"
                     autoComplete="bday"
                     value={dateOfBirth}
-                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    onChange={(e) => {
+                      setDateOfBirth(e.target.value);
+                      if (e.target.value) {
+                        const calc = calculateExactAge(e.target.value);
+                        if (calc > 0) {
+                          setExactAgeInput(String(calc));
+                          setAgeGroup(ageToAgeGroup(calc));
+                        }
+                      }
+                    }}
                     className="w-full bg-studio-950 border border-studio-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500 transition"
                   />
                   <p className="text-[11px] text-studio-400 mt-1 leading-tight">
-                    DOB is kept in restricted private records. Only your calculated age is shown to the Director for band formation.
+                    Private. Auto-calculates your exact age.
+                  </p>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="student-exact-age"
+                    className="block text-xs font-bold text-studio-300 uppercase tracking-wider mb-1.5 flex items-center justify-between"
+                  >
+                    <span>Actual Age (Years) *</span>
+                    <span className="text-[10px] text-emerald-400 font-medium">
+                      Director Roster
+                    </span>
+                  </label>
+                  <input
+                    id="student-exact-age"
+                    type="number"
+                    min="4"
+                    max="100"
+                    placeholder="e.g. 15"
+                    value={exactAgeInput}
+                    onChange={(e) => {
+                      setExactAgeInput(e.target.value);
+                      const parsed = parseInt(e.target.value, 10);
+                      if (!isNaN(parsed) && parsed > 0) {
+                        setAgeGroup(ageToAgeGroup(parsed));
+                      }
+                    }}
+                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500 transition"
+                  />
+                  <p className="text-[11px] text-studio-400 mt-1 leading-tight">
+                    {exactAgeInput ? `Recorded as Age ${exactAgeInput} (${ageToAgeGroup(parseInt(exactAgeInput, 10))})` : 'Shown to director for band age pairing'}
                   </p>
                 </div>
 
@@ -621,7 +669,7 @@ function OnboardContent() {
                     value={pronouns}
                     onChange={(e) => setPronouns(e.target.value)}
                     placeholder="e.g. he/him, she/her, they/them"
-                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500 transition"
+                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500 transition"
                   />
                 </div>
               </div>

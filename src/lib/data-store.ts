@@ -698,6 +698,33 @@ export const DataStore = {
     notify('students');
   },
 
+  updateStudent(studentId: string, updates: Partial<UserProfile>): UserProfile | null {
+    const students = loadItem<UserProfile[]>(STORAGE_KEYS.STUDENTS, []);
+    const idx = students.findIndex((s) => s.id === studentId);
+    if (idx === -1) return null;
+
+    let ageGroup = updates.ageGroup || students[idx].ageGroup;
+    if (updates.exactAge && !updates.ageGroup) {
+      ageGroup = ageToAgeGroup(updates.exactAge);
+    }
+
+    const updated: UserProfile = {
+      ...students[idx],
+      ...updates,
+      ageGroup,
+    };
+
+    students[idx] = updated;
+    saveItem(STORAGE_KEYS.STUDENTS, students);
+
+    if (isFirebaseConfigured) {
+      FirestoreService.updateUser(studentId, updates).catch(console.error);
+    }
+
+    notify('students');
+    return updated;
+  },
+
   // BANDS (CRUD)
   getBands(directorId?: string): Band[] {
     const bands = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);

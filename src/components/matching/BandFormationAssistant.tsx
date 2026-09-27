@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { UserProfile, InstrumentType, Band } from '@/types';
 import { InstrumentIcon } from '@/components/InstrumentIcon';
 import { Badge } from '@/components/Badge';
+import { StudentProfileModal } from '@/components/roster/StudentProfileModal';
 import {
   analyzeGroupCompatibility,
   GroupCompatibilityReport,
@@ -46,6 +47,7 @@ export function BandFormationAssistant({
   const [instrumentFilter, setInstrumentFilter] = useState<string>('all');
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [createdBand, setCreatedBand] = useState<Band | null>(null);
+  const [viewProfileStudent, setViewProfileStudent] = useState<UserProfile | null>(null);
 
   const [mobileView, setMobileView] = useState<'bench' | 'analysis'>('bench');
 
@@ -268,15 +270,29 @@ export function BandFormationAssistant({
                       </div>
                     </div>
 
-                    <div
-                      className={clsx(
-                        'w-6 h-6 rounded-lg border flex items-center justify-center shrink-0 transition',
-                        isSelected
-                          ? 'bg-amber-500 border-amber-400 text-slate-950'
-                          : 'border-studio-700 text-studio-500'
-                      )}
-                    >
-                      {isSelected ? <X className="w-3.5 h-3.5 stroke-[3]" /> : <Plus className="w-3.5 h-3.5" />}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setViewProfileStudent(candidate);
+                        }}
+                        className="p-1 rounded-lg text-studio-400 hover:text-amber-300 hover:bg-studio-800 transition"
+                        title="View complete questionnaire responses"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </button>
+
+                      <div
+                        className={clsx(
+                          'w-6 h-6 rounded-lg border flex items-center justify-center transition',
+                          isSelected
+                            ? 'bg-amber-500 border-amber-400 text-slate-950'
+                            : 'border-studio-700 text-studio-500'
+                        )}
+                      >
+                        {isSelected ? <X className="w-3.5 h-3.5 stroke-[3]" /> : <Plus className="w-3.5 h-3.5" />}
+                      </div>
                     </div>
                   </div>
                 );
@@ -538,6 +554,14 @@ export function BandFormationAssistant({
           </div>
         </div>
       )}
+
+      {/* Candidate Profile & Questionnaire Inspection Modal */}
+      <StudentProfileModal
+        isOpen={Boolean(viewProfileStudent)}
+        onClose={() => setViewProfileStudent(null)}
+        student={viewProfileStudent}
+        bands={[]}
+      />
     </div>
   );
 }

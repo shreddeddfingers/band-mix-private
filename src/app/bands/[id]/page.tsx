@@ -11,6 +11,7 @@ import { Badge } from '@/components/Badge';
 import { BandChat } from '@/components/chat/BandChat';
 import { RehearsalPlanner } from '@/components/scheduling/RehearsalPlanner';
 import { QRCodeModal } from '@/components/QRCodeModal';
+import { StudentProfileModal } from '@/components/roster/StudentProfileModal';
 import { BandAnnouncementsTab } from '@/components/announcements/BandAnnouncementsTab';
 import { SetlistManager } from '@/components/repertoire/SetlistManager';
 import { SongSuggestionVoting } from '@/components/repertoire/SongSuggestionVoting';
@@ -44,6 +45,7 @@ export default function BandHubPage({
     'chat' | 'announcements' | 'repertoire' | 'suggestions' | 'schedule' | 'roster'
   >('chat');
   const [isQrOpen, setIsQrOpen] = useState(false);
+  const [viewProfileStudent, setViewProfileStudent] = useState<UserProfile | null>(null);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [selectedStudentToAdd, setSelectedStudentToAdd] = useState('');
   const [selectedInstrumentToAdd, setSelectedInstrumentToAdd] = useState<InstrumentType>('guitars');
@@ -406,17 +408,21 @@ export default function BandHubPage({
                 key={member.userId}
                 className="bg-studio-900 border border-studio-800 rounded-2xl p-5 space-y-3"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-studio-800 border-2 border-studio-700 shrink-0">
+                <div
+                  onClick={() => studentDetails && setViewProfileStudent(studentDetails)}
+                  className={`flex items-center gap-3 ${studentDetails ? 'cursor-pointer group' : ''}`}
+                  title={studentDetails ? 'Click to view student questionnaire and profile' : undefined}
+                >
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-studio-800 border-2 border-studio-700 group-hover:border-amber-500 transition shrink-0 shadow-md">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={member.avatar}
                       alt={member.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
                   </div>
-                  <div>
-                    <h4 className="font-bold text-white text-sm">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-bold text-white text-sm group-hover:text-amber-300 transition truncate">
                       {member.name}
                     </h4>
                     <div className="flex items-center gap-1.5 mt-0.5">
@@ -427,6 +433,9 @@ export default function BandHubPage({
                       />
                       {member.role === 'director' && (
                         <Badge role="admin" />
+                      )}
+                      {studentDetails?.exactAge && (
+                        <Badge exactAge={studentDetails.exactAge} />
                       )}
                     </div>
                   </div>
@@ -455,6 +464,14 @@ export default function BandHubPage({
                         </div>
                       </div>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => setViewProfileStudent(studentDetails)}
+                      className="w-full mt-1.5 py-1.5 px-2 rounded-xl bg-studio-950 hover:bg-studio-800 border border-studio-800 hover:border-amber-500/40 text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition flex items-center justify-center gap-1.5"
+                    >
+                      <Sparkles className="w-3 h-3 text-amber-400" />
+                      View Questionnaire & Profile
+                    </button>
                   </div>
                 )}
 
@@ -593,6 +610,44 @@ export default function BandHubPage({
           </div>
         </div>
       )}
+
+      {/* Student Profile & Questionnaire Modal */}
+      <StudentProfileModal
+        isOpen={Boolean(viewProfileStudent)}
+        onClose={() => setViewProfileStudent(null)}
+        student={viewProfileStudent}
+        bands={band ? [band] : []}
+        onDeleteStudent={async (student) => {
+          if (
+            confirm(
+              `Permanently remove "${student.name}" from the studio roster? This deletes their account and removes them from all ensembles.`
+            )
+          ) {
+            const targetId = student.id;
+            setBand((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    members: prev.members.filter((m) => m.userId !== targetId),
+                    memberIds: (prev.memberIds || []).filter((id) => id !== targetId),
+                  }
+                : null
+            );
+            await DataStore.deleteStudent(targetId);
+            if (band) {
+              const updated = DataStore.getBand(band.id);
+              if (updated) setBand({ ...updated });
+            }
+          }
+        }}
+        onStudentUpdated={(updated) => {
+          setViewProfileStudent(updated);
+          if (band) {
+            const b = DataStore.getBand(band.id);
+            if (b) setBand({ ...b });
+          }
+        }}
+      />
     </div>
   );
 }
