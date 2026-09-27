@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { X, Copy, Check, Printer, QrCode, Sparkles, Music, Share2, Building } from 'lucide-react';
 import { DataStore } from '@/lib/data-store';
+import { isFirebaseConfigured } from '@/lib/firebase';
+import { FirestoreService } from '@/lib/firestore-service';
 import { useAuth } from '@/lib/auth-context';
 import { InviteCode, Band } from '@/types';
 
@@ -40,37 +42,52 @@ export function QRCodeModal({
     const dirBands = DataStore.getBands(dirId);
     setBands(dirBands);
 
-    // Find or create appropriate code for this director
-    const existing = DataStore.getInvites(dirId);
-    if (preselectedBandId) {
-      setSelectedBandId(preselectedBandId);
-      const bandCode = existing.find((i) => i.bandId === preselectedBandId);
-      if (bandCode) {
-        setActiveCode(bandCode.code);
-      } else {
-        const created = DataStore.createInvite({
-          bandId: preselectedBandId,
-          label: 'Band Join QR',
-          directorId: dirId,
-          directorName,
-          studioName,
-        });
-        setActiveCode(created.code);
+    const resolveInvites = async () => {
+      if (isFirebaseConfigured) {
+        try {
+          const remoteInvites = await FirestoreService.getInvitesByDirector(dirId);
+          if (remoteInvites && remoteInvites.length > 0) {
+            DataStore.mergeRemoteInvites(remoteInvites);
+          }
+        } catch (err) {
+          console.warn('Could not sync remote invites for QRCodeModal:', err);
+        }
       }
-    } else {
-      const general = existing.find((i) => !i.bandId);
-      if (general) {
-        setActiveCode(general.code);
+
+      // Find or create appropriate code for this director
+      const existing = DataStore.getInvites(dirId);
+      if (preselectedBandId) {
+        setSelectedBandId(preselectedBandId);
+        const bandCode = existing.find((i) => i.bandId === preselectedBandId);
+        if (bandCode) {
+          setActiveCode(bandCode.code);
+        } else {
+          const created = DataStore.createInvite({
+            bandId: preselectedBandId,
+            label: 'Band Join QR',
+            directorId: dirId,
+            directorName,
+            studioName,
+          });
+          setActiveCode(created.code);
+        }
       } else {
-        const created = DataStore.createInvite({
-          label: `${studioName} Student Intake Pass`,
-          directorId: dirId,
-          directorName,
-          studioName,
-        });
-        setActiveCode(created.code);
+        const general = existing.find((i) => !i.bandId);
+        if (general) {
+          setActiveCode(general.code);
+        } else {
+          const created = DataStore.createInvite({
+            label: `${studioName} Student Intake Pass`,
+            directorId: dirId,
+            directorName,
+            studioName,
+          });
+          setActiveCode(created.code);
+        }
       }
-    }
+    };
+
+    resolveInvites();
   }, [isOpen, preselectedBandId, dirId, directorName, studioName]);
 
   if (!isOpen) return null;
