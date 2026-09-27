@@ -256,22 +256,22 @@ export function QRCodeModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 bg-studio-950/60 border-t border-studio-800 flex items-center justify-between">
-          <span className="text-xs text-studio-400 flex items-center gap-1">
+        <div className="p-4 bg-studio-950/60 border-t border-studio-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span className="text-xs text-studio-400 flex items-center gap-1 self-start sm:self-auto">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             Dynamic single-scan intake
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               onClick={printCard}
-              className="px-4 py-2 bg-studio-800 hover:bg-studio-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+              className="flex-1 sm:flex-none px-4 py-2 bg-studio-800 hover:bg-studio-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition"
             >
               <Printer className="w-3.5 h-3.5" />
-              Print Rehearsal Room Flyer
+              Print Flyer
             </button>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition"
+              className="flex-1 sm:flex-none px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition text-center"
             >
               Done
             </button>

@@ -134,20 +134,21 @@ export default function BandsPage() {
       {/* Status & Search Filters */}
       <div className="space-y-3">
         {/* Status Pills */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setStatusFilter('active')}
             className={clsx(
-              'px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 border',
+              'px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 sm:gap-2 border',
               statusFilter === 'active'
                 ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-md'
                 : 'bg-studio-900 border-studio-800 text-studio-400 hover:text-white'
             )}
           >
-            <span>Active Ensembles</span>
+            <span className="sm:hidden">Active</span>
+            <span className="hidden sm:inline">Active Ensembles</span>
             <span
               className={clsx(
-                'text-[11px] px-2 py-0.5 rounded-full font-black',
+                'text-[11px] px-1.5 sm:px-2 py-0.5 rounded-full font-black',
                 statusFilter === 'active'
                   ? 'bg-slate-950/20 text-slate-950'
                   : 'bg-studio-800 text-studio-300'
@@ -160,17 +161,18 @@ export default function BandsPage() {
           <button
             onClick={() => setStatusFilter('archived')}
             className={clsx(
-              'px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 border',
+              'px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 sm:gap-2 border',
               statusFilter === 'archived'
                 ? 'bg-rose-500 text-slate-950 border-rose-500 shadow-md'
                 : 'bg-studio-900 border-studio-800 text-studio-400 hover:text-white'
             )}
           >
             <Archive className="w-3.5 h-3.5" />
-            <span>Past Seasons (Archived)</span>
+            <span className="sm:hidden">Archived</span>
+            <span className="hidden sm:inline">Past Seasons (Archived)</span>
             <span
               className={clsx(
-                'text-[11px] px-2 py-0.5 rounded-full font-black',
+                'text-[11px] px-1.5 sm:px-2 py-0.5 rounded-full font-black',
                 statusFilter === 'archived'
                   ? 'bg-slate-950/20 text-slate-950'
                   : 'bg-studio-800 text-studio-300'
@@ -183,14 +185,14 @@ export default function BandsPage() {
           <button
             onClick={() => setStatusFilter('all')}
             className={clsx(
-              'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 border',
+              'px-3 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 sm:gap-2 border',
               statusFilter === 'all'
                 ? 'bg-studio-800 text-white border-studio-700 shadow-md'
                 : 'bg-studio-900 border-studio-800 text-studio-400 hover:text-white'
             )}
           >
             <span>All</span>
-            <span className="text-[11px] px-2 py-0.5 rounded-full font-black bg-studio-800 text-studio-300">
+            <span className="text-[11px] px-1.5 sm:px-2 py-0.5 rounded-full font-black bg-studio-800 text-studio-300">
               {bands.length}
             </span>
           </button>
@@ -209,13 +211,13 @@ export default function BandsPage() {
             />
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto w-full pb-1 md:pb-0">
+          <div className="flex items-center gap-1.5 overflow-x-auto w-full pb-1 md:pb-0 no-scrollbar">
             {genres.map((g) => (
               <button
                 key={g}
                 onClick={() => setSelectedGenre(g)}
                 className={clsx(
-                  'px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap capitalize transition border',
+                  'px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap capitalize transition border shrink-0',
                   selectedGenre === g
                     ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
                     : 'bg-studio-950 border-studio-800 text-studio-400 hover:text-white'

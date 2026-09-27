@@ -186,31 +186,33 @@ export default function RosterPage() {
       </div>
 
       {/* Sub-navigation Tabs: Directory vs Formation Assistant */}
-      <div className="flex items-center gap-2 border-b border-studio-800 pb-2">
+      <div className="flex items-center gap-2 border-b border-studio-800 pb-2 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveView('roster')}
           className={clsx(
-            'flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition',
+            'flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition shrink-0',
             activeView === 'roster'
               ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
           <Users className="w-4 h-4" />
-          Tagged Roster Directory ({students.length})
+          <span className="sm:hidden">Roster ({students.length})</span>
+          <span className="hidden sm:inline">Tagged Roster Directory ({students.length})</span>
         </button>
 
         <button
           onClick={() => setActiveView('matching')}
           className={clsx(
-            'flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition',
+            'flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition shrink-0',
             activeView === 'matching'
               ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
           <Sparkles className="w-4 h-4" />
-          Band Formation Assistant
+          <span className="sm:hidden">Formation Assistant</span>
+          <span className="hidden sm:inline">Band Formation Assistant</span>
         </button>
       </div>
 
@@ -253,7 +255,7 @@ export default function RosterPage() {
         <div className="space-y-3 pt-2 border-t border-studio-800/80 text-xs">
           {/* Instrument Filter Tags */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-studio-400 font-bold uppercase tracking-wider text-[10px] w-24 shrink-0">
+            <span className="w-full sm:w-24 shrink-0 text-studio-400 font-bold uppercase tracking-wider text-[10px] mb-0.5 sm:mb-0">
               Instruments:
             </span>
             <button
@@ -286,7 +288,7 @@ export default function RosterPage() {
 
           {/* Skill Filter Tags */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-studio-400 font-bold uppercase tracking-wider text-[10px] w-24 shrink-0">
+            <span className="w-full sm:w-24 shrink-0 text-studio-400 font-bold uppercase tracking-wider text-[10px] mb-0.5 sm:mb-0">
               Skill Level:
             </span>
             <button
@@ -318,7 +320,7 @@ export default function RosterPage() {
 
           {/* Musical Style Tags */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-studio-400 font-bold uppercase tracking-wider text-[10px] w-24 shrink-0">
+            <span className="w-full sm:w-24 shrink-0 text-studio-400 font-bold uppercase tracking-wider text-[10px] mb-0.5 sm:mb-0">
               Musical Style:
             </span>
             <button
@@ -350,7 +352,7 @@ export default function RosterPage() {
 
           {/* Age Group */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-studio-400 font-bold uppercase tracking-wider text-[10px] w-24 shrink-0">
+            <span className="w-full sm:w-24 shrink-0 text-studio-400 font-bold uppercase tracking-wider text-[10px] mb-0.5 sm:mb-0">
               Age Bracket:
             </span>
             <button

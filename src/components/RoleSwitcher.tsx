@@ -40,30 +40,36 @@ export function RoleSwitcher() {
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={clsx(
-            'flex items-center gap-2.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all shadow-sm',
+            'flex items-center gap-1.5 sm:gap-2.5 px-2 sm:px-3 py-1.5 rounded-xl border text-xs font-medium transition-all shadow-sm max-w-[150px] sm:max-w-none',
             role === 'admin'
               ? 'bg-amber-500/10 border-amber-500/30 text-amber-200 hover:bg-amber-500/20'
               : 'bg-studio-800/80 border-studio-700 text-studio-200 hover:bg-studio-700/80'
           )}
         >
           {role === 'admin' ? (
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-amber-400" />
-              <div className="text-left">
-                <div className="font-bold flex items-center gap-1 leading-none text-white">
-                  {currentUser?.name}
-                  <span className="text-[10px] text-amber-400 font-mono">
+            <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
+              <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
+              <div className="text-left min-w-0">
+                <div className="font-bold flex items-center gap-1 leading-none text-white truncate">
+                  <span className="truncate">{currentUser?.name?.split(' ')[0] || 'Director'}</span>
+                  <span className="hidden sm:inline font-normal">
+                    {currentUser?.name?.split(' ').slice(1).join(' ')}
+                  </span>
+                  <span className="hidden sm:inline text-[10px] text-amber-400 font-mono">
                     ({currentUser?.studioName || 'Director'})
                   </span>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5">
-              <GraduationCap className="w-4 h-4 text-studio-400" />
-              <div className="text-left">
-                <div className="font-bold flex items-center gap-1 leading-none text-white">
-                  {currentUser?.name}
+            <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
+              <GraduationCap className="w-4 h-4 text-studio-400 shrink-0" />
+              <div className="text-left min-w-0">
+                <div className="font-bold flex items-center gap-1 leading-none text-white truncate">
+                  <span className="truncate">{currentUser?.name?.split(' ')[0] || 'Student'}</span>
+                  <span className="hidden sm:inline font-normal">
+                    {currentUser?.name?.split(' ').slice(1).join(' ')}
+                  </span>
                   {currentUser?.primaryInstrument && (
                     <InstrumentIcon instrument={currentUser.primaryInstrument} size="xs" />
                   )}
@@ -73,7 +79,7 @@ export function RoleSwitcher() {
           )}
           <ChevronDown
             className={clsx(
-              'w-3.5 h-3.5 text-studio-400 transition-transform',
+              'w-3.5 h-3.5 text-studio-400 transition-transform shrink-0',
               isOpen && 'rotate-180'
             )}
           />
@@ -85,7 +91,7 @@ export function RoleSwitcher() {
               className="fixed inset-0 z-40"
               onClick={() => setIsOpen(false)}
             />
-            <div className="absolute right-0 mt-2 w-80 bg-studio-900 border border-studio-700/90 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-xs sm:w-80 bg-studio-900 border border-studio-700/90 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
               <div className="px-3 py-2 border-b border-studio-800 mb-1">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-studio-400">
                   Switch Workspace & Perspective

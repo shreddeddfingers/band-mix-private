@@ -177,7 +177,7 @@ export function CreateBandModal({
             <label className="block text-xs font-semibold text-studio-300 uppercase tracking-wider mb-2">
               Band Cover Visual
             </label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {sampleCoverImages.map((img, i) => (
                 <button
                   type="button"

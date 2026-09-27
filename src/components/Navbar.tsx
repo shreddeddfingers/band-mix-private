@@ -71,32 +71,32 @@ export function Navbar() {
       <header className="sticky top-0 z-30 bg-studio-950/80 backdrop-blur-md border-b border-studio-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           {/* Logo & Platform Name */}
-          <div className="flex items-center gap-8">
-            <Link href={logoHref} className="flex items-center gap-2.5 group">
+          <div className="flex items-center gap-3 sm:gap-8 min-w-0">
+            <Link href={logoHref} className="flex items-center gap-2 sm:gap-2.5 group min-w-0">
               {activeBranding?.logoUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={activeBranding.logoUrl}
                   alt={brandName}
-                  className="w-9 h-9 rounded-xl object-cover border border-studio-700 shadow-md group-hover:scale-105 transition-transform bg-studio-900"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-cover border border-studio-700 shadow-md group-hover:scale-105 transition-transform bg-studio-900 shrink-0"
                 />
               ) : (
                 <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-950 font-black shadow-lg group-hover:scale-105 transition-transform"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-slate-950 font-black shadow-lg group-hover:scale-105 transition-transform shrink-0"
                   style={{
                     backgroundColor: brandColor,
                     boxShadow: `0 10px 15px -3px ${brandColor}33`,
                   }}
                 >
-                  <Radio className="w-5 h-5 text-slate-950 stroke-[2.5]" />
+                  <Radio className="w-4 h-4 sm:w-5 sm:h-5 text-slate-950 stroke-[2.5]" />
                 </div>
               )}
-              <div>
-                <span className="font-black text-lg tracking-tight text-white flex items-center gap-1.5">
+              <div className="min-w-0">
+                <span className="font-black text-base sm:text-lg tracking-tight text-white flex items-center gap-1.5 truncate">
                   {brandName}
                 </span>
                 <span
-                  className="text-[9px] tracking-wider uppercase font-semibold block -mt-1 font-mono"
+                  className="text-[8px] sm:text-[9px] tracking-wider uppercase font-semibold block -mt-1 font-mono truncate"
                   style={{ color: brandColor }}
                 >
                   {brandBadge}
@@ -131,12 +131,12 @@ export function Navbar() {
           </div>
 
           {/* Right actions */}
-          <div className="flex items-center gap-2.5">
-            {/* White-Label Branding Customizer (Director Only) */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* White-Label Branding Customizer (Desktop Only) */}
             {isAdmin && (
               <button
                 onClick={() => setIsBrandingOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border shadow-sm"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border shadow-sm"
                 style={{
                   backgroundColor: `${brandColor}18`,
                   borderColor: `${brandColor}40`,
@@ -145,19 +145,19 @@ export function Navbar() {
                 title="White-Label Studio Branding (School of Rock, Bach to Rock, etc.)"
               >
                 <Palette className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Brand Studio</span>
+                <span>Brand Studio</span>
               </button>
             )}
 
-            {/* QR Code Action (Director / Admin quick tool) */}
+            {/* QR Code Action (Desktop Only) */}
             {isAdmin && (
               <button
                 onClick={() => setIsQrOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border shadow-sm bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border shadow-sm bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30"
                 title="Generate Dynamic Onboarding QR Code"
               >
                 <QrCode className="w-4 h-4 text-amber-400" />
-                <span className="hidden sm:inline">QR Onboard</span>
+                <span>QR Onboard</span>
               </button>
             )}
 
@@ -177,7 +177,7 @@ export function Navbar() {
 
         {/* Mobile menu dropdown */}
         {mobileMenuOpen && (
-          <div className="md:hidden px-4 pt-2 pb-4 border-t border-studio-800 bg-studio-950 space-y-1">
+          <div className="md:hidden px-4 pt-2 pb-4 border-t border-studio-800 bg-studio-950 space-y-1 animate-in fade-in slide-in-from-top-2 duration-150">
             {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive =
@@ -200,6 +200,35 @@ export function Navbar() {
                 </Link>
               );
             })}
+
+            {/* Director tools inside mobile menu */}
+            {isAdmin && (
+              <div className="pt-2 mt-2 border-t border-studio-800/80 space-y-1">
+                <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-studio-500">
+                  Director Quick Actions
+                </div>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsBrandingOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-amber-300 hover:bg-studio-900 transition text-left"
+                >
+                  <Palette className="w-4 h-4 text-amber-400" />
+                  White-Label Brand Studio
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsQrOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-amber-300 hover:bg-studio-900 transition text-left"
+                >
+                  <QrCode className="w-4 h-4 text-amber-400" />
+                  Dynamic Student QR Onboarding
+                </button>
+              </div>
+            )}
           </div>
         )}
       </header>

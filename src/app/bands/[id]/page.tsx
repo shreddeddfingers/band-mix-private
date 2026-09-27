@@ -195,17 +195,17 @@ export default function BandHubPage({
         </div>
 
         {/* Member instrument strip */}
-        <div className="p-4 bg-studio-950/80 border-t border-studio-800 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2 overflow-x-auto py-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-studio-400 mr-2 flex items-center gap-1">
+        <div className="p-3 sm:p-4 bg-studio-950/80 border-t border-studio-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar max-w-full">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-studio-400 mr-1 flex items-center gap-1 shrink-0">
               <Users className="w-3.5 h-3.5" /> Roster:
             </span>
             {band.members.map((member) => (
               <div
                 key={member.userId}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-studio-900 border border-studio-800 text-xs shrink-0"
+                className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-studio-900 border border-studio-800 text-xs shrink-0"
               >
-                <div className="w-6 h-6 rounded-full overflow-hidden border border-studio-700">
+                <div className="w-6 h-6 rounded-full overflow-hidden border border-studio-700 shrink-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={member.avatar}
@@ -213,7 +213,7 @@ export default function BandHubPage({
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <span className="font-bold text-white">{member.name}</span>
+                <span className="font-bold text-white whitespace-nowrap">{member.name}</span>
                 <InstrumentIcon instrument={member.instrument} size="xs" showLabel />
                 {member.role === 'director' ? (
                   <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">
@@ -238,98 +238,128 @@ export default function BandHubPage({
             {isAdmin && (
               <button
                 onClick={() => setIsAddMemberOpen(true)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-studio-900 hover:bg-studio-800 border border-dashed border-studio-700 text-xs text-amber-400 font-semibold transition"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-studio-900 hover:bg-studio-800 border border-dashed border-studio-700 text-xs text-amber-400 font-semibold transition shrink-0 whitespace-nowrap"
               >
                 <UserPlus className="w-3.5 h-3.5" /> Add Student
               </button>
             )}
           </div>
 
-          <div className="text-xs text-studio-400 flex items-center gap-1.5 font-medium shrink-0">
+          <div className="text-xs text-studio-400 flex items-center gap-1.5 font-medium shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-studio-850">
             <Clock className="w-3.5 h-3.5 text-amber-400" />
-            <span>Target: {band.rehearsalSchedule || 'TBD'}</span>
+            <span className="truncate">Target: {band.rehearsalSchedule || 'TBD'}</span>
           </div>
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="flex items-center gap-1.5 border-b border-studio-800 pb-2 overflow-x-auto">
+      {/* Mobile Tab Selector (Visible on iPhone portrait / small screens) */}
+      <div className="sm:hidden">
+        <label className="block text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-1.5 flex items-center gap-1.5">
+          <Sparkles className="w-3 h-3 text-amber-400" />
+          Ensemble View & Controls
+        </label>
+        <div className="relative">
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value as any)}
+            className="w-full bg-studio-900 border-2 border-amber-500/50 rounded-2xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:border-amber-400 shadow-lg shadow-amber-500/10 appearance-none pr-10"
+          >
+            <option value="chat">💬 Chat Channel</option>
+            <option value="announcements">📢 Persistent Announcements</option>
+            <option value="repertoire">🎵 Master Setlist Repertoire</option>
+            <option value="suggestions">✨ Song Suggestions & Voting</option>
+            <option value="schedule">📅 Rehearsal & Event Schedule</option>
+            <option value="roster">👥 Band Roster ({band.members.length} Musicians)</option>
+          </select>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-amber-400 text-xs font-bold">
+            ▼
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs Navigation (Pills on sm+, and horizontally scrollable on mobile) */}
+      <div className="flex items-center gap-1.5 border-b border-studio-800 pb-2 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('chat')}
           className={clsx(
-            'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
+            'flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition shrink-0',
             activeTab === 'chat'
               ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
           <MessageSquare className="w-4 h-4" />
-          Chat Channel
+          <span className="sm:hidden">Chat</span>
+          <span className="hidden sm:inline">Chat Channel</span>
         </button>
 
         <button
           onClick={() => setActiveTab('announcements')}
           className={clsx(
-            'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
+            'flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition shrink-0',
             activeTab === 'announcements'
               ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
           <Megaphone className="w-4 h-4" />
-          Announcements
+          <span className="sm:hidden">Notices</span>
+          <span className="hidden sm:inline">Announcements</span>
         </button>
 
         <button
           onClick={() => setActiveTab('repertoire')}
           className={clsx(
-            'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
+            'flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition shrink-0',
             activeTab === 'repertoire'
               ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
           <ListMusic className="w-4 h-4" />
-          Master Setlist
+          <span className="sm:hidden">Setlist</span>
+          <span className="hidden sm:inline">Master Setlist</span>
         </button>
 
         <button
           onClick={() => setActiveTab('suggestions')}
           className={clsx(
-            'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
+            'flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition shrink-0',
             activeTab === 'suggestions'
               ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
           <Sparkles className="w-4 h-4" />
-          Song Suggestions & Voting
+          <span className="sm:hidden">Suggestions</span>
+          <span className="hidden sm:inline">Song Suggestions & Voting</span>
         </button>
 
         <button
           onClick={() => setActiveTab('schedule')}
           className={clsx(
-            'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
+            'flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition shrink-0',
             activeTab === 'schedule'
               ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
           <Calendar className="w-4 h-4" />
-          Rehearsal Schedule
+          <span className="sm:hidden">Schedule</span>
+          <span className="hidden sm:inline">Rehearsal Schedule</span>
         </button>
 
         <button
           onClick={() => setActiveTab('roster')}
           className={clsx(
-            'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition',
+            'flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition shrink-0',
             activeTab === 'roster'
               ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
               : 'text-studio-400 hover:text-white hover:bg-studio-900'
           )}
         >
           <Users className="w-4 h-4" />
-          Roster ({band.members.length})
+          <span>Roster ({band.members.length})</span>
         </button>
       </div>
 

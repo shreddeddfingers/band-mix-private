@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
 import { Navbar } from '@/components/Navbar';
@@ -7,6 +7,12 @@ export const metadata: Metadata = {
   title: 'Bandmix - Studio Band Management Platform',
   description:
     'Web-based band management platform for scheduling, internal communication, QR onboarding, and ensemble structure for music students.',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({

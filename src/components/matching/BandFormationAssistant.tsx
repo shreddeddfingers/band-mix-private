@@ -47,6 +47,8 @@ export function BandFormationAssistant({
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [createdBand, setCreatedBand] = useState<Band | null>(null);
 
+  const [mobileView, setMobileView] = useState<'bench' | 'analysis'>('bench');
+
   // Selected students objects
   const selectedStudents = useMemo(() => {
     return students.filter((s) => selectedStudentIds.includes(s.id));
@@ -109,18 +111,18 @@ export function BandFormationAssistant({
   return (
     <div className="space-y-6">
       {/* Assistant Header */}
-      <div className="bg-gradient-to-r from-studio-900 via-studio-900 to-studio-950 border border-studio-800 p-6 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-studio-900 via-studio-900 to-studio-950 border border-studio-800 p-5 sm:p-6 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
               Director Decision Support
             </span>
-            <span className="text-xs text-studio-400">
-              Availability → Exact Age → Instrumentation → Skill → Style → Goals
+            <span className="text-[11px] sm:text-xs text-studio-400">
+              Availability → Age → Instrumentation → Skill → Style
             </span>
           </div>
-          <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <Sparkles className="w-6 h-6 text-amber-400" />
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
+            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400" />
             Band Formation & Matching Assistant
           </h2>
           <p className="text-xs sm:text-sm text-studio-300 mt-1 max-w-2xl leading-relaxed">
@@ -131,7 +133,7 @@ export function BandFormationAssistant({
         {selectedStudents.length > 0 && (
           <button
             onClick={handleCreateBand}
-            className="px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-black uppercase tracking-wider shadow-lg shadow-amber-500/20 transition flex items-center gap-2 shrink-0 self-start md:self-center"
+            className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-black uppercase tracking-wider shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2 shrink-0 self-start md:self-center"
           >
             <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
             Finalize & Form Ensemble ({selectedStudents.length})
@@ -139,10 +141,38 @@ export function BandFormationAssistant({
         )}
       </div>
 
+      {/* Mobile Assistant View Switcher (lg:hidden) */}
+      <div className="lg:hidden flex items-center gap-2 p-1.5 bg-studio-900 border border-studio-800 rounded-2xl shadow-sm">
+        <button
+          onClick={() => setMobileView('bench')}
+          className={clsx(
+            'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5',
+            mobileView === 'bench'
+              ? 'bg-amber-500 text-slate-950 shadow-md'
+              : 'text-studio-400 hover:text-white'
+          )}
+        >
+          <Users className="w-3.5 h-3.5" />
+          <span>1. Select Candidates ({candidatePool.length})</span>
+        </button>
+        <button
+          onClick={() => setMobileView('analysis')}
+          className={clsx(
+            'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5',
+            mobileView === 'analysis'
+              ? 'bg-amber-500 text-slate-950 shadow-md'
+              : 'text-studio-400 hover:text-white'
+          )}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>2. Signals & Analysis ({selectedStudents.length})</span>
+        </button>
+      </div>
+
       {/* Main Workbench Grid: Candidate Pool (Left) + Prospective Band & Signal Analysis (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column (5 Cols): Candidate Bench */}
-        <div className="lg:col-span-5 space-y-4">
+        <div className={clsx('lg:col-span-5 space-y-4', mobileView === 'analysis' && 'hidden lg:block')}>
           <div className="bg-studio-900 border border-studio-800 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -256,7 +286,7 @@ export function BandFormationAssistant({
         </div>
 
         {/* Right Column (7 Cols): Proposed Band Analysis & Decision Workspace */}
-        <div className="lg:col-span-7 space-y-4">
+        <div className={clsx('lg:col-span-7 space-y-4', mobileView === 'bench' && 'hidden lg:block')}>
           {/* Prospective Band Header Configuration */}
           <div className="bg-studio-900 border border-studio-800 rounded-2xl p-5 space-y-4 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-studio-800 pb-3">

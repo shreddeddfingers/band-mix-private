@@ -290,11 +290,11 @@ export function SongSuggestionVoting({ band }: SongSuggestionVotingProps) {
                 </div>
 
                 {/* Individual Private Voting Buttons (Only user sees their own selection) */}
-                <div className="pt-2 border-t border-studio-800 flex flex-wrap items-center justify-between gap-2">
+                <div className="pt-2 border-t border-studio-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <span className="text-[11px] text-studio-400 font-semibold">
                     Your Private Vote:
                   </span>
-                  <div className="flex flex-wrap items-center gap-1.5">
+                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 w-full sm:w-auto">
                     {SENTIMENT_OPTIONS.map((opt) => {
                       const Icon = opt.icon;
                       const isSelected = myVote === opt.id;
@@ -303,15 +303,15 @@ export function SongSuggestionVoting({ band }: SongSuggestionVotingProps) {
                           key={opt.id}
                           onClick={() => handleVote(song.id, opt.id)}
                           className={clsx(
-                            'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border',
+                            'flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition border text-center',
                             isSelected
                               ? opt.bg
                               : 'bg-studio-950 border-studio-800 text-studio-400 hover:border-studio-700 hover:text-white'
                           )}
                         >
-                          <Icon className={clsx('w-3.5 h-3.5', isSelected ? '' : opt.color)} />
-                          <span>{opt.label}</span>
-                          {isSelected && <span className="text-xs font-black">✓</span>}
+                          <Icon className={clsx('w-3.5 h-3.5 shrink-0', isSelected ? '' : opt.color)} />
+                          <span className="truncate">{opt.label}</span>
+                          {isSelected && <span className="text-xs font-black shrink-0">✓</span>}
                         </button>
                       );
                     })}

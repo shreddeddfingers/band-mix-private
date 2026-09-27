@@ -605,22 +605,22 @@ export function StudioBrandingModal({ isOpen, onClose }: StudioBrandingModalProp
           </div>
 
           {/* Footer Buttons */}
-          <div className="pt-4 border-t border-studio-800 flex items-center justify-between shrink-0">
-            <div className="text-xs text-studio-400 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" style={{ color: accentColor }} />
-              Instantly permeates navbar, dashboard, roster, and flyers.
+          <div className="pt-4 border-t border-studio-800 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+            <div className="text-xs text-studio-400 flex items-center gap-1.5 self-start sm:self-auto">
+              <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} />
+              <span>Instantly permeates navbar, dashboard, roster, and flyers.</span>
             </div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-xs font-semibold text-studio-400 hover:text-white rounded-xl hover:bg-studio-800 transition"
+                className="flex-1 sm:flex-none px-4 py-2 text-xs font-semibold text-studio-400 hover:text-white rounded-xl hover:bg-studio-800 transition text-center"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl font-bold text-xs transition shadow-lg flex items-center gap-2"
+                className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-bold text-xs transition shadow-lg flex items-center justify-center gap-2 text-center"
                 style={{
                   backgroundColor: accentColor,
                   color: isDarkColor ? '#FFFFFF' : '#020617',
@@ -632,7 +632,7 @@ export function StudioBrandingModal({ isOpen, onClose }: StudioBrandingModalProp
                     Branding Applied!
                   </>
                 ) : (
-                  'Save & Apply Everywhere'
+                  'Save & Apply'
                 )}
               </button>
             </div>

@@ -365,7 +365,7 @@ export function RehearsalPlanner({
                 </div>
 
                 {/* RSVP Attendance Strip */}
-                <div className="pt-3 border-t border-studio-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="pt-3 border-t border-studio-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
                   <div className="flex items-center gap-2 text-studio-400 text-[11px]">
                     <span className="font-semibold text-white">
                       RSVPs: <strong className="text-emerald-400">{attendingCount} Going</strong>
@@ -376,13 +376,13 @@ export function RehearsalPlanner({
                   </div>
 
                   {/* Student RSVP Actions */}
-                  <div className="flex items-center gap-1">
+                  <div className="grid grid-cols-3 sm:flex items-center gap-1.5 w-full sm:w-auto">
                     <button
                       onClick={() => handleRSVP(event.id, 'attending')}
                       className={clsx(
-                        'px-2.5 py-1 rounded-lg text-xs font-semibold transition border',
+                        'px-2 py-1.5 rounded-lg text-center text-[11px] sm:text-xs font-semibold transition border flex items-center justify-center',
                         myRSVP === 'attending'
-                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold'
                           : 'bg-studio-950 border-studio-800 text-studio-400 hover:text-white'
                       )}
                     >
@@ -391,9 +391,9 @@ export function RehearsalPlanner({
                     <button
                       onClick={() => handleRSVP(event.id, 'tentative')}
                       className={clsx(
-                        'px-2.5 py-1 rounded-lg text-xs font-semibold transition border',
+                        'px-2 py-1.5 rounded-lg text-center text-[11px] sm:text-xs font-semibold transition border flex items-center justify-center',
                         myRSVP === 'tentative'
-                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'
                           : 'bg-studio-950 border-studio-800 text-studio-400 hover:text-white'
                       )}
                     >
@@ -402,13 +402,13 @@ export function RehearsalPlanner({
                     <button
                       onClick={() => handleRSVP(event.id, 'declined')}
                       className={clsx(
-                        'px-2.5 py-1 rounded-lg text-xs font-semibold transition border',
+                        'px-2 py-1.5 rounded-lg text-center text-[11px] sm:text-xs font-semibold transition border flex items-center justify-center',
                         myRSVP === 'declined'
-                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 font-bold'
                           : 'bg-studio-950 border-studio-800 text-studio-400 hover:text-white'
                       )}
                     >
-                      Can&apos;t Make It
+                      Can&apos;t Go
                     </button>
                   </div>
                 </div>
