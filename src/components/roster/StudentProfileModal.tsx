@@ -32,7 +32,9 @@ import {
   Check,
   ShieldCheck,
   Compass,
+  Camera,
 } from 'lucide-react';
+import { ChangeAvatarModal } from '@/components/profile/ChangeAvatarModal';
 
 interface StudentProfileModalProps {
   isOpen: boolean;
@@ -145,6 +147,7 @@ export function StudentProfileModal({
 }: StudentProfileModalProps) {
   const [isEditingAge, setIsEditingAge] = useState(false);
   const [newAgeInput, setNewAgeInput] = useState('');
+  const [isChangeAvatarOpen, setIsChangeAvatarOpen] = useState(false);
 
   if (!isOpen || !student) return null;
 
@@ -178,6 +181,16 @@ export function StudentProfileModal({
     setNewAgeInput('');
   };
 
+  const handleSaveAvatar = (newAvatarUrl: string) => {
+    DataStore.updateUserAvatar(student.id, newAvatarUrl);
+    if (onStudentUpdated) {
+      onStudentUpdated({
+        ...student,
+        avatar: newAvatarUrl,
+      });
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-2xl max-h-[90vh] bg-studio-900 border border-studio-700/80 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
@@ -200,39 +213,61 @@ export function StudentProfileModal({
         {/* Scrollable Content */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-6">
           {/* Section 1: Hero Identity */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-studio-950/60 p-4 rounded-2xl border border-studio-800/80">
-            <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-studio-800 border-2 border-studio-700 shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={student.avatar}
-                alt={student.name}
-                className="w-full h-full object-cover"
-              />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-studio-950/60 p-4 rounded-2xl border border-studio-800/80">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-studio-800 border-2 border-studio-700 shrink-0 group">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={student.avatar}
+                  alt={student.name}
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsChangeAvatarOpen(true)}
+                  className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold transition-opacity"
+                  title="Change profile picture"
+                >
+                  <Camera className="w-4 h-4 text-amber-400 mb-0.5" />
+                  Change
+                </button>
+              </div>
+
+              <div className="min-w-0 space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                    {student.name}
+                  </h2>
+                  {student.pronouns && <Badge pronouns={student.pronouns} />}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-studio-900 border border-studio-700 text-xs text-white capitalize font-semibold">
+                    <InstrumentIcon
+                      instrument={student.primaryInstrument}
+                      size="xs"
+                      showLabel
+                    />
+                  </div>
+                  <Badge skill={student.skillLevel} />
+                  <Badge role="student" />
+                </div>
+
+                <p className="text-xs text-studio-400 font-mono truncate">
+                  {student.email}
+                </p>
+              </div>
             </div>
 
-            <div className="flex-1 min-w-0 space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                  {student.name}
-                </h2>
-                {student.pronouns && <Badge pronouns={student.pronouns} />}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-studio-900 border border-studio-700 text-xs text-white capitalize font-semibold">
-                  <InstrumentIcon
-                    instrument={student.primaryInstrument}
-                    size="xs"
-                    showLabel
-                  />
-                </div>
-                <Badge skill={student.skillLevel} />
-                <Badge role="student" />
-              </div>
-
-              <p className="text-xs text-studio-400 font-mono truncate">
-                {student.email}
-              </p>
+            <div className="shrink-0 self-stretch sm:self-center">
+              <button
+                type="button"
+                onClick={() => setIsChangeAvatarOpen(true)}
+                className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-studio-900 hover:bg-studio-800 text-studio-300 hover:text-white border border-studio-700 text-xs font-semibold transition"
+              >
+                <Camera className="w-3.5 h-3.5 text-amber-400" />
+                <span>Change Photo</span>
+              </button>
             </div>
           </div>
 
@@ -614,6 +649,16 @@ export function StudentProfileModal({
           </div>
         </div>
       </div>
+
+      {student && (
+        <ChangeAvatarModal
+          isOpen={isChangeAvatarOpen}
+          onClose={() => setIsChangeAvatarOpen(false)}
+          currentAvatar={student.avatar}
+          userName={student.name}
+          onSave={handleSaveAvatar}
+        />
+      )}
     </div>
   );
 }

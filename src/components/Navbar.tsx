@@ -14,6 +14,7 @@ import {
   Palette,
   Radio,
   Sparkles,
+  Camera,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { DataStore, subscribeToStore } from '@/lib/data-store';
@@ -21,14 +22,23 @@ import { Band } from '@/types';
 import { RoleSwitcher } from './RoleSwitcher';
 import { QRCodeModal } from './QRCodeModal';
 import { StudioBrandingModal } from './branding/StudioBrandingModal';
+import { ChangeAvatarModal } from './profile/ChangeAvatarModal';
 import { clsx } from 'clsx';
 
 export function Navbar() {
   const pathname = usePathname();
-  const { isAdmin, isStudent, currentUser, activeDirectorId, activeBranding } = useAuth();
+  const {
+    isAdmin,
+    isStudent,
+    currentUser,
+    activeDirectorId,
+    activeBranding,
+    updateUserAvatar,
+  } = useAuth();
   const [studentBands, setStudentBands] = useState<Band[]>([]);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isBrandingOpen, setIsBrandingOpen] = useState(false);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -164,6 +174,32 @@ export function Navbar() {
             {/* Role & Perspective Switcher */}
             <RoleSwitcher />
 
+            {/* Current User Avatar / Quick Change Photo */}
+            {currentUser && (
+              <button
+                type="button"
+                onClick={() => setIsAvatarModalOpen(true)}
+                className="relative group p-0.5 rounded-full border border-studio-700 hover:border-amber-400 transition shrink-0"
+                title={`Change profile picture (${currentUser.name})`}
+                aria-label="Change profile picture"
+              >
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-studio-800">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                </div>
+                <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <Camera className="w-3.5 h-3.5 text-amber-300" />
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-studio-950 border border-studio-700 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 transition">
+                  <Camera className="w-2 h-2" />
+                </div>
+              </button>
+            )}
+
             {/* Mobile menu trigger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -178,6 +214,40 @@ export function Navbar() {
         {/* Mobile menu dropdown */}
         {mobileMenuOpen && (
           <div className="md:hidden px-4 pt-2 pb-4 border-t border-studio-800 bg-studio-950 space-y-1 animate-in fade-in slide-in-from-top-2 duration-150">
+            {/* User Profile Card inside mobile menu */}
+            {currentUser && (
+              <div className="pt-1 pb-2 border-b border-studio-800/80 mb-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsAvatarModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-studio-900 border border-studio-800 hover:border-amber-500/50 transition text-left"
+                >
+                  <div className="relative w-9 h-9 rounded-full overflow-hidden bg-studio-800 border border-studio-700 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={currentUser.avatar}
+                      alt={currentUser.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <Camera className="w-3 h-3 text-white" />
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-bold text-white truncate">
+                      {currentUser.name}
+                    </div>
+                    <div className="text-[11px] text-amber-400 flex items-center gap-1 font-medium">
+                      <Camera className="w-3 h-3" /> Change Profile Picture
+                    </div>
+                  </div>
+                </button>
+              </div>
+            )}
+
             {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive =
@@ -241,6 +311,19 @@ export function Navbar() {
         isOpen={isBrandingOpen}
         onClose={() => setIsBrandingOpen(false)}
       />
+
+      {/* Profile Picture Change Modal */}
+      {currentUser && (
+        <ChangeAvatarModal
+          isOpen={isAvatarModalOpen}
+          onClose={() => setIsAvatarModalOpen(false)}
+          currentAvatar={currentUser.avatar}
+          userName={currentUser.name}
+          onSave={(newAvatarUrl) => {
+            updateUserAvatar(newAvatarUrl);
+          }}
+        />
+      )}
     </>
   );
 }

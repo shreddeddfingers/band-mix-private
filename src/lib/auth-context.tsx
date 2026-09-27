@@ -34,6 +34,7 @@ interface AuthContextType {
   switchUser: (userId: string) => void;
   switchRole: (role: UserRole, studentId?: string) => void;
   availableUsers: UserProfile[];
+  updateUserAvatar: (avatarUrl: string, targetUserId?: string) => void;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   isFirebaseActive: boolean;
@@ -314,6 +315,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCurrentUser(director);
   };
 
+  const updateUserAvatar = (avatarUrl: string, targetUserId?: string) => {
+    const uid = targetUserId || currentUser?.id;
+    if (!uid) return;
+    DataStore.updateUserAvatar(uid, avatarUrl);
+    if (currentUser && currentUser.id === uid) {
+      setCurrentUser((prev) => (prev ? { ...prev, avatar: avatarUrl } : prev));
+    }
+  };
+
   const role = currentUser?.role || 'admin';
   const isAdmin = role === 'admin';
   const isStudent = role === 'student';
@@ -335,6 +345,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         switchUser,
         switchRole,
         availableUsers,
+        updateUserAvatar,
         signInWithGoogle,
         signOut,
         isFirebaseActive,

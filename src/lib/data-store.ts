@@ -717,12 +717,90 @@ export const DataStore = {
     students[idx] = updated;
     saveItem(STORAGE_KEYS.STUDENTS, students);
 
+    // If avatar was updated, propagate to all band rosters
+    if (updates.avatar) {
+      const bands = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);
+      let bandsChanged = false;
+      for (const b of bands) {
+        let memberUpdated = false;
+        for (const m of b.members) {
+          if (m.userId === studentId) {
+            m.avatar = updates.avatar;
+            memberUpdated = true;
+            bandsChanged = true;
+          }
+        }
+        if (memberUpdated && isFirebaseConfigured) {
+          FirestoreService.updateBand(b.id, { members: b.members }).catch(console.error);
+        }
+      }
+      if (bandsChanged) {
+        saveItem(STORAGE_KEYS.BANDS, bands);
+        notify('bands');
+      }
+    }
+
     if (isFirebaseConfigured) {
       FirestoreService.updateUser(studentId, updates).catch(console.error);
     }
 
     notify('students');
     return updated;
+  },
+
+  updateUserAvatar(userId: string, avatarUrl: string): void {
+    // 1. Check if user is director
+    const directors = this.getDirectors();
+    const dirIdx = directors.findIndex((d) => d.id === userId);
+    let isDir = false;
+    if (dirIdx >= 0) {
+      isDir = true;
+      directors[dirIdx].avatar = avatarUrl;
+      saveItem(STORAGE_KEYS.DIRECTORS, directors);
+      const activeDir = this.getDirector();
+      if (activeDir.id === userId) {
+        saveItem(STORAGE_KEYS.DIRECTOR, { ...activeDir, avatar: avatarUrl });
+      }
+    }
+
+    // 2. Check if user is student
+    const students = loadItem<UserProfile[]>(STORAGE_KEYS.STUDENTS, []);
+    const studentIdx = students.findIndex((s) => s.id === userId);
+    if (studentIdx >= 0) {
+      students[studentIdx].avatar = avatarUrl;
+      saveItem(STORAGE_KEYS.STUDENTS, students);
+    }
+
+    // 3. Propagate avatar to all band rosters where this user is enrolled
+    const bands = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);
+    let bandsChanged = false;
+    for (const b of bands) {
+      let memberUpdated = false;
+      for (const m of b.members) {
+        if (m.userId === userId) {
+          m.avatar = avatarUrl;
+          memberUpdated = true;
+          bandsChanged = true;
+        }
+      }
+      if (memberUpdated && isFirebaseConfigured) {
+        FirestoreService.updateBand(b.id, { members: b.members }).catch(console.error);
+      }
+    }
+    if (bandsChanged) {
+      saveItem(STORAGE_KEYS.BANDS, bands);
+      notify('bands');
+    }
+
+    // 4. Update in Firestore
+    if (isFirebaseConfigured) {
+      FirestoreService.updateUser(userId, { avatar: avatarUrl }).catch(console.error);
+    }
+
+    notify('students');
+    if (isDir) {
+      notify('branding');
+    }
   },
 
   // BANDS (CRUD)

@@ -15,6 +15,7 @@ import { StudentProfileModal } from '@/components/roster/StudentProfileModal';
 import { BandAnnouncementsTab } from '@/components/announcements/BandAnnouncementsTab';
 import { SetlistManager } from '@/components/repertoire/SetlistManager';
 import { SongSuggestionVoting } from '@/components/repertoire/SongSuggestionVoting';
+import { ChangeBandCoverModal } from '@/components/bands/ChangeBandCoverModal';
 import {
   Music,
   Calendar,
@@ -29,6 +30,7 @@ import {
   Sparkles,
   Megaphone,
   ListMusic,
+  Camera,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -45,6 +47,7 @@ export default function BandHubPage({
     'chat' | 'announcements' | 'repertoire' | 'suggestions' | 'schedule' | 'roster'
   >('chat');
   const [isQrOpen, setIsQrOpen] = useState(false);
+  const [isChangeCoverOpen, setIsChangeCoverOpen] = useState(false);
   const [viewProfileStudent, setViewProfileStudent] = useState<UserProfile | null>(null);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [selectedStudentToAdd, setSelectedStudentToAdd] = useState('');
@@ -191,7 +194,17 @@ export default function BandHubPage({
             </div>
 
             {/* Quick Actions on banner */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {(isAdmin || isMember) && (
+                <button
+                  onClick={() => setIsChangeCoverOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/70 hover:bg-black/90 text-white text-xs font-semibold border border-white/20 backdrop-blur-md transition shadow-sm"
+                  title="Change band cover picture"
+                >
+                  <Camera className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Change Band Picture</span>
+                </button>
+              )}
               {isAdmin && (
                 <button
                   onClick={() => setIsQrOpen(true)}
@@ -648,6 +661,19 @@ export default function BandHubPage({
           }
         }}
       />
+
+      {band && (
+        <ChangeBandCoverModal
+          isOpen={isChangeCoverOpen}
+          onClose={() => setIsChangeCoverOpen(false)}
+          bandName={band.name}
+          currentCover={band.coverImage}
+          onSave={(newCoverUrl) => {
+            DataStore.updateBand(band.id, { coverImage: newCoverUrl });
+            setBand((prev) => (prev ? { ...prev, coverImage: newCoverUrl } : prev));
+          }}
+        />
+      )}
     </div>
   );
 }
