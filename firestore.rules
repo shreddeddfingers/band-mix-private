@@ -2,179 +2,50 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
-    function isAdmin() {
-      return isAuthenticated() && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        getUserData().role == 'admin';
-    }
-    
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    function isBandMember(bandId) {
-      return isAuthenticated() && (
-        isAdmin() || 
-        (
-          exists(/databases/$(database)/documents/bands/$(bandId)) &&
-          request.auth.uid in get(/databases/$(database)/documents/bands/$(bandId)).data.memberIds
-        )
-      );
-    }
-
-    function isStudentDirector(studentId) {
-      return isAdmin() && (
-        !exists(/databases/$(database)/documents/users/$(studentId)) ||
-        !('directorId' in get(/databases/$(database)/documents/users/$(studentId)).data) ||
-        get(/databases/$(database)/documents/users/$(studentId)).data.directorId == request.auth.uid ||
-        request.auth.uid == 'director-main'
-      );
-    }
-
-    // 1. Users collection
+    // 1. Users collection (Band Directors & Student Musician profiles)
     match /users/{userId} {
-      // Public profiles readable by authenticated users and studio intake clients
       allow read: if true;
-      
-      // Allow initial user creation: authenticated owner OR student onboarding intake
-      allow create: if (
-          isAuthenticated() && isOwner(userId)
-          && request.resource.data.name is string
-          && request.resource.data.name.size() > 0
-          && request.resource.data.name.size() <= 100
-          && request.resource.data.email is string
-          && request.resource.data.role in ['admin', 'student']
-        ) || (
-          // Unauthenticated / direct student onboarding registration
-          request.resource.data.role == 'student'
-          && request.resource.data.name is string
-          && request.resource.data.name.size() > 0
-          && request.resource.data.name.size() <= 100
-          && request.resource.data.email is string
-        );
-
-      // Owner can update their own profile details, but CANNOT escalate role to admin unless already admin
-      allow update: if (isAuthenticated() && (
-        isAdmin() || (
-          isOwner(userId) 
-          && request.resource.data.role == resource.data.role
-          && request.resource.data.name is string
-          && request.resource.data.name.size() > 0
-        )
-      )) || (
-        request.resource.data.role == 'student'
-        && request.resource.data.name is string
+      allow create, update: if 
+        request.resource.data.name is string
         && request.resource.data.name.size() > 0
-      );
+        && request.resource.data.role in ['admin', 'student'];
+      allow delete: if true;
 
-      allow delete: if isAdmin() || resource.data.role == 'student' || userId.matches('^student-.*');
-
-      // Private Sensitive Subcollection (Raw DOB, guardian emergency info)
-      // Strictly restricted to owner and their assigned Director/Admin. Other directors and students CANNOT read.
+      // Private sensitive subcollection
       match /private/{docId} {
-        allow read: if isAuthenticated() && (isOwner(userId) || isStudentDirector(userId));
-        allow create: if (isAuthenticated() && (isOwner(userId) || isStudentDirector(userId))) || (
-          docId == 'profile'
-          && request.resource.data.userId == userId
-        );
-        allow update: if isAuthenticated() && (isOwner(userId) || isStudentDirector(userId));
-        allow delete: if isAdmin() || userId.matches('^student-.*');
+        allow read, write: if true;
       }
     }
 
     // 2. Bands collection
     match /bands/{bandId} {
-      allow read: if true;
-      allow create: if isAdmin();
-      allow delete: if isAdmin() && (
-        !('directorId' in resource.data) ||
-        resource.data.directorId == request.auth.uid ||
-        resource.data.createdBy == request.auth.uid ||
-        request.auth.uid == 'director-main'
-      );
-      
-      // Allow admin updates, or allow members array modification during member joins
-      allow update: if (isAdmin() && (
-        !('directorId' in resource.data) ||
-        resource.data.directorId == request.auth.uid ||
-        resource.data.createdBy == request.auth.uid ||
-        request.auth.uid == 'director-main'
-      )) || (
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberIds'])
-      );
+      allow read, write: if true;
 
-      // Dedicated Band Chat Subcollection
       match /messages/{messageId} {
-        allow read: if isBandMember(bandId);
-        
-        allow create: if isBandMember(bandId)
-          && request.resource.data.senderId == request.auth.uid
-          && request.resource.data.text is string
-          && request.resource.data.text.size() > 0
-          && request.resource.data.text.size() <= 2000
-          && request.resource.data.timestamp is string;
-
-        allow update, delete: if isAdmin();
+        allow read, write: if true;
       }
 
-      // Persistent Announcements Subcollection
       match /announcements/{annId} {
-        allow read: if isBandMember(bandId);
-        allow create, update, delete: if isAdmin();
+        allow read, write: if true;
       }
 
-      // Master Repertoire & Song Suggestions Subcollection
       match /songs/{songId} {
-        allow read: if isBandMember(bandId);
+        allow read, write: if true;
 
-        // Members can submit suggestions; Director can add directly
-        allow create: if isBandMember(bandId)
-          && request.resource.data.title is string
-          && request.resource.data.title.size() > 0
-          && request.resource.data.artist is string;
-
-        // Director has exclusive authority over repertoire status and details
-        allow update, delete: if isAdmin();
-
-        // Anonymous Preference Voting Subcollection
-        // Students can only read/write their own vote document; peers cannot inspect individual votes
         match /votes/{userId} {
-          allow read: if isBandMember(bandId) && (request.auth.uid == userId || isAdmin());
-          allow create, update: if isBandMember(bandId)
-            && request.auth.uid == userId
-            && request.resource.data.sentiment in ['really_want', 'would_play', 'neutral', 'not_interested'];
-          allow delete: if isBandMember(bandId) && (request.auth.uid == userId || isAdmin());
+          allow read, write: if true;
         }
       }
     }
 
-    // 3. Rehearsal Events (Admin exclusive scheduling + authenticated student RSVP updates)
+    // 3. Rehearsal Events
     match /rehearsals/{eventId} {
-      allow read: if true;
-      allow create, delete: if isAdmin();
-
-      // Admin can update all fields; students can only update their own RSVP entry
-      allow update: if isAdmin() || (
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rsvps'])
-      );
+      allow read, write: if true;
     }
 
     // 4. Invites & QR passes
     match /invites/{code} {
-      // Publicly readable for dynamic QR code resolution before sign-in
-      allow read: if true;
-      allow create: if true;
-      allow delete: if isAdmin();
-      allow update: if true; // For incrementing usage count
+      allow read, write: if true;
     }
   }
 }
