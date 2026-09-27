@@ -80,6 +80,7 @@ export const BRAND_PRESETS: Record<BrandPresetKey, StudioBranding> = {
 const STORAGE_KEYS = {
   BANDS: 'bandmix_prod_bands',
   STUDENTS: 'bandmix_prod_students',
+  DELETED_STUDENTS: 'bandmix_prod_deleted_students',
   DIRECTOR: 'bandmix_prod_director',
   DIRECTORS: 'bandmix_prod_directors',
   MESSAGES: 'bandmix_prod_messages',
@@ -180,6 +181,7 @@ export const DataStore = {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(STORAGE_KEYS.BANDS);
     localStorage.removeItem(STORAGE_KEYS.STUDENTS);
+    localStorage.removeItem(STORAGE_KEYS.DELETED_STUDENTS);
     localStorage.removeItem(STORAGE_KEYS.DIRECTOR);
     localStorage.removeItem(STORAGE_KEYS.DIRECTORS);
     localStorage.removeItem(STORAGE_KEYS.MESSAGES);
@@ -375,10 +377,21 @@ export const DataStore = {
     return newDirector;
   },
 
+  getDeletedStudentIds(): string[] {
+    return loadItem<string[]>(STORAGE_KEYS.DELETED_STUDENTS, []);
+  },
+
   getStudents(directorId?: string): UserProfile[] {
+    const deletedSet = new Set(this.getDeletedStudentIds());
     const students = loadItem<UserProfile[]>(STORAGE_KEYS.STUDENTS, []);
-    if (!directorId) return students;
-    return students.filter(
+    const active = students.filter(
+      (s) =>
+        !deletedSet.has(s.id) &&
+        !(s as any).isDeleted &&
+        !(s as any).deleted
+    );
+    if (!directorId) return active;
+    return active.filter(
       (s) =>
         s.directorId === directorId ||
         !s.directorId ||
@@ -387,12 +400,31 @@ export const DataStore = {
   },
 
   mergeRemoteStudents(remoteStudents: UserProfile[]): void {
-    if (!remoteStudents || remoteStudents.length === 0) return;
+    if (!remoteStudents) return;
+    const deletedSet = new Set(this.getDeletedStudentIds());
     const local = loadItem<UserProfile[]>(STORAGE_KEYS.STUDENTS, []);
-    let changed = false;
-    const merged = [...local];
 
-    for (const remote of remoteStudents) {
+    // Filter out deleted students from both local and remote
+    const validRemote = remoteStudents.filter(
+      (s) =>
+        !deletedSet.has(s.id) &&
+        !(s as any).isDeleted &&
+        !(s as any).deleted &&
+        s.role === 'student'
+    );
+    let changed = false;
+    let merged = local.filter(
+      (s) =>
+        !deletedSet.has(s.id) &&
+        !(s as any).isDeleted &&
+        !(s as any).deleted
+    );
+
+    if (merged.length !== local.length) {
+      changed = true;
+    }
+
+    for (const remote of validRemote) {
       const idx = merged.findIndex((s) => s.id === remote.id);
       if (idx >= 0) {
         if (JSON.stringify(merged[idx]) !== JSON.stringify(remote)) {
@@ -570,6 +602,9 @@ export const DataStore = {
       bandIds: studentData.bandIdToJoin ? [studentData.bandIdToJoin] : [],
     };
 
+    const deleted = this.getDeletedStudentIds().filter((id) => id !== newId);
+    saveItem(STORAGE_KEYS.DELETED_STUDENTS, deleted);
+
     const updated = [newStudent, ...students];
     saveItem(STORAGE_KEYS.STUDENTS, updated);
 
@@ -602,16 +637,23 @@ export const DataStore = {
     return newStudent;
   },
 
-  deleteStudent(studentId: string): void {
+  async deleteStudent(studentId: string): Promise<void> {
     const director = this.getDirector();
     if (studentId === director.id) return; // Cannot delete director
 
-    // 1. Remove from local students list
+    // 1. Permanently record in deleted student tombstone to prevent resurrection
+    const deletedIds = this.getDeletedStudentIds();
+    if (!deletedIds.includes(studentId)) {
+      deletedIds.push(studentId);
+      saveItem(STORAGE_KEYS.DELETED_STUDENTS, deletedIds);
+    }
+
+    // 2. Remove from local students list
     const students = loadItem<UserProfile[]>(STORAGE_KEYS.STUDENTS, []);
     const filteredStudents = students.filter((s) => s.id !== studentId);
     saveItem(STORAGE_KEYS.STUDENTS, filteredStudents);
 
-    // 2. Remove private profile if any
+    // 3. Remove private profile if any
     const privateProfiles = loadItem<Record<string, PrivateUserProfile>>(
       STORAGE_KEYS.PRIVATE_PROFILES,
       {}
@@ -621,16 +663,20 @@ export const DataStore = {
       saveItem(STORAGE_KEYS.PRIVATE_PROFILES, privateProfiles);
     }
 
-    // 3. Remove student from all bands
+    // 4. Remove student from all bands
     const bands = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);
     let bandsChanged = false;
     for (const b of bands) {
       const hasMember = b.members.some((m) => m.userId === studentId);
       if (hasMember) {
         b.members = b.members.filter((m) => m.userId !== studentId);
+        b.memberIds = (b.memberIds || []).filter((id) => id !== studentId);
         bandsChanged = true;
         if (isFirebaseConfigured) {
-          FirestoreService.updateBand(b.id, { members: b.members }).catch(console.error);
+          FirestoreService.updateBand(b.id, {
+            members: b.members,
+            memberIds: b.memberIds,
+          }).catch(console.error);
         }
       }
     }
@@ -639,12 +685,16 @@ export const DataStore = {
       notify('bands');
     }
 
-    // 4. Remote delete from Firestore if configured
+    // 5. Remote delete from Firestore if configured
     if (isFirebaseConfigured) {
-      FirestoreService.deleteUser(studentId).catch(console.error);
+      try {
+        await FirestoreService.deleteUser(studentId);
+      } catch (err) {
+        console.error('Remote user deletion error:', err);
+      }
     }
 
-    // 5. Notify listeners
+    // 6. Notify listeners
     notify('students');
   },
 
@@ -818,7 +868,10 @@ export const DataStore = {
     }
 
     if (isFirebaseConfigured) {
-      FirestoreService.updateBand(bandId, { members: band.members }).catch(console.error);
+      FirestoreService.updateBand(bandId, {
+        members: band.members,
+        memberIds: band.members.map((m) => m.userId),
+      }).catch(console.error);
       if (studentObj) {
         FirestoreService.updateUser(student.id, { bandIds: studentObj.bandIds }).catch(console.error);
       }
@@ -844,6 +897,7 @@ export const DataStore = {
     if (!band) return;
 
     band.members = band.members.filter((m) => m.userId !== userId);
+    band.memberIds = band.members.map((m) => m.userId);
     saveItem(STORAGE_KEYS.BANDS, bands);
 
     const students = this.getStudents();
@@ -855,7 +909,10 @@ export const DataStore = {
     }
 
     if (isFirebaseConfigured) {
-      FirestoreService.updateBand(bandId, { members: band.members }).catch(console.error);
+      FirestoreService.updateBand(bandId, {
+        members: band.members,
+        memberIds: band.memberIds,
+      }).catch(console.error);
       if (student) {
         FirestoreService.updateUser(userId, { bandIds: student.bandIds }).catch(console.error);
       }

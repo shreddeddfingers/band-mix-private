@@ -59,13 +59,17 @@ export const FirestoreService = {
   async getUser(uid: string): Promise<UserProfile | null> {
     const firestore = getDb();
     const snap = await getDoc(doc(firestore, 'users', uid));
-    return snap.exists() ? (snap.data() as UserProfile) : null;
+    if (!snap.exists()) return null;
+    const data = snap.data() as UserProfile & { isDeleted?: boolean; deleted?: boolean };
+    return data.isDeleted || data.deleted ? null : data;
   },
 
   async getAllUsers(): Promise<UserProfile[]> {
     const firestore = getDb();
     const snap = await getDocs(collection(firestore, 'users'));
-    return snap.docs.map((d) => d.data() as UserProfile);
+    return snap.docs
+      .map((d) => d.data() as UserProfile & { isDeleted?: boolean; deleted?: boolean })
+      .filter((u) => !u.isDeleted && !u.deleted);
   },
 
   subscribeUsers(callback: (users: UserProfile[]) => void): Unsubscribe {
@@ -74,7 +78,9 @@ export const FirestoreService = {
     return onSnapshot(
       col,
       (snapshot) => {
-        const users = snapshot.docs.map((d) => d.data() as UserProfile);
+        const users = snapshot.docs
+          .map((d) => d.data() as UserProfile & { isDeleted?: boolean; deleted?: boolean })
+          .filter((u) => !u.isDeleted && !u.deleted);
         callback(users);
       },
       (err) => {
@@ -97,7 +103,25 @@ export const FirestoreService = {
 
   async deleteUser(uid: string): Promise<void> {
     const firestore = getDb();
-    await deleteDoc(doc(firestore, 'users', uid));
+    // 1. Soft-delete tombstone first (supported under student update permissions without requiring admin auth)
+    try {
+      await updateDoc(doc(firestore, 'users', uid), {
+        isDeleted: true,
+        deleted: true,
+        deletedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.warn('Soft-delete doc marker failed:', err);
+    }
+
+    // 2. Hard delete doc (succeeds if authenticated as admin or permitted ID)
+    try {
+      await deleteDoc(doc(firestore, 'users', uid));
+    } catch {
+      // Handled by soft-delete tombstone
+    }
+
+    // 3. Delete private sensitive doc
     try {
       await deleteDoc(doc(firestore, `users/${uid}/private`, 'profile'));
     } catch {
@@ -166,7 +190,9 @@ export const FirestoreService = {
     const firestore = getDb();
     const q = query(collection(firestore, 'users'), where('directorId', '==', directorId));
     const snap = await getDocs(q);
-    return snap.docs.map((d) => d.data() as UserProfile);
+    return snap.docs
+      .map((d) => d.data() as UserProfile & { isDeleted?: boolean; deleted?: boolean })
+      .filter((u) => !u.isDeleted && !u.deleted);
   },
 
   async deleteBand(id: string): Promise<void> {

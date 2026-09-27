@@ -155,6 +155,7 @@ export interface Band {
   directorId?: string;   // Explicit Director UID for multi-director scoping
   createdAt: string;
   members: BandMember[];
+  memberIds?: string[];
   rehearsalSchedule?: string; // e.g. "Tuesdays 5:00 PM - 7:00 PM"
   status: 'active' | 'forming' | 'archived';
   archivedAt?: string;

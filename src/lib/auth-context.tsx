@@ -128,12 +128,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         unsubRemoteInvites = FirestoreService.subscribeInvites((remoteInvites) => {
           DataStore.mergeRemoteInvites(remoteInvites);
         });
-
-        // Auto-sync existing local students to Firestore (recovers accounts created before rules deployment)
-        const localStudents = DataStore.getStudents();
-        for (const student of localStudents) {
-          FirestoreService.setUser(student).catch(console.error);
-        }
       } catch (err) {
         console.warn('Real-time cloud sync subscription failed:', err);
       }
@@ -151,7 +145,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setCurrentUser(director);
       } else {
         const updated = all.find((u) => u.id === currentUser.id);
-        if (updated) setCurrentUser(updated);
+        if (updated) {
+          setCurrentUser(updated);
+        } else if (currentUser.role === 'student') {
+          // If the currently viewed student profile was deleted, switch back to director
+          const director = DataStore.getDirector();
+          setCurrentUser(director);
+        }
       }
     };
 

@@ -112,6 +112,15 @@ export default function BandHubPage({
     if (!isAdmin) return;
     if (confirm(`Remove ${memberName} from this band?`)) {
       DataStore.removeMemberFromBand(band.id, userId);
+      setBand((prev) =>
+        prev
+          ? {
+              ...prev,
+              members: prev.members.filter((m) => m.userId !== userId),
+              memberIds: (prev.memberIds || []).filter((id) => id !== userId),
+            }
+          : null
+      );
     }
   };
 
@@ -458,13 +467,23 @@ export default function BandHubPage({
                       Remove from Band
                     </button>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (
                           confirm(
                             `Permanently remove "${member.name}" from the studio roster? This deletes their account and removes them from all ensembles.`
                           )
                         ) {
-                          DataStore.deleteStudent(member.userId);
+                          const targetId = member.userId;
+                          setBand((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  members: prev.members.filter((m) => m.userId !== targetId),
+                                  memberIds: (prev.memberIds || []).filter((id) => id !== targetId),
+                                }
+                              : null
+                          );
+                          await DataStore.deleteStudent(targetId);
                           const updated = DataStore.getBand(band.id);
                           if (updated) setBand({ ...updated });
                         }

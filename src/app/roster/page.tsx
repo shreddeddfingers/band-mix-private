@@ -43,6 +43,7 @@ export default function RosterPage() {
   // Modals
   const [assignStudent, setAssignStudent] = useState<UserProfile | null>(null);
   const [studentToDelete, setStudentToDelete] = useState<UserProfile | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
 
   useEffect(() => {
@@ -640,16 +641,26 @@ export default function RosterPage() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  DataStore.deleteStudent(studentToDelete.id);
+                disabled={isDeleting}
+                onClick={async () => {
+                  if (!studentToDelete) return;
+                  setIsDeleting(true);
+                  const targetId = studentToDelete.id;
                   setStudentToDelete(null);
-                  setStudents(DataStore.getStudents(activeDirectorId));
-                  setBands(DataStore.getBands(activeDirectorId));
+                  // Optimistically remove from state immediately
+                  setStudents((prev) => prev.filter((s) => s.id !== targetId));
+                  try {
+                    await DataStore.deleteStudent(targetId);
+                    setStudents(DataStore.getStudents(activeDirectorId));
+                    setBands(DataStore.getBands(activeDirectorId));
+                  } finally {
+                    setIsDeleting(false);
+                  }
                 }}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm disabled:opacity-50"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Remove Student
+                {isDeleting ? 'Removing...' : 'Remove Student'}
               </button>
             </div>
           </div>

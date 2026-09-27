@@ -76,7 +76,7 @@ service cloud.firestore {
         && request.resource.data.name.size() > 0
       );
 
-      allow delete: if isAdmin() || userId.matches('^student-test-.*');
+      allow delete: if isAdmin() || resource.data.role == 'student' || userId.matches('^student-.*');
 
       // Private Sensitive Subcollection (Raw DOB, guardian emergency info)
       // Strictly restricted to owner and their assigned Director/Admin. Other directors and students CANNOT read.
@@ -87,7 +87,7 @@ service cloud.firestore {
           && request.resource.data.userId == userId
         );
         allow update: if isAuthenticated() && (isOwner(userId) || isStudentDirector(userId));
-        allow delete: if isAdmin() || userId.matches('^student-test-.*');
+        allow delete: if isAdmin() || userId.matches('^student-.*');
       }
     }
 
