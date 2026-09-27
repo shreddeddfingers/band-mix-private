@@ -8,6 +8,7 @@ export async function POST(req: Request) {
       success: true,
       message: 'All remote Firestore accounts, bands, invites, and data have been wiped clean.',
       deletedCount: result.deletedCount,
+      details: result.details,
     });
   } catch (err: any) {
     console.error('Error during Firestore purge:', err);
@@ -22,6 +23,7 @@ export async function GET(req: Request) {
       success: true,
       message: 'All remote Firestore accounts, bands, invites, and data have been wiped clean.',
       deletedCount: result.deletedCount,
+      details: result.details,
     });
   } catch (err: any) {
     console.error('Error during Firestore purge:', err);

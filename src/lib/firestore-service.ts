@@ -399,25 +399,28 @@ export const FirestoreService = {
   },
 
   // --- FULL PURGE (For clean studio resets) ---
-  async purgeAllRemoteData(): Promise<{ success: boolean; deletedCount: number }> {
+  async purgeAllRemoteData(): Promise<{ success: boolean; deletedCount: number; details: Record<string, any> }> {
     const firestore = getDb();
     const cols = ['users', 'bands', 'invites', 'rehearsals'];
     let count = 0;
+    const details: Record<string, any> = {};
     for (const col of cols) {
       try {
         const snap = await getDocs(collection(firestore, col));
+        details[col] = snap.docs.length;
         for (const docSnap of snap.docs) {
           try {
             await deleteDoc(doc(firestore, col, docSnap.id));
             count++;
-          } catch (e) {
+          } catch (e: any) {
             console.warn(`Failed to delete ${col}/${docSnap.id}:`, e);
+            details[`${col}_del_error_${docSnap.id}`] = e?.message || String(e);
           }
         }
-      } catch (err) {
-        console.warn(`Failed to query collection ${col}:`, err);
+      } catch (err: any) {
+        details[`${col}_query_error`] = err?.message || String(err);
       }
     }
-    return { success: true, deletedCount: count };
+    return { success: true, deletedCount: count, details };
   },
 };
