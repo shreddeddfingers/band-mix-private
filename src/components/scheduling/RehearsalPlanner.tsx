@@ -454,7 +454,7 @@ export function RehearsalPlanner({
                     value={selectedBandId}
                     onChange={(e) => setSelectedBandId(e.target.value)}
                     required
-                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                   >
                     {bands.map((b) => (
                       <option key={b.id} value={b.id}>
@@ -471,7 +471,7 @@ export function RehearsalPlanner({
                   <select
                     value={eventType}
                     onChange={(e) => setEventType(e.target.value as BandEventType)}
-                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500 font-semibold capitalize"
+                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500 font-semibold capitalize"
                   >
                     <option value="rehearsal">Rehearsal</option>
                     <option value="gig">Live Gig / Concert</option>
@@ -497,7 +497,7 @@ export function RehearsalPlanner({
                       : 'e.g. Rhythm Section Tightening & Solos'
                   }
                   required
-                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -511,7 +511,7 @@ export function RehearsalPlanner({
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     required
-                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3 py-2 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
                 <div>
@@ -523,7 +523,7 @@ export function RehearsalPlanner({
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
                     required
-                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3 py-2 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
                 <div>
@@ -535,7 +535,7 @@ export function RehearsalPlanner({
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
                     required
-                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3 py-2 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
@@ -551,7 +551,7 @@ export function RehearsalPlanner({
                       type="time"
                       value={callTime}
                       onChange={(e) => setCallTime(e.target.value)}
-                      className="w-full bg-studio-900 border border-studio-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                      className="w-full bg-studio-900 border border-studio-700 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-white focus:outline-none focus:border-amber-500"
                     />
                   </div>
                   <div>
@@ -562,7 +562,7 @@ export function RehearsalPlanner({
                       type="time"
                       value={performanceTime}
                       onChange={(e) => setPerformanceTime(e.target.value)}
-                      className="w-full bg-studio-900 border border-studio-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                      className="w-full bg-studio-900 border border-studio-700 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-white focus:outline-none focus:border-amber-500"
                     />
                   </div>
                 </div>
@@ -578,7 +578,7 @@ export function RehearsalPlanner({
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="e.g. Studio A, Rehearsal Hall 2, Downtown Amphitheater"
                   required
-                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -625,7 +625,7 @@ export function RehearsalPlanner({
                   value={customSetlistInput}
                   onChange={(e) => setCustomSetlistInput(e.target.value)}
                   placeholder="e.g. Chameleon, Superstition, Cissy Strut"
-                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -638,7 +638,7 @@ export function RehearsalPlanner({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Specific goals, charts to review, dress code..."
-                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 

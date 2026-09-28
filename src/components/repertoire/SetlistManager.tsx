@@ -159,10 +159,10 @@ export function SetlistManager({ band }: SetlistManagerProps) {
         )}
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+      {/* Filter Tabs - Apple HIG zero-scroll responsive control */}
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 p-1 bg-studio-950/60 rounded-2xl border border-studio-800/80">
         {[
-          { id: 'all', label: 'Active Repertoire' },
+          { id: 'all', label: 'Active Repertoire', fullWidth: true },
           { id: 'learning', label: 'Learning' },
           { id: 'rehearsing', label: 'Rehearsing' },
           { id: 'performance_ready', label: 'Performance Ready' },
@@ -170,11 +170,13 @@ export function SetlistManager({ band }: SetlistManagerProps) {
         ].map((tab) => (
           <button
             key={tab.id}
+            type="button"
             onClick={() => setActiveFilter(tab.id)}
             className={clsx(
-              'px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition border',
+              'px-3 py-2 rounded-xl text-xs font-bold transition border text-center active:scale-95',
+              tab.fullWidth ? 'col-span-2 sm:col-span-1' : '',
               activeFilter === tab.id
-                ? 'bg-amber-500 text-slate-950 border-amber-400'
+                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm'
                 : 'bg-studio-900 border-studio-800 text-studio-400 hover:text-white'
             )}
           >
@@ -318,7 +320,7 @@ export function SetlistManager({ band }: SetlistManagerProps) {
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Chameleon"
                   required
-                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -332,7 +334,7 @@ export function SetlistManager({ band }: SetlistManagerProps) {
                   onChange={(e) => setArtist(e.target.value)}
                   placeholder="e.g. Herbie Hancock"
                   required
-                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -346,7 +348,7 @@ export function SetlistManager({ band }: SetlistManagerProps) {
                     value={key}
                     onChange={(e) => setKey(e.target.value)}
                     placeholder="e.g. Bb Dorian / Am"
-                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3 py-2 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
 
@@ -359,7 +361,7 @@ export function SetlistManager({ band }: SetlistManagerProps) {
                     value={tempoBpm}
                     onChange={(e) => setTempoBpm(e.target.value)}
                     placeholder="e.g. 112"
-                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3 py-2 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
@@ -373,7 +375,7 @@ export function SetlistManager({ band }: SetlistManagerProps) {
                   value={vocalists}
                   onChange={(e) => setVocalists(e.target.value)}
                   placeholder="e.g. Julian (Lead), Maya (Harmonies)"
-                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -386,7 +388,7 @@ export function SetlistManager({ band }: SetlistManagerProps) {
                   value={directorNotes}
                   onChange={(e) => setDirectorNotes(e.target.value)}
                   placeholder="Specific solo order, bridge changes, horn intro..."
-                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -397,7 +399,7 @@ export function SetlistManager({ band }: SetlistManagerProps) {
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as SongStatus)}
-                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500 capitalize"
+                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500 capitalize"
                 >
                   <option value="learning">Learning</option>
                   <option value="rehearsing">Rehearsing</option>

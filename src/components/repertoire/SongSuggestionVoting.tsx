@@ -351,7 +351,7 @@ export function SongSuggestionVoting({ band }: SongSuggestionVotingProps) {
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Superstition"
                   required
-                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -365,7 +365,7 @@ export function SongSuggestionVoting({ band }: SongSuggestionVotingProps) {
                   onChange={(e) => setArtist(e.target.value)}
                   placeholder="e.g. Stevie Wonder"
                   required
-                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -378,7 +378,7 @@ export function SongSuggestionVoting({ band }: SongSuggestionVotingProps) {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="e.g. Great keyboard groove, fun brass lines, energetic tempo..."
-                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 

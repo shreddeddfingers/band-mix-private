@@ -215,7 +215,7 @@ export function BandAnnouncementsTab({ band }: BandAnnouncementsTabProps) {
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Rehearsal Room Change & Concert Charts"
                   required
-                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -229,7 +229,7 @@ export function BandAnnouncementsTab({ band }: BandAnnouncementsTabProps) {
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="Write the full message for the band members..."
                   required
-                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
 
