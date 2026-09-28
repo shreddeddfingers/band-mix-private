@@ -293,153 +293,98 @@ export default function BandHubPage({
             </div>
           </div>
 
-          {/* Desktop member chips */}
-          <div className="hidden sm:flex items-center gap-2 overflow-x-auto py-1 no-scrollbar max-w-full">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-studio-400 mr-1 flex items-center gap-1 shrink-0">
-              <Users className="w-3.5 h-3.5" /> Roster:
-            </span>
-            {band.members.map((member) => (
-              <div
-                key={member.userId}
-                className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-studio-900 border border-studio-800 text-xs shrink-0"
-              >
-                <div className="w-6 h-6 rounded-full overflow-hidden border border-studio-700 shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={member.avatar}
-                    alt={member.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <span className="font-bold text-white whitespace-nowrap">{member.name}</span>
-                <InstrumentIcon instrument={member.instrument} size="xs" showLabel />
-                {member.role === 'director' ? (
-                  <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">
-                    DIRECTOR
-                  </span>
-                ) : (
-                  isAdmin && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleRemoveMember(member.userId, member.name)
-                      }
-                      className="text-studio-500 hover:text-rose-400 p-0.5 rounded"
-                      title="Remove from Band"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  )
-                )}
+          {/* Compact Roster & Target Schedule Overview (Zero horizontal scrolling) */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+            <button
+              type="button"
+              onClick={() => setActiveTab('roster')}
+              className="flex items-center gap-2.5 group text-left min-w-0"
+              title="Click to view full band roster"
+            >
+              {/* Overlapping avatar stack */}
+              <div className="flex -space-x-2 overflow-hidden shrink-0">
+                {band.members.slice(0, 5).map((member) => (
+                  <div
+                    key={member.userId}
+                    className="inline-block w-8 h-8 rounded-full ring-2 ring-studio-950 overflow-hidden bg-studio-800"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={member.avatar}
+                      alt={member.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
+              <div className="min-w-0">
+                <span className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-400 transition flex items-center gap-1.5 truncate">
+                  <Users className="w-3.5 h-3.5 text-amber-400" />
+                  {band.members.length} Musicians in Ensemble
+                  <span className="text-amber-400 text-xs">→</span>
+                </span>
+                <span className="text-[10px] text-studio-400 block -mt-0.5">
+                  Tap to view roster questionnaire &amp; profiles
+                </span>
+              </div>
+            </button>
 
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={() => setIsAddMemberOpen(true)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-studio-900 hover:bg-studio-800 border border-dashed border-studio-700 text-xs text-amber-400 font-semibold transition shrink-0 whitespace-nowrap"
-              >
-                <UserPlus className="w-3.5 h-3.5" /> Add Student
-              </button>
-            )}
-          </div>
-
-          <div className="hidden sm:flex text-xs text-studio-400 items-center gap-1.5 font-medium shrink-0">
-            <Clock className="w-3.5 h-3.5 text-amber-400" />
-            <span className="truncate">Target: {band.rehearsalSchedule || 'TBD'}</span>
+            <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setIsAddMemberOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-studio-900 active:scale-95 border border-dashed border-studio-700 text-xs text-amber-400 font-semibold transition hover:bg-studio-800"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Add Student</span>
+                </button>
+              )}
+              <div className="text-xs text-studio-300 flex items-center gap-1.5 font-medium bg-studio-900 px-3 py-1.5 rounded-xl border border-studio-800">
+                <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>Target: {band.rehearsalSchedule || 'TBD'}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Navigation Tabs - Apple iOS Segmented Control Grid (Mobile) & Segmented Bar (Desktop) */}
-      {/* Mobile: 3x2 Apple Segmented Grid (All 6 tabs visible without ANY scrolling!) */}
-      <div className="sm:hidden grid grid-cols-3 gap-1.5 p-1.5 bg-studio-900/90 backdrop-blur-md rounded-2xl border border-studio-800 shadow-lg">
-        {[
-          { id: 'chat', label: 'Chat', icon: MessageSquare, badge: 'Live' },
-          { id: 'announcements', label: 'Notices', icon: Megaphone },
-          { id: 'repertoire', label: 'Setlist', icon: ListMusic },
-          { id: 'suggestions', label: 'Song Ideas', icon: Sparkles },
-          { id: 'schedule', label: 'Schedule', icon: Calendar },
-          { id: 'roster', label: `Roster (${band.members.length})`, icon: Users },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id as any)}
-              className={clsx(
-                'flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition active:scale-95 text-center min-h-[54px] select-none',
-                isActive
-                  ? 'bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/25 ring-1 ring-amber-400'
-                  : 'text-studio-400 hover:text-white hover:bg-studio-800/80 bg-studio-950/40 border border-studio-850 font-medium'
-              )}
-            >
-              <div className="relative">
-                <Icon
-                  className={clsx(
-                    'w-4 h-4 mb-1',
-                    isActive ? 'text-slate-950 stroke-[2.5]' : 'text-studio-400'
-                  )}
-                />
-                {tab.id === 'chat' && (
-                  <span
-                    className={clsx(
-                      'absolute -top-0.5 -right-1 w-2 h-2 rounded-full',
-                      isActive ? 'bg-slate-950' : 'bg-emerald-400'
-                    )}
-                  />
-                )}
-              </div>
-              <span
-                className={clsx(
-                  'text-[11px] leading-tight tracking-tight',
-                  isActive ? 'font-black text-slate-950' : 'text-studio-300 font-semibold'
-                )}
-              >
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Ensemble View & Controls - Apple Pop-Down Menu (No redundant button rows) */}
+      <div className="bg-studio-900 border border-studio-800 rounded-2xl p-3.5 sm:p-4 shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-studio-400 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              Ensemble View:
+            </span>
+            <span className="text-xs px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 font-semibold border border-amber-500/30">
+              {activeTab === 'chat' && 'Live Communication'}
+              {activeTab === 'announcements' && 'Director Notices'}
+              {activeTab === 'repertoire' && 'Active Songs'}
+              {activeTab === 'suggestions' && 'Song Voting'}
+              {activeTab === 'schedule' && 'Rehearsal Times'}
+              {activeTab === 'roster' && `${band.members.length} Musicians`}
+            </span>
+          </div>
 
-      {/* Desktop / Tablet: Apple Segmented Pill Bar */}
-      <div className="hidden sm:flex items-center gap-1.5 p-1.5 bg-studio-900/80 backdrop-blur-md rounded-2xl border border-studio-800">
-        {[
-          { id: 'chat', label: 'Chat Channel', icon: MessageSquare },
-          { id: 'announcements', label: 'Announcements', icon: Megaphone },
-          { id: 'repertoire', label: 'Master Setlist', icon: ListMusic },
-          { id: 'suggestions', label: 'Song Suggestions & Voting', icon: Sparkles },
-          { id: 'schedule', label: 'Rehearsal Schedule', icon: Calendar },
-          { id: 'roster', label: `Roster (${band.members.length})`, icon: Users },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id as any)}
-              className={clsx(
-                'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap active:scale-98',
-                isActive
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                  : 'text-studio-400 hover:text-white hover:bg-studio-800'
-              )}
+          <div className="relative w-full sm:w-80">
+            <select
+              value={activeTab}
+              onChange={(e) => setActiveTab(e.target.value as any)}
+              className="w-full bg-studio-950 border-2 border-amber-500/60 rounded-xl px-4 py-2.5 text-base sm:text-xs font-bold text-white focus:outline-none focus:border-amber-400 shadow-md shadow-amber-500/10 appearance-none pr-10 cursor-pointer"
             >
-              <Icon
-                className={clsx(
-                  'w-4 h-4',
-                  isActive ? 'text-slate-950 stroke-[2.5]' : 'text-studio-400'
-                )}
-              />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+              <option value="chat">💬 Chat Channel (Live Communication)</option>
+              <option value="announcements">📢 Persistent Announcements &amp; Notices</option>
+              <option value="repertoire">🎵 Master Setlist Repertoire</option>
+              <option value="suggestions">✨ Song Suggestions &amp; Voting</option>
+              <option value="schedule">📅 Rehearsal &amp; Event Schedule</option>
+              <option value="roster">👥 Band Roster ({band.members.length} Musicians)</option>
+            </select>
+            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-amber-400 text-xs font-bold">
+              ▼
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tab Panels */}

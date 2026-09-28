@@ -201,35 +201,32 @@ export default function RosterPage() {
         </div>
       </div>
 
-      {/* Sub-navigation Tabs: Directory vs Formation Assistant */}
-      <div className="flex items-center gap-2 border-b border-studio-800 pb-2 overflow-x-auto no-scrollbar">
-        <button
-          onClick={() => setActiveView('roster')}
-          className={clsx(
-            'flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition shrink-0',
-            activeView === 'roster'
-              ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
-              : 'text-studio-400 hover:text-white hover:bg-studio-900'
+      {/* View Selector Pop-down Menu */}
+      <div className="flex items-center justify-between gap-3 bg-studio-900 border border-studio-800 p-2 sm:p-2.5 rounded-2xl shadow-sm">
+        <div className="flex items-center gap-2 pl-2 min-w-0">
+          {activeView === 'roster' ? (
+            <Users className="w-5 h-5 text-amber-400 shrink-0" />
+          ) : (
+            <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
           )}
-        >
-          <Users className="w-4 h-4" />
-          <span className="sm:hidden">Roster ({students.length})</span>
-          <span className="hidden sm:inline">Tagged Roster Directory ({students.length})</span>
-        </button>
+          <span className="text-xs font-bold uppercase tracking-wider text-studio-400 truncate">
+            Roster View:
+          </span>
+        </div>
 
-        <button
-          onClick={() => setActiveView('matching')}
-          className={clsx(
-            'flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition shrink-0',
-            activeView === 'matching'
-              ? 'bg-amber-500 text-[var(--brand-contrast-text)] shadow-md shadow-amber-500/10'
-              : 'text-studio-400 hover:text-white hover:bg-studio-900'
-          )}
-        >
-          <Sparkles className="w-4 h-4" />
-          <span className="sm:hidden">Formation Assistant</span>
-          <span className="hidden sm:inline">Band Formation Assistant</span>
-        </button>
+        <div className="relative min-w-[190px] sm:min-w-[260px]">
+          <select
+            value={activeView}
+            onChange={(e) => setActiveView(e.target.value as any)}
+            className="w-full bg-studio-950 border border-amber-500/40 rounded-xl px-3.5 py-2 text-base sm:text-xs font-bold text-white focus:outline-none focus:border-amber-400 appearance-none pr-8 cursor-pointer shadow-sm"
+          >
+            <option value="roster">👥 Tagged Roster Directory ({students.length})</option>
+            <option value="matching">✨ Band Formation Assistant</option>
+          </select>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-amber-400 text-xs font-bold">
+            ▾
+          </div>
+        </div>
       </div>
 
       {activeView === 'matching' ? (
@@ -242,163 +239,141 @@ export default function RosterPage() {
         />
       ) : (
         <>
-          {/* Filter Matrix Card */}
-          <div className="bg-studio-900 border border-studio-800 rounded-2xl p-5 space-y-4 shadow-sm">
-        {/* Search & Clear Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="relative w-full sm:w-96">
-            <Search className="w-4 h-4 text-studio-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by student name or bio..."
-              className="w-full bg-studio-950 border border-studio-700/80 rounded-xl pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-            />
-          </div>
+          {/* Filter Card with Clean Apple Pop-Down Menus */}
+          <div className="bg-studio-900 border border-studio-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm">
+            {/* Search & Clear Bar */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="relative w-full sm:w-96">
+                <Search className="w-4 h-4 text-studio-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by student name or bio..."
+                  className="w-full bg-studio-950 border border-studio-700/80 rounded-xl pl-9 pr-4 py-2 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
 
-          {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold self-end sm:self-center"
-            >
-              <X className="w-3.5 h-3.5" /> Clear All Filters
-            </button>
-          )}
-        </div>
-
-        {/* Tag Filters */}
-        <div className="space-y-3 pt-2 border-t border-studio-800/80 text-xs">
-          {/* Instrument Filter Tags */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="w-full sm:w-24 shrink-0 text-studio-400 font-bold uppercase tracking-wider text-[10px] mb-0.5 sm:mb-0">
-              Instruments:
-            </span>
-            <button
-              onClick={() => setSelectedInstrument('all')}
-              className={clsx(
-                'px-2.5 py-1 rounded-lg font-semibold transition border',
-                selectedInstrument === 'all'
-                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                  : 'bg-studio-950 border-studio-800 text-studio-400 hover:text-white'
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold self-end sm:self-center"
+                >
+                  <X className="w-3.5 h-3.5" /> Clear All Filters
+                </button>
               )}
-            >
-              All Instruments
-            </button>
-            {instrumentsList.map((inst) => (
-              <button
-                key={inst}
-                onClick={() => setSelectedInstrument(inst)}
-                className={clsx(
-                  'flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold transition border capitalize',
-                  selectedInstrument === inst
-                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                    : 'bg-studio-950 border-studio-800 text-studio-400 hover:text-white'
-                )}
-              >
-                <InstrumentIcon instrument={inst} size="xs" />
-                {inst}
-              </button>
-            ))}
-          </div>
+            </div>
 
-          {/* Skill Filter Tags */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="w-full sm:w-24 shrink-0 text-studio-400 font-bold uppercase tracking-wider text-[10px] mb-0.5 sm:mb-0">
-              Skill Level:
-            </span>
-            <button
-              onClick={() => setSelectedSkill('all')}
-              className={clsx(
-                'px-2.5 py-1 rounded-lg font-semibold transition border',
-                selectedSkill === 'all'
-                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                  : 'bg-studio-950 border-studio-800 text-studio-400 hover:text-white'
-              )}
-            >
-              All Levels
-            </button>
-            {skillList.map((skill) => (
-              <button
-                key={skill}
-                onClick={() => setSelectedSkill(skill)}
-                className={clsx(
-                  'px-2.5 py-1 rounded-lg font-semibold transition border capitalize',
-                  selectedSkill === skill
-                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                    : 'bg-studio-950 border-studio-800 text-studio-400 hover:text-white'
-                )}
-              >
-                {skill}
-              </button>
-            ))}
-          </div>
+            {/* 4 Apple-Style Pop-Down Menus */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-studio-800/80">
+              {/* 1. Instrument Pop-Down */}
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-1.5 flex items-center justify-between">
+                  <span>Instrument</span>
+                  {selectedInstrument !== 'all' && (
+                    <span className="text-amber-400 text-[10px]">Filtered</span>
+                  )}
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedInstrument}
+                    onChange={(e) => setSelectedInstrument(e.target.value)}
+                    className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2.5 text-base sm:text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none pr-8 cursor-pointer capitalize"
+                  >
+                    <option value="all">All Instruments</option>
+                    {instrumentsList.map((inst) => (
+                      <option key={inst} value={inst}>
+                        {INSTRUMENT_METADATA[inst]?.label || inst}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
+                    ▾
+                  </div>
+                </div>
+              </div>
 
-          {/* Musical Style Tags */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="w-full sm:w-24 shrink-0 text-studio-400 font-bold uppercase tracking-wider text-[10px] mb-0.5 sm:mb-0">
-              Musical Style:
-            </span>
-            <button
-              onClick={() => setSelectedStyle('all')}
-              className={clsx(
-                'px-2.5 py-1 rounded-lg font-semibold transition border',
-                selectedStyle === 'all'
-                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                  : 'bg-studio-950 border-studio-800 text-studio-400 hover:text-white'
-              )}
-            >
-              All Styles
-            </button>
-            {allStyles.map((style) => (
-              <button
-                key={style}
-                onClick={() => setSelectedStyle(style)}
-                className={clsx(
-                  'px-2.5 py-1 rounded-lg font-semibold transition border',
-                  selectedStyle === style
-                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                    : 'bg-studio-950 border-studio-800 text-studio-400 hover:text-white'
-                )}
-              >
-                #{style}
-              </button>
-            ))}
-          </div>
+              {/* 2. Skill Level Pop-Down */}
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-1.5 flex items-center justify-between">
+                  <span>Skill Level</span>
+                  {selectedSkill !== 'all' && (
+                    <span className="text-amber-400 text-[10px]">Filtered</span>
+                  )}
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedSkill}
+                    onChange={(e) => setSelectedSkill(e.target.value)}
+                    className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2.5 text-base sm:text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none pr-8 cursor-pointer capitalize"
+                  >
+                    <option value="all">All Skill Levels</option>
+                    {skillList.map((skill) => (
+                      <option key={skill} value={skill} className="capitalize">
+                        {skill}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
+                    ▾
+                  </div>
+                </div>
+              </div>
 
-          {/* Age Group */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="w-full sm:w-24 shrink-0 text-studio-400 font-bold uppercase tracking-wider text-[10px] mb-0.5 sm:mb-0">
-              Age Bracket:
-            </span>
-            <button
-              onClick={() => setSelectedAge('all')}
-              className={clsx(
-                'px-2.5 py-1 rounded-lg font-semibold transition border',
-                selectedAge === 'all'
-                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                  : 'bg-studio-950 border-studio-800 text-studio-400 hover:text-white'
-              )}
-            >
-              All Ages
-            </button>
-            {ageList.map((age) => (
-              <button
-                key={age}
-                onClick={() => setSelectedAge(age)}
-                className={clsx(
-                  'px-2.5 py-1 rounded-lg font-semibold transition border capitalize',
-                  selectedAge === age
-                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                    : 'bg-studio-950 border-studio-800 text-studio-400 hover:text-white'
-                )}
-              >
-                {age === 'kids' ? 'Youth (<13)' : age === 'teens' ? 'Teens (13–18)' : 'Adults (18+)'}
-              </button>
-            ))}
+              {/* 3. Musical Style Pop-Down */}
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-1.5 flex items-center justify-between">
+                  <span>Musical Style</span>
+                  {selectedStyle !== 'all' && (
+                    <span className="text-amber-400 text-[10px]">Filtered</span>
+                  )}
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedStyle}
+                    onChange={(e) => setSelectedStyle(e.target.value)}
+                    className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2.5 text-base sm:text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none pr-8 cursor-pointer"
+                  >
+                    <option value="all">All Styles ({allStyles.length})</option>
+                    {allStyles.map((style) => (
+                      <option key={style} value={style}>
+                        {style}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
+                    ▾
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Age Bracket Pop-Down */}
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-1.5 flex items-center justify-between">
+                  <span>Age Bracket</span>
+                  {selectedAge !== 'all' && (
+                    <span className="text-amber-400 text-[10px]">Filtered</span>
+                  )}
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedAge}
+                    onChange={(e) => setSelectedAge(e.target.value)}
+                    className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2.5 text-base sm:text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none pr-8 cursor-pointer capitalize"
+                  >
+                    <option value="all">All Age Groups</option>
+                    <option value="kids">Kids (Under 13)</option>
+                    <option value="teens">Teens (13–18)</option>
+                    <option value="adults">Adults (18+)</option>
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
+                    ▾
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
       {/* Roster Grid Count */}
       <div className="flex items-center justify-between text-xs text-studio-400 px-1">

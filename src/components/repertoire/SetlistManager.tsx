@@ -159,30 +159,28 @@ export function SetlistManager({ band }: SetlistManagerProps) {
         )}
       </div>
 
-      {/* Filter Tabs - Apple HIG zero-scroll responsive control */}
-      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 p-1 bg-studio-950/60 rounded-2xl border border-studio-800/80">
-        {[
-          { id: 'all', label: 'Active Repertoire', fullWidth: true },
-          { id: 'learning', label: 'Learning' },
-          { id: 'rehearsing', label: 'Rehearsing' },
-          { id: 'performance_ready', label: 'Performance Ready' },
-          { id: 'retired', label: 'Retired Archive' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveFilter(tab.id)}
-            className={clsx(
-              'px-3 py-2 rounded-xl text-xs font-bold transition border text-center active:scale-95',
-              tab.fullWidth ? 'col-span-2 sm:col-span-1' : '',
-              activeFilter === tab.id
-                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm'
-                : 'bg-studio-900 border-studio-800 text-studio-400 hover:text-white'
-            )}
+      {/* Repertoire Filter Pop-Down Menu (Apple-grade) */}
+      <div className="flex items-center justify-between gap-3 bg-studio-900 border border-studio-800 p-2.5 sm:p-3 rounded-2xl shadow-sm">
+        <span className="text-xs font-bold uppercase tracking-wider text-studio-400 pl-1 flex items-center gap-1.5">
+          <ListMusic className="w-4 h-4 text-amber-400" />
+          Filter Repertoire:
+        </span>
+        <div className="relative min-w-[200px] sm:min-w-[250px]">
+          <select
+            value={activeFilter}
+            onChange={(e) => setActiveFilter(e.target.value)}
+            className="w-full bg-studio-950 border border-amber-500/40 rounded-xl px-3.5 py-2 text-base sm:text-xs font-bold text-white focus:outline-none focus:border-amber-400 appearance-none pr-8 cursor-pointer shadow-sm"
           >
-            {tab.label}
-          </button>
-        ))}
+            <option value="all">🎵 Active Repertoire ({activeRepertoire.length})</option>
+            <option value="learning">📘 Learning ({songs.filter((s) => s.status === 'learning').length})</option>
+            <option value="rehearsing">🔥 Rehearsing ({songs.filter((s) => s.status === 'rehearsing').length})</option>
+            <option value="performance_ready">⭐ Performance Ready ({songs.filter((s) => s.status === 'performance_ready').length})</option>
+            <option value="retired">📁 Retired Archive ({songs.filter((s) => s.status === 'retired').length})</option>
+          </select>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-amber-400 text-xs font-bold">
+            ▼
+          </div>
+        </div>
       </div>
 
       {/* Songs List */}

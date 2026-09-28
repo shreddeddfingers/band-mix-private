@@ -28,8 +28,12 @@ import {
   Sparkles,
   MessageSquare,
   LogIn,
+  Smartphone,
+  Check,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { clsx } from 'clsx';
+
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -42,6 +46,13 @@ export default function DashboardPage() {
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginDefaultRole, setLoginDefaultRole] = useState<'student' | 'admin'>('student');
+  const [rememberOnDevice, setRememberOnDevice] = useState(() => DataStore.isRememberDevice());
+
+  const toggleRememberDevice = () => {
+    const next = !rememberOnDevice;
+    setRememberOnDevice(next);
+    DataStore.setRememberDevice(next);
+  };
 
   useEffect(() => {
     const refresh = () => {
@@ -182,6 +193,19 @@ export default function DashboardPage() {
                 <Sparkles className="w-3.5 h-3.5 text-purple-400" />
                 <span>New Director? Create Account →</span>
               </button>
+
+              <label className="flex items-center gap-2 text-xs text-studio-400 hover:text-studio-300 cursor-pointer pt-1 justify-center select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberOnDevice}
+                  onChange={(e) => {
+                    setRememberOnDevice(e.target.checked);
+                    DataStore.setRememberDevice(e.target.checked);
+                  }}
+                  className="w-4 h-4 rounded text-purple-600 focus:ring-0 bg-studio-950 border-studio-700 cursor-pointer"
+                />
+                <span>Remember Director on this device</span>
+              </label>
             </div>
           </div>
         </div>
@@ -330,6 +354,40 @@ export default function DashboardPage() {
               <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
               <span>Mandated Director presence active on all channels.</span>
             </div>
+
+            {isAdmin && (
+              <div className="pt-3 border-t border-studio-800/80">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Smartphone className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span className="text-[11px] font-semibold text-white truncate">
+                      Remember on this device
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleRememberDevice}
+                    className={clsx(
+                      'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                      rememberOnDevice ? 'bg-amber-500' : 'bg-studio-800'
+                    )}
+                    title={rememberOnDevice ? 'Session remembered on this device' : 'Remember on this device'}
+                  >
+                    <span
+                      className={clsx(
+                        'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                        rememberOnDevice ? 'translate-x-4' : 'translate-x-0'
+                      )}
+                    />
+                  </button>
+                </div>
+                <p className="text-[10px] text-studio-400 mt-1">
+                  {rememberOnDevice
+                    ? '✓ Auto-signs in as Director on this device'
+                    : 'Session ends when browser closes'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

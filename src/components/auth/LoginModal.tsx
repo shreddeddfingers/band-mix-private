@@ -46,6 +46,7 @@ export function LoginModal({
   const [studentQuery, setStudentQuery] = useState('');
   const [directorEmail, setDirectorEmail] = useState('');
   const [directorPassword, setDirectorPassword] = useState('');
+  const [rememberDirector, setRememberDirector] = useState(() => DataStore.isRememberDevice());
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -370,6 +371,19 @@ export function LoginModal({
                     />
                   </div>
                 </div>
+
+                <label className="flex items-center gap-2 text-xs text-studio-400 hover:text-studio-300 cursor-pointer py-1 select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberDirector}
+                    onChange={(e) => {
+                      setRememberDirector(e.target.checked);
+                      DataStore.setRememberDevice(e.target.checked);
+                    }}
+                    className="w-4 h-4 rounded text-amber-500 focus:ring-0 bg-studio-950 border-studio-700 cursor-pointer"
+                  />
+                  <span>Remember Director on this device</span>
+                </label>
 
                 <button
                   type="submit"

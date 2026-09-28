@@ -233,42 +233,34 @@ export function BandChat({ band, onOpenSchedulePlanner }: BandChatProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Student Availability Quick-Prompt Chips */}
-      <div className="px-4 py-2 bg-studio-900/60 border-t border-studio-800/80 flex items-center gap-2 overflow-x-auto text-xs no-scrollbar">
-        <span className="text-studio-400 text-[11px] font-semibold whitespace-nowrap flex items-center gap-1">
-          <Clock className="w-3 h-3 text-amber-400" />
-          Availability Chips:
+      {/* Student Availability Quick-Prompt Pop-Down Menu */}
+      <div className="px-3.5 sm:px-4 py-2 bg-studio-900/80 border-t border-studio-800/80 flex items-center justify-between gap-2 text-xs">
+        <span className="text-studio-400 text-[11px] font-semibold whitespace-nowrap flex items-center gap-1.5 shrink-0">
+          <Clock className="w-3.5 h-3.5 text-amber-400" />
+          <span>Quick Availability:</span>
         </span>
-        <button
-          onClick={() =>
-            handleQuickAvailability(
-              "I'm free this Tuesday & Thursday after 4:30 PM!"
-            )
-          }
-          className="px-2.5 py-1 rounded-lg bg-studio-800 hover:bg-studio-700 text-studio-300 hover:text-white border border-studio-700 text-xs whitespace-nowrap transition"
-        >
-          Free Tue/Thu after 4:30pm
-        </button>
-        <button
-          onClick={() =>
-            handleQuickAvailability(
-              'Saturday morning 10am works best for my instrument practice.'
-            )
-          }
-          className="px-2.5 py-1 rounded-lg bg-studio-800 hover:bg-studio-700 text-studio-300 hover:text-white border border-studio-700 text-xs whitespace-nowrap transition"
-        >
-          Sat 10am works for me
-        </button>
-        <button
-          onClick={() =>
-            handleQuickAvailability(
-              'I have a conflict on Wednesday afternoons, any other day is good.'
-            )
-          }
-          className="px-2.5 py-1 rounded-lg bg-studio-800 hover:bg-studio-700 text-studio-300 hover:text-white border border-studio-700 text-xs whitespace-nowrap transition"
-        >
-          Wednesday conflict
-        </button>
+        <div className="relative flex-1 max-w-xs">
+          <select
+            defaultValue=""
+            onChange={(e) => {
+              if (e.target.value) {
+                handleQuickAvailability(e.target.value);
+                e.target.value = '';
+              }
+            }}
+            className="w-full bg-studio-950 border border-studio-700/80 rounded-lg px-2.5 py-1.5 text-base sm:text-xs font-medium text-amber-300 focus:outline-none focus:border-amber-500 appearance-none pr-7 cursor-pointer"
+          >
+            <option value="" disabled>⚡ Choose message to send... ▾</option>
+            <option value="I'm free this Tuesday & Thursday after 4:30 PM!">Free Tue/Thu after 4:30pm</option>
+            <option value="Saturday morning 10am works best for my instrument practice.">Sat 10am works best</option>
+            <option value="I have a conflict on Wednesday afternoons, any other day is good.">Wednesday afternoon conflict</option>
+            <option value="Ready for rehearsal this weekend! Let me know call time.">Ready for weekend rehearsal</option>
+            <option value="Need 30-min call time heads up before rehearsals.">Need 30-min call time heads up</option>
+          </select>
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-amber-400 text-[10px] font-bold">
+            ▼
+          </div>
+        </div>
       </div>
 
       {/* Input Form */}

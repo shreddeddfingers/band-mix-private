@@ -91,6 +91,7 @@ const STORAGE_KEYS = {
   VOTES: 'bandmix_prod_song_votes',
   ANNOUNCEMENTS: 'bandmix_prod_announcements',
   ACTIVE_USER_ID: 'bandmix_active_user_id',
+  REMEMBER_DEVICE: 'bandmix_remember_device',
 };
 
 // Schema revision to guarantee all client browsers wipe stale data on upgrade
@@ -546,6 +547,18 @@ export const DataStore = {
     } else {
       localStorage.removeItem(STORAGE_KEYS.ACTIVE_USER_ID);
     }
+  },
+
+  isRememberDevice(): boolean {
+    if (typeof window === 'undefined') return true;
+    const val = localStorage.getItem(STORAGE_KEYS.REMEMBER_DEVICE);
+    return val === null ? true : val === 'true';
+  },
+
+  setRememberDevice(enabled: boolean): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.REMEMBER_DEVICE, enabled ? 'true' : 'false');
+    notify('device_settings');
   },
 
   findStudentByEmailOrName(queryStr: string): UserProfile | null {
