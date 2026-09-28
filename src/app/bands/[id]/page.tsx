@@ -47,9 +47,9 @@ export default function BandHubPage({
   const router = useRouter();
   const { isAdmin, currentUser } = useAuth();
   const [band, setBand] = useState<Band | null>(null);
-  const [activeTab, setActiveTab] = useState<
-    'chat' | 'announcements' | 'repertoire' | 'suggestions' | 'schedule' | 'roster'
-  >('chat');
+  const [activeTab, setActiveTab] = useState<'feed' | 'songs' | 'schedule' | 'chat'>('feed');
+  const [songsSubTab, setSongsSubTab] = useState<'setlist' | 'voting'>('setlist');
+
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isChangeCoverOpen, setIsChangeCoverOpen] = useState(false);
   const [viewProfileStudent, setViewProfileStudent] = useState<UserProfile | null>(null);
@@ -194,24 +194,42 @@ export default function BandHubPage({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-studio-950 via-studio-950/60 to-transparent" />
 
-          {/* Quick Photo / Pass Buttons Top-Right */}
+          {/* Instagram-Style Top-Right Header Actions (Messages Icon, Cover, QR Pass) */}
           <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+            {/* Instagram Direct Messages Icon Button */}
+            <button
+              type="button"
+              onClick={() => setActiveTab(activeTab === 'chat' ? 'feed' : 'chat')}
+              className={clsx(
+                'relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg transition active:scale-95 border backdrop-blur-md',
+                activeTab === 'chat'
+                  ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 border-pink-400 text-white shadow-pink-500/30'
+                  : 'bg-black/75 hover:bg-black/90 border-white/20 text-white'
+              )}
+              title={activeTab === 'chat' ? 'Return to Band Feed' : 'Direct Messages'}
+            >
+              <MessageCircle className="w-4 h-4 text-pink-400 stroke-[2.5]" />
+              <span>{activeTab === 'chat' ? 'Close Chat' : 'Messages'}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            </button>
+
             {(isAdmin || isMember) && (
               <button
                 type="button"
                 onClick={() => setIsChangeCoverOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 hover:bg-black/90 active:scale-95 text-white text-xs font-semibold border border-white/20 backdrop-blur-md transition shadow-md"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/75 hover:bg-black/90 active:scale-95 text-white text-xs font-semibold border border-white/20 backdrop-blur-md transition shadow-md"
                 title="Change band cover picture"
               >
                 <Camera className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden xs:inline">Band Photo</span>
+                <span className="hidden xs:inline">Photo</span>
               </button>
             )}
+
             {isAdmin && (
               <button
                 type="button"
                 onClick={() => setIsQrOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 hover:bg-black/90 active:scale-95 text-white text-xs font-semibold border border-white/20 backdrop-blur-md transition shadow-md"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/75 hover:bg-black/90 active:scale-95 text-white text-xs font-semibold border border-white/20 backdrop-blur-md transition shadow-md"
                 title="Invite student with QR Intake Pass"
               >
                 <QrCode className="w-3.5 h-3.5 text-amber-400" />
@@ -268,49 +286,6 @@ export default function BandHubPage({
                 </p>
               </div>
             </div>
-
-            {/* Instagram Action Buttons */}
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setActiveTab('chat')}
-                className={clsx(
-                  'flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition shadow-sm active:scale-95',
-                  activeTab === 'chat'
-                    ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white'
-                    : 'bg-studio-800 hover:bg-studio-700 text-white'
-                )}
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span>Band Chat</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('announcements')}
-                className={clsx(
-                  'flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition shadow-sm active:scale-95',
-                  activeTab === 'announcements'
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950'
-                    : 'bg-studio-800 hover:bg-studio-700 text-white'
-                )}
-              >
-                <Megaphone className="w-3.5 h-3.5" />
-                <span>Feed</span>
-              </button>
-
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setIsAddMemberOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-studio-800 hover:bg-studio-700 text-amber-400 text-xs font-bold border border-studio-700 transition active:scale-95"
-                  title="Add student musician"
-                >
-                  <UserPlus className="w-3.5 h-3.5" />
-                  <span className="hidden xs:inline">Add</span>
-                </button>
-              )}
-            </div>
           </div>
 
           {/* Instagram Bio / Description */}
@@ -324,25 +299,21 @@ export default function BandHubPage({
           <div className="flex items-center gap-4 sm:gap-6 py-2.5 px-3.5 rounded-2xl bg-studio-950/70 border border-studio-800/80 text-xs">
             <button
               type="button"
-              onClick={() => setActiveTab('announcements')}
+              onClick={() => setActiveTab('feed')}
               className="flex items-center gap-1.5 hover:text-amber-400 transition"
             >
               <strong className="text-white font-extrabold">{DataStore.getAnnouncements(band.id).length}</strong>
               <span className="text-studio-400">Posts</span>
             </button>
             <span>•</span>
-            <button
-              type="button"
-              onClick={() => setActiveTab('roster')}
-              className="flex items-center gap-1.5 hover:text-amber-400 transition"
-            >
+            <div className="flex items-center gap-1.5 text-studio-300">
               <strong className="text-white font-extrabold">{band.members.length}</strong>
               <span className="text-studio-400">Musicians</span>
-            </button>
+            </div>
             <span>•</span>
             <button
               type="button"
-              onClick={() => setActiveTab('repertoire')}
+              onClick={() => setActiveTab('songs')}
               className="flex items-center gap-1.5 hover:text-amber-400 transition"
             >
               <strong className="text-white font-extrabold">{DataStore.getSongs(band.id).length}</strong>
@@ -361,7 +332,7 @@ export default function BandHubPage({
         </div>
       </div>
 
-      {/* Instagram Stories Bar: Band Members & Profiles */}
+      {/* Instagram Stories Bar: Band Members & Profiles (Single Add Member button here) */}
       <BandStoriesBar
         band={band}
         currentUserId={currentUser?.id}
@@ -377,32 +348,18 @@ export default function BandHubPage({
         isAdmin={isAdmin}
       />
 
-      {/* Instagram / Facebook Navigation Tabs & Apple Pop-Down Controller */}
-      <div className="bg-studio-900 border border-studio-800 rounded-2xl p-2 sm:p-2.5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-2.5">
-        {/* Instagram Social Segmented Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+      {/* Primary Navigation - Clean 3-Option Switcher & Apple Pop-Down (Zero Horizontal Scrolling) */}
+      <div className="bg-studio-900 border border-studio-800 rounded-2xl p-2 sm:p-2.5 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        {/* 3 Clean Segmented Buttons that fit smoothly on mobile */}
+        <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto">
           <button
             type="button"
-            onClick={() => setActiveTab('chat')}
+            onClick={() => setActiveTab('feed')}
             className={clsx(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition shrink-0',
-              activeTab === 'chat'
-                ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white shadow-md'
-                : 'text-studio-400 hover:text-white hover:bg-studio-800'
-            )}
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>Chat</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('announcements')}
-            className={clsx(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition shrink-0',
-              activeTab === 'announcements'
-                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
-                : 'text-studio-400 hover:text-white hover:bg-studio-800'
+              'flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
+              activeTab === 'feed'
+                ? 'bg-amber-500 text-slate-950 font-extrabold shadow-amber-500/20'
+                : 'bg-studio-950 hover:bg-studio-800 text-studio-300 hover:text-white'
             )}
           >
             <Megaphone className="w-3.5 h-3.5" />
@@ -411,74 +368,44 @@ export default function BandHubPage({
 
           <button
             type="button"
-            onClick={() => setActiveTab('repertoire')}
+            onClick={() => setActiveTab('songs')}
             className={clsx(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition shrink-0',
-              activeTab === 'repertoire'
-                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
-                : 'text-studio-400 hover:text-white hover:bg-studio-800'
+              'flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
+              activeTab === 'songs'
+                ? 'bg-amber-500 text-slate-950 font-extrabold shadow-amber-500/20'
+                : 'bg-studio-950 hover:bg-studio-800 text-studio-300 hover:text-white'
             )}
           >
             <ListMusic className="w-3.5 h-3.5" />
-            <span>Setlist</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('suggestions')}
-            className={clsx(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition shrink-0',
-              activeTab === 'suggestions'
-                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
-                : 'text-studio-400 hover:text-white hover:bg-studio-800'
-            )}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Voting</span>
+            <span>Songs</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('schedule')}
             className={clsx(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition shrink-0',
+              'flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
               activeTab === 'schedule'
-                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
-                : 'text-studio-400 hover:text-white hover:bg-studio-800'
+                ? 'bg-amber-500 text-slate-950 font-extrabold shadow-amber-500/20'
+                : 'bg-studio-950 hover:bg-studio-800 text-studio-300 hover:text-white'
             )}
           >
             <Calendar className="w-3.5 h-3.5" />
             <span>Schedule</span>
           </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('roster')}
-            className={clsx(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition shrink-0',
-              activeTab === 'roster'
-                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
-                : 'text-studio-400 hover:text-white hover:bg-studio-800'
-            )}
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>Lineup</span>
-          </button>
         </div>
 
-        {/* Apple Pop-Down Controller (Quick Menu) */}
-        <div className="relative w-full md:w-64 shrink-0">
+        {/* Apple Pop-Down Controller */}
+        <div className="relative w-full sm:w-64 shrink-0">
           <select
             value={activeTab}
             onChange={(e) => setActiveTab(e.target.value as any)}
-            className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-1.5 text-base sm:text-xs font-bold text-white focus:outline-none focus:border-amber-400 appearance-none pr-8 cursor-pointer"
+            className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2 text-base sm:text-xs font-bold text-white focus:outline-none focus:border-amber-400 appearance-none pr-8 cursor-pointer"
           >
-            <option value="chat">💬 Chat Channel (DMs)</option>
-            <option value="announcements">📢 Band Feed &amp; Wall</option>
-            <option value="repertoire">🎵 Setlist &amp; Songs</option>
-            <option value="suggestions">✨ Song Voting &amp; Suggestions</option>
-            <option value="schedule">📅 Rehearsals &amp; Schedule</option>
-            <option value="roster">👥 Musician Lineup ({band.members.length})</option>
+            <option value="feed">📢 Band Feed (Updates &amp; Wall)</option>
+            <option value="songs">🎵 Songs, Setlist &amp; Voting</option>
+            <option value="schedule">📅 Rehearsal Schedule</option>
+            <option value="chat">💬 Direct Messages (Chat)</option>
           </select>
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
             ▼
@@ -487,154 +414,78 @@ export default function BandHubPage({
       </div>
 
       {/* Tab Panels */}
+      {/* 1. Direct Messages / Chat Panel */}
       {activeTab === 'chat' && (
-        <BandChat
-          band={band}
-          onOpenSchedulePlanner={() => setActiveTab('schedule')}
-          onOpenRoster={() => setActiveTab('roster')}
-        />
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setActiveTab('feed')}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-studio-400 hover:text-white transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Band Feed</span>
+            </button>
+          </div>
+          <BandChat
+            band={band}
+            onOpenSchedulePlanner={() => setActiveTab('schedule')}
+          />
+        </div>
       )}
 
-      {activeTab === 'announcements' && (
+      {/* 2. Band Feed (Default Wall) */}
+      {activeTab === 'feed' && (
         <BandAnnouncementsTab band={band} />
       )}
 
-      {activeTab === 'repertoire' && (
-        <SetlistManager band={band} />
+      {/* 3. Unified Songs & Setlist Area (Selecting a song & voting are inside) */}
+      {activeTab === 'songs' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3 bg-studio-900 border border-studio-800 rounded-2xl p-2 shadow-md">
+            <div className="grid grid-cols-2 gap-1.5 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setSongsSubTab('setlist')}
+                className={clsx(
+                  'flex items-center justify-center gap-1.5 py-2 px-4 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
+                  songsSubTab === 'setlist'
+                    ? 'bg-amber-500 text-slate-950 font-extrabold shadow-amber-500/20'
+                    : 'bg-studio-950 text-studio-300 hover:text-white'
+                )}
+              >
+                <ListMusic className="w-3.5 h-3.5" />
+                <span>Master Setlist ({DataStore.getSongs(band.id).length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSongsSubTab('voting')}
+                className={clsx(
+                  'flex items-center justify-center gap-1.5 py-2 px-4 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
+                  songsSubTab === 'voting'
+                    ? 'bg-amber-500 text-slate-950 font-extrabold shadow-amber-500/20'
+                    : 'bg-studio-950 text-studio-300 hover:text-white'
+                )}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Song Voting &amp; Suggestions</span>
+              </button>
+            </div>
+          </div>
+
+          {songsSubTab === 'setlist' ? (
+            <SetlistManager band={band} />
+          ) : (
+            <SongSuggestionVoting band={band} />
+          )}
+        </div>
       )}
 
-      {activeTab === 'suggestions' && (
-        <SongSuggestionVoting band={band} />
-      )}
-
+      {/* 4. Schedule & Rehearsals */}
       {activeTab === 'schedule' && (
         <RehearsalPlanner bandId={band.id} />
       )}
 
-      {activeTab === 'roster' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {band.members.map((member) => {
-            const studentDetails = DataStore.getUserById(member.userId);
-
-            return (
-              <div
-                key={member.userId}
-                className="bg-studio-900 border border-studio-800 rounded-2xl p-5 space-y-3"
-              >
-                <div
-                  onClick={() => studentDetails && setViewProfileStudent(studentDetails)}
-                  className={`flex items-center gap-3 ${studentDetails ? 'cursor-pointer group' : ''}`}
-                  title={studentDetails ? 'Click to view student questionnaire and profile' : undefined}
-                >
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-studio-800 border-2 border-studio-700 group-hover:border-amber-500 transition shrink-0 shadow-md">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={member.avatar}
-                      alt={member.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-bold text-white text-sm group-hover:text-amber-300 transition truncate">
-                      {member.name}
-                    </h4>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <InstrumentIcon
-                        instrument={member.instrument}
-                        size="xs"
-                        showLabel
-                      />
-                      {member.role === 'director' && (
-                        <Badge role="admin" />
-                      )}
-                      {studentDetails?.exactAge && (
-                        <Badge exactAge={studentDetails.exactAge} />
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {studentDetails && (
-                  <div className="space-y-2 text-xs pt-2 border-t border-studio-800/80">
-                    <div className="flex items-center justify-between">
-                      <span className="text-studio-400">Skill Level</span>
-                      <Badge skill={studentDetails.skillLevel} />
-                    </div>
-                    {studentDetails.musicalStyles && (
-                      <div>
-                        <span className="text-studio-400 block mb-1">
-                          Musical Styles:
-                        </span>
-                        <div className="flex flex-wrap gap-1">
-                          {studentDetails.musicalStyles.map((style) => (
-                            <span
-                              key={style}
-                              className="px-2 py-0.5 rounded bg-studio-950 border border-studio-800 text-[10px] text-studio-300"
-                            >
-                              {style}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {(isAdmin || member.userId === currentUser?.id) && (
-                      <button
-                        type="button"
-                        onClick={() => setViewProfileStudent(studentDetails)}
-                        className="w-full mt-1.5 py-1.5 px-2 rounded-xl bg-studio-950 hover:bg-studio-800 border border-studio-800 hover:border-amber-500/40 text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition flex items-center justify-center gap-1.5"
-                      >
-                        <Sparkles className="w-3 h-3 text-amber-400" />
-                        {member.userId === currentUser?.id
-                          ? 'View & Edit My Profile'
-                          : 'View Questionnaire & Profile'}
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {isAdmin && member.role !== 'director' && (
-                  <div className="pt-2 border-t border-studio-800 flex items-center justify-between text-xs">
-                    <button
-                      onClick={() => handleRemoveMember(member.userId, member.name)}
-                      className="text-studio-400 hover:text-amber-300 font-medium transition"
-                    >
-                      Remove from Band
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (
-                          confirm(
-                            `Permanently remove "${member.name}" from the studio roster? This deletes their account and removes them from all ensembles.`
-                          )
-                        ) {
-                          const targetId = member.userId;
-                          setBand((prev) =>
-                            prev
-                              ? {
-                                  ...prev,
-                                  members: prev.members.filter((m) => m.userId !== targetId),
-                                  memberIds: (prev.memberIds || []).filter((id) => id !== targetId),
-                                }
-                              : null
-                          );
-                          await DataStore.deleteStudent(targetId);
-                          const updated = DataStore.getBand(band.id);
-                          if (updated) setBand({ ...updated });
-                        }
-                      }}
-                      className="text-studio-500 hover:text-rose-400 font-medium transition flex items-center gap-1"
-                      title="Permanently remove student from studio roster"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      Delete Account
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       {/* Modals */}
       <QRCodeModal
