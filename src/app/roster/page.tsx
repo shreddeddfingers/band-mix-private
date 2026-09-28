@@ -26,6 +26,10 @@ import {
   Lock,
   Trash2,
   AlertTriangle,
+  SlidersHorizontal,
+  ChevronDown,
+  ArrowRight,
+  ChevronRight,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -42,6 +46,8 @@ export default function RosterPage() {
   const [selectedSkill, setSelectedSkill] = useState<string>('all');
   const [selectedAge, setSelectedAge] = useState<string>('all');
   const [selectedStyle, setSelectedStyle] = useState<string>('all');
+  const [selectedBandStatus, setSelectedBandStatus] = useState<'all' | 'unassigned' | 'assigned'>('all');
+  const [isRefineOpen, setIsRefineOpen] = useState(false);
 
   // Modals
   const [viewProfileStudent, setViewProfileStudent] = useState<UserProfile | null>(null);
@@ -133,10 +139,15 @@ export default function RosterPage() {
   );
 
   const filteredStudents = students.filter((student) => {
+    const query = search.trim().toLowerCase();
     const matchesSearch =
-      student.name.toLowerCase().includes(search.toLowerCase()) ||
-      student.email.toLowerCase().includes(search.toLowerCase()) ||
-      (student.bio && student.bio.toLowerCase().includes(search.toLowerCase()));
+      query === '' ||
+      student.name.toLowerCase().includes(query) ||
+      student.email.toLowerCase().includes(query) ||
+      student.primaryInstrument.toLowerCase().includes(query) ||
+      student.instruments.some((i) => i.toLowerCase().includes(query)) ||
+      (student.musicalStyles && student.musicalStyles.some((s) => s.toLowerCase().includes(query))) ||
+      (student.bio && student.bio.toLowerCase().includes(query));
 
     const matchesInstrument =
       selectedInstrument === 'all' ||
@@ -152,12 +163,23 @@ export default function RosterPage() {
       selectedStyle === 'all' ||
       student.musicalStyles?.includes(selectedStyle);
 
+    const studentBands = bands.filter(
+      (b) =>
+        b.members?.some((m) => m.userId === student.id) ||
+        (student.bandIds && student.bandIds.includes(b.id))
+    );
+    const matchesBandStatus =
+      selectedBandStatus === 'all' ||
+      (selectedBandStatus === 'unassigned' && studentBands.length === 0) ||
+      (selectedBandStatus === 'assigned' && studentBands.length > 0);
+
     return (
       matchesSearch &&
       matchesInstrument &&
       matchesSkill &&
       matchesAge &&
-      matchesStyle
+      matchesStyle &&
+      matchesBandStatus
     );
   });
 
@@ -166,15 +188,19 @@ export default function RosterPage() {
     setSelectedSkill('all');
     setSelectedAge('all');
     setSelectedStyle('all');
+    setSelectedBandStatus('all');
     setSearch('');
   };
 
-  const hasActiveFilters =
-    selectedInstrument !== 'all' ||
-    selectedSkill !== 'all' ||
-    selectedAge !== 'all' ||
-    selectedStyle !== 'all' ||
-    search !== '';
+  const activeFilterCount =
+    (selectedInstrument !== 'all' ? 1 : 0) +
+    (selectedSkill !== 'all' ? 1 : 0) +
+    (selectedAge !== 'all' ? 1 : 0) +
+    (selectedStyle !== 'all' ? 1 : 0) +
+    (selectedBandStatus !== 'all' ? 1 : 0);
+
+  const hasActiveFilters = activeFilterCount > 0 || search !== '';
+
 
   return (
     <div className="space-y-6">
@@ -239,332 +265,403 @@ export default function RosterPage() {
         />
       ) : (
         <>
-          {/* Filter Card with Clean Apple Pop-Down Menus */}
-          <div className="bg-studio-900 border border-studio-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm">
-            {/* Search & Clear Bar */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="relative w-full sm:w-96">
-                <Search className="w-4 h-4 text-studio-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          {/* Amazon-Style Search & Refine System */}
+          <div className="space-y-2.5">
+            {/* Main Search & Refine Bar */}
+            <div className="flex items-center gap-2 bg-studio-900 border border-studio-800 rounded-2xl p-2 shadow-sm">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-studio-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by student name or bio..."
-                  className="w-full bg-studio-950 border border-studio-700/80 rounded-xl pl-9 pr-4 py-2 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
+                  placeholder="Search name, instrument, style, or bio..."
+                  className="w-full bg-studio-950 border border-studio-800 rounded-xl pl-9 pr-3 py-2 text-base sm:text-xs text-white placeholder-studio-500 focus:outline-none focus:border-amber-500 transition"
                 />
               </div>
 
-              {hasActiveFilters && (
+              {/* Amazon-Style Refine Button */}
+              <button
+                type="button"
+                onClick={() => setIsRefineOpen(!isRefineOpen)}
+                className={clsx(
+                  'flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 active:scale-95 border',
+                  isRefineOpen || activeFilterCount > 0
+                    ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-sm'
+                    : 'bg-studio-950 hover:bg-studio-800 border-studio-800 text-studio-300 hover:text-white'
+                )}
+                title="Refine search filters by category"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>Refine</span>
+                {activeFilterCount > 0 && (
+                  <span className="w-4 h-4 rounded-full bg-slate-950 text-amber-400 flex items-center justify-center text-[10px] font-black">
+                    {activeFilterCount}
+                  </span>
+                )}
+                <ChevronDown
+                  className={clsx(
+                    'w-3.5 h-3.5 transition-transform duration-200',
+                    isRefineOpen && 'rotate-180'
+                  )}
+                />
+              </button>
+            </div>
+
+            {/* Amazon-Style Active Filter Chips (if any filter is applied) */}
+            {hasActiveFilters && (
+              <div className="flex flex-wrap items-center gap-1.5 px-1 text-xs">
+                <span className="text-[11px] font-bold text-studio-400 uppercase tracking-wider mr-1">
+                  Active:
+                </span>
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-studio-900 border border-studio-700 text-studio-200 text-xs hover:border-studio-500"
+                  >
+                    <span>&ldquo;{search}&rdquo;</span>
+                    <X className="w-3 h-3 text-studio-400 hover:text-white" />
+                  </button>
+                )}
+                {selectedInstrument !== 'all' && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedInstrument('all')}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-studio-900 border border-studio-700 text-amber-300 text-xs hover:border-amber-500"
+                  >
+                    <span>{INSTRUMENT_METADATA[selectedInstrument as InstrumentType]?.label || selectedInstrument}</span>
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+                {selectedSkill !== 'all' && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSkill('all')}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-studio-900 border border-studio-700 text-amber-300 text-xs capitalize hover:border-amber-500"
+                  >
+                    <span>Skill: {selectedSkill}</span>
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+                {selectedStyle !== 'all' && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStyle('all')}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-studio-900 border border-studio-700 text-amber-300 text-xs hover:border-amber-500"
+                  >
+                    <span>Style: {selectedStyle}</span>
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+                {selectedAge !== 'all' && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAge('all')}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-studio-900 border border-studio-700 text-amber-300 text-xs capitalize hover:border-amber-500"
+                  >
+                    <span>Age: {selectedAge}</span>
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+                {selectedBandStatus !== 'all' && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBandStatus('all')}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-studio-900 border border-studio-700 text-amber-300 text-xs capitalize hover:border-amber-500"
+                  >
+                    <span>{selectedBandStatus === 'unassigned' ? 'Unassigned Only' : 'Assigned to Band'}</span>
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold self-end sm:self-center"
+                  className="text-xs text-amber-400 hover:text-amber-300 font-semibold underline ml-1"
                 >
-                  <X className="w-3.5 h-3.5" /> Clear All Filters
+                  Clear All
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* 4 Apple-Style Pop-Down Menus */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-studio-800/80">
-              {/* 1. Instrument Pop-Down */}
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-1.5 flex items-center justify-between">
-                  <span>Instrument</span>
-                  {selectedInstrument !== 'all' && (
-                    <span className="text-amber-400 text-[10px]">Filtered</span>
-                  )}
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedInstrument}
-                    onChange={(e) => setSelectedInstrument(e.target.value)}
-                    className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2.5 text-base sm:text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none pr-8 cursor-pointer capitalize"
-                  >
-                    <option value="all">All Instruments</option>
-                    {instrumentsList.map((inst) => (
-                      <option key={inst} value={inst}>
-                        {INSTRUMENT_METADATA[inst]?.label || inst}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
-                    ▾
+            {/* Amazon-Style Collapsible Refine Sub-menu */}
+            {isRefineOpen && (
+              <div className="bg-studio-900 border border-studio-800 rounded-3xl p-4 sm:p-5 space-y-4 shadow-xl animate-in slide-in-from-top-2 duration-150">
+                <div className="flex items-center justify-between border-b border-studio-800 pb-2.5">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-studio-400 flex items-center gap-1.5">
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Refine Roster by Category</span>
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    {hasActiveFilters && (
+                      <button
+                        type="button"
+                        onClick={clearFilters}
+                        className="text-xs text-studio-400 hover:text-white"
+                      >
+                        Reset
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsRefineOpen(false)}
+                      className="px-3 py-1 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                  {/* Category 1: Instrument */}
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-1.5 flex items-center justify-between">
+                      <span>Instrument</span>
+                      {selectedInstrument !== 'all' && (
+                        <span className="text-amber-400 text-[10px]">Filtered</span>
+                      )}
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedInstrument}
+                        onChange={(e) => setSelectedInstrument(e.target.value)}
+                        className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2 text-base sm:text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none pr-7 cursor-pointer capitalize"
+                      >
+                        <option value="all">All Instruments</option>
+                        {instrumentsList.map((inst) => (
+                          <option key={inst} value={inst}>
+                            {INSTRUMENT_METADATA[inst]?.label || inst}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
+                        ▾
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Category 2: Skill Level */}
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-1.5 flex items-center justify-between">
+                      <span>Skill Level</span>
+                      {selectedSkill !== 'all' && (
+                        <span className="text-amber-400 text-[10px]">Filtered</span>
+                      )}
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedSkill}
+                        onChange={(e) => setSelectedSkill(e.target.value)}
+                        className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2 text-base sm:text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none pr-7 cursor-pointer capitalize"
+                      >
+                        <option value="all">All Skill Levels</option>
+                        {skillList.map((skill) => (
+                          <option key={skill} value={skill} className="capitalize">
+                            {skill}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
+                        ▾
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Category 3: Musical Style */}
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-1.5 flex items-center justify-between">
+                      <span>Musical Style</span>
+                      {selectedStyle !== 'all' && (
+                        <span className="text-amber-400 text-[10px]">Filtered</span>
+                      )}
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedStyle}
+                        onChange={(e) => setSelectedStyle(e.target.value)}
+                        className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2 text-base sm:text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none pr-7 cursor-pointer"
+                      >
+                        <option value="all">All Styles ({allStyles.length})</option>
+                        {allStyles.map((style) => (
+                          <option key={style} value={style}>
+                            {style}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
+                        ▾
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Category 4: Age Bracket */}
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-1.5 flex items-center justify-between">
+                      <span>Age Bracket</span>
+                      {selectedAge !== 'all' && (
+                        <span className="text-amber-400 text-[10px]">Filtered</span>
+                      )}
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedAge}
+                        onChange={(e) => setSelectedAge(e.target.value)}
+                        className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2 text-base sm:text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none pr-7 cursor-pointer capitalize"
+                      >
+                        <option value="all">All Age Groups</option>
+                        <option value="kids">Kids (Under 13)</option>
+                        <option value="teens">Teens (13–18)</option>
+                        <option value="adults">Adults (18+)</option>
+                      </select>
+                      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
+                        ▾
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Category 5: Ensemble Status */}
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-1.5 flex items-center justify-between">
+                      <span>Band Status</span>
+                      {selectedBandStatus !== 'all' && (
+                        <span className="text-amber-400 text-[10px]">Filtered</span>
+                      )}
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedBandStatus}
+                        onChange={(e) => setSelectedBandStatus(e.target.value as any)}
+                        className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2 text-base sm:text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none pr-7 cursor-pointer"
+                      >
+                        <option value="all">All Musicians</option>
+                        <option value="unassigned">⚡ Unassigned Only</option>
+                        <option value="assigned">🎵 In an Ensemble</option>
+                      </select>
+                      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
+                        ▾
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-
-              {/* 2. Skill Level Pop-Down */}
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-1.5 flex items-center justify-between">
-                  <span>Skill Level</span>
-                  {selectedSkill !== 'all' && (
-                    <span className="text-amber-400 text-[10px]">Filtered</span>
-                  )}
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedSkill}
-                    onChange={(e) => setSelectedSkill(e.target.value)}
-                    className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2.5 text-base sm:text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none pr-8 cursor-pointer capitalize"
-                  >
-                    <option value="all">All Skill Levels</option>
-                    {skillList.map((skill) => (
-                      <option key={skill} value={skill} className="capitalize">
-                        {skill}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
-                    ▾
-                  </div>
-                </div>
-              </div>
-
-              {/* 3. Musical Style Pop-Down */}
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-1.5 flex items-center justify-between">
-                  <span>Musical Style</span>
-                  {selectedStyle !== 'all' && (
-                    <span className="text-amber-400 text-[10px]">Filtered</span>
-                  )}
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedStyle}
-                    onChange={(e) => setSelectedStyle(e.target.value)}
-                    className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2.5 text-base sm:text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none pr-8 cursor-pointer"
-                  >
-                    <option value="all">All Styles ({allStyles.length})</option>
-                    {allStyles.map((style) => (
-                      <option key={style} value={style}>
-                        {style}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
-                    ▾
-                  </div>
-                </div>
-              </div>
-
-              {/* 4. Age Bracket Pop-Down */}
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-1.5 flex items-center justify-between">
-                  <span>Age Bracket</span>
-                  {selectedAge !== 'all' && (
-                    <span className="text-amber-400 text-[10px]">Filtered</span>
-                  )}
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedAge}
-                    onChange={(e) => setSelectedAge(e.target.value)}
-                    className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2.5 text-base sm:text-xs font-semibold text-white focus:outline-none focus:border-amber-500 appearance-none pr-8 cursor-pointer capitalize"
-                  >
-                    <option value="all">All Age Groups</option>
-                    <option value="kids">Kids (Under 13)</option>
-                    <option value="teens">Teens (13–18)</option>
-                    <option value="adults">Adults (18+)</option>
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
-                    ▾
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
-      {/* Roster Grid Count */}
-      <div className="flex items-center justify-between text-xs text-studio-400 px-1">
-        <span>
-          Showing <strong className="text-white">{filteredStudents.length}</strong> of{' '}
-          {students.length} Enrolled Musicians
-        </span>
-      </div>
+          {/* Roster Overview Count Header */}
+          <div className="flex items-center justify-between text-xs text-studio-400 px-1 pt-1">
+            <span>
+              Showing <strong className="text-white">{filteredStudents.length}</strong> of{' '}
+              {students.length} Musicians
+            </span>
+            <span className="text-[11px] text-studio-500">
+              Tap any student to view their full profile card &amp; questionnaire
+            </span>
+          </div>
 
-      {/* Roster Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredStudents.map((student) => {
-          const studentBands = bands.filter(
-            (b) =>
-              b.members?.some((m) => m.userId === student.id) ||
-              (student.bandIds && student.bandIds.includes(b.id))
-          );
-
-          return (
-            <div
-              key={student.id}
-              className="bg-studio-900 border border-studio-800 hover:border-studio-700 rounded-2xl p-5 transition shadow-sm flex flex-col justify-between"
-            >
-              <div>
-                {/* Top: Avatar & Name */}
-                <div
-                  onClick={() => setViewProfileStudent(student)}
-                  className="flex items-start gap-3.5 mb-3.5 cursor-pointer group"
-                  title="Click to view full questionnaire responses and exact age"
-                >
-                  <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-studio-800 border-2 border-studio-700 group-hover:border-amber-500 transition shrink-0 shadow-md">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={student.avatar}
-                      alt={student.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <h3 className="text-base font-bold text-white group-hover:text-amber-300 transition truncate">
-                        {student.name}
-                      </h3>
-                      {student.pronouns && <Badge pronouns={student.pronouns} />}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <InstrumentIcon
-                        instrument={student.primaryInstrument}
-                        size="xs"
-                        showLabel
-                      />
-                      <Badge skill={student.skillLevel} />
-                    </div>
-                    <span className="text-[10px] text-amber-400 font-medium group-hover:underline mt-0.5 inline-block">
-                      View Questionnaire &rarr;
-                    </span>
-                  </div>
-                </div>
-
-                {/* Bio */}
-                {student.bio && (
-                  <p className="text-xs text-studio-300 line-clamp-2 mb-3 leading-relaxed">
-                    {student.bio}
-                  </p>
-                )}
-
-                {/* Metadata Tags */}
-                <div className="space-y-2 text-xs bg-studio-950/70 p-3 rounded-xl border border-studio-800/80 mb-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-studio-400">Age:</span>
-                    {student.exactAge ? (
-                      <div className="flex items-center gap-1">
-                        <Badge exactAge={student.exactAge} />
-                        <span className="text-[10px] text-studio-500">
-                          ({student.ageGroup})
-                        </span>
-                      </div>
-                    ) : (
-                      <Badge age={student.ageGroup} />
-                    )}
-                  </div>
-
-                  {student.availability && student.availability.length > 0 && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-studio-400">Availability:</span>
-                      <span className="text-[11px] text-amber-300 font-medium">
-                        {student.availability.map((a) => a.dayOfWeek.slice(0, 3)).join(', ')}
-                      </span>
-                    </div>
-                  )}
-
-                  {student.bandMatchProfile?.commitmentLevel && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-studio-400">Band Goal:</span>
-                      <span className="text-[11px] text-studio-300 capitalize">
-                        {student.bandMatchProfile.commitmentLevel.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                  )}
-
-                  {student.instruments.length > 1 && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-studio-400">All Instruments:</span>
-                      <div className="flex items-center gap-1">
-                        {student.instruments.map((inst) => (
-                          <InstrumentIcon key={inst} instrument={inst} size="xs" />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {student.musicalStyles && student.musicalStyles.length > 0 && (
-                    <div>
-                      <span className="text-studio-400 block mb-1">
-                        Preferred Styles:
-                      </span>
-                      <div className="flex flex-wrap gap-1">
-                        {student.musicalStyles.map((style) => (
-                          <span
-                            key={style}
-                            className="px-2 py-0.5 rounded bg-studio-900 border border-studio-800 text-[10px] text-studio-300 font-medium"
-                          >
-                            #{style}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Current Enrolled Bands */}
-                <div className="mb-4">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-studio-400 mb-1.5">
-                    Active Ensembles ({studentBands.length})
-                  </div>
-                  {studentBands.length === 0 ? (
-                    <span className="text-xs text-amber-400/80 italic">
-                      Not currently assigned to any band.
-                    </span>
-                  ) : (
-                    <div className="flex flex-wrap gap-1">
-                      {studentBands.map((b) => (
-                        <span
-                          key={b.id}
-                          className="text-xs px-2.5 py-1 rounded-lg bg-studio-950 border border-studio-800 text-studio-200 font-semibold"
-                        >
-                          {b.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              {isAdmin && (
-                <div className="pt-3 border-t border-studio-800 flex items-center gap-2">
-                  <button
-                    onClick={() => setViewProfileStudent(student)}
-                    className="flex-1 py-2 rounded-xl bg-studio-950 hover:bg-studio-800 border border-studio-800 hover:border-amber-500/40 text-studio-200 hover:text-white text-xs font-semibold transition flex items-center justify-center gap-1.5"
-                    title="View complete intake questionnaire answers and profile"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    Questionnaire & Profile
-                  </button>
-
-                  <button
-                    onClick={() => setAssignStudent(student)}
-                    className="py-2 px-3 rounded-xl bg-studio-800 hover:bg-amber-500 hover:text-slate-950 text-studio-200 text-xs font-bold transition flex items-center justify-center gap-1.5"
-                    title="Assign to Band"
-                  >
-                    <UserPlus className="w-3.5 h-3.5" />
-                    Assign
-                  </button>
-
-                  <button
-                    onClick={() => setStudentToDelete(student)}
-                    className="p-2 rounded-xl bg-studio-950 hover:bg-rose-500/20 border border-studio-800 hover:border-rose-500/40 text-studio-400 hover:text-rose-400 text-xs transition"
-                    title={`Remove ${student.name} from studio roster`}
-                    aria-label={`Remove ${student.name}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
+          {/* Compact Student Overview List (No giant cards taking over the screen) */}
+          {filteredStudents.length === 0 ? (
+            <div className="bg-studio-900 border border-studio-800 rounded-3xl p-8 text-center space-y-3">
+              <Users className="w-10 h-10 text-studio-600 mx-auto" />
+              <p className="font-bold text-white text-base">No students matched your search</p>
+              <p className="text-xs text-studio-400 max-w-sm mx-auto">
+                Try clearing active filters or refining your search keywords.
+              </p>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition"
+              >
+                Reset All Filters
+              </button>
             </div>
-          );
-        })}
-      </div>
-      </>
+          ) : (
+            <div className="bg-studio-900 border border-studio-800 rounded-3xl overflow-hidden shadow-xl divide-y divide-studio-800/80">
+              {filteredStudents.map((student) => {
+                const studentBands = bands.filter(
+                  (b) =>
+                    b.members?.some((m) => m.userId === student.id) ||
+                    (student.bandIds && student.bandIds.includes(b.id))
+                );
+
+                return (
+                  <div
+                    key={student.id}
+                    onClick={() => setViewProfileStudent(student)}
+                    className="p-3.5 sm:p-4 hover:bg-studio-850/80 transition-colors cursor-pointer flex items-center justify-between gap-3 group active:bg-studio-800"
+                    title="Tap to open full student card, questionnaire, and band controls"
+                  >
+                    {/* Left: Avatar + Primary Info */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-studio-800 border-2 border-studio-700 group-hover:border-amber-500 shrink-0 shadow-md transition">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={student.avatar}
+                          alt={student.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 truncate">
+                          <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-amber-300 transition truncate">
+                            {student.name}
+                          </h3>
+                          {student.exactAge ? (
+                            <Badge exactAge={student.exactAge} />
+                          ) : (
+                            <Badge age={student.ageGroup} />
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 mt-0.5 text-xs text-studio-400 truncate">
+                          <div className="flex items-center gap-1 text-white font-medium">
+                            <InstrumentIcon
+                              instrument={student.primaryInstrument}
+                              size="xs"
+                              showLabel
+                            />
+                          </div>
+                          <span>•</span>
+                          <span className="capitalize text-studio-300">
+                            {student.skillLevel}
+                          </span>
+                          {student.musicalStyles && student.musicalStyles.length > 0 && (
+                            <>
+                              <span className="hidden sm:inline">•</span>
+                              <span className="hidden sm:inline text-studio-400 truncate max-w-[160px]">
+                                {student.musicalStyles.slice(0, 2).join(', ')}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Band Status Pill + Chevron */}
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      {studentBands.length === 0 ? (
+                        <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                          Unassigned
+                        </span>
+                      ) : (
+                        <span className="hidden xs:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-studio-950 text-studio-300 border border-studio-800">
+                          <Music className="w-3 h-3 text-amber-400" />
+                          <span>
+                            {studentBands.length} {studentBands.length === 1 ? 'Band' : 'Bands'}
+                          </span>
+                        </span>
+                      )}
+
+                      <div className="w-7 h-7 rounded-full bg-studio-950 group-hover:bg-amber-500 group-hover:text-slate-950 text-studio-400 transition flex items-center justify-center">
+                        <ChevronRight className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
 
       {/* Modals */}
