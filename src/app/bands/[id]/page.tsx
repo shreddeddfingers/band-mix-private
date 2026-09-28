@@ -18,10 +18,12 @@ import { BandAnnouncementsTab } from '@/components/announcements/BandAnnouncemen
 import { SetlistManager } from '@/components/repertoire/SetlistManager';
 import { SongSuggestionVoting } from '@/components/repertoire/SongSuggestionVoting';
 import { ChangeBandCoverModal } from '@/components/bands/ChangeBandCoverModal';
+import { BandStoriesBar } from '@/components/social/BandStoriesBar';
 import {
   Music,
   Calendar,
   MessageSquare,
+  MessageCircle,
   Users,
   QrCode,
   ArrowLeft,
@@ -177,212 +179,309 @@ export default function BandHubPage({
         </div>
       )}
 
-      {/* Band Hero Banner */}
-      <div className="relative rounded-2xl sm:rounded-3xl bg-studio-900 border border-studio-800 overflow-hidden shadow-2xl">
-        <div className="relative min-h-[220px] sm:min-h-[260px] bg-studio-950 flex flex-col justify-end p-4 sm:p-6">
-          {/* Background image & gradient */}
-          <div className="absolute inset-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={
-                band.coverImage ||
-                'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=800'
-              }
-              alt={band.name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-studio-950 via-studio-950/75 to-studio-950/20" />
-          </div>
+      {/* Instagram / Facebook Style Band Profile Header */}
+      <div className="relative rounded-3xl bg-studio-900 border border-studio-800 overflow-hidden shadow-2xl">
+        {/* Cover Photo Banner */}
+        <div className="relative h-44 sm:h-56 bg-studio-950 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={
+              band.coverImage ||
+              'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=1000'
+            }
+            alt={band.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-studio-950 via-studio-950/60 to-transparent" />
 
-          {/* Banner content */}
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 backdrop-blur-md">
-                  {band.genre}
-                </span>
-                <span className="text-[11px] sm:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-black/60 text-studio-300 border border-white/10 font-mono backdrop-blur-md">
-                  {band.members.length} Musicians
-                </span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight break-words">
-                {band.name}
-              </h1>
-              {band.description && (
-                <p className="text-xs sm:text-sm text-studio-300 max-w-2xl mt-1 line-clamp-2 sm:line-clamp-none">
-                  {band.description}
-                </p>
-              )}
-            </div>
-
-            {/* Quick Actions on banner */}
-            <div className="flex items-center gap-2 shrink-0 pt-1 sm:pt-0">
-              {(isAdmin || isMember) && (
-                <button
-                  type="button"
-                  onClick={() => setIsChangeCoverOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/70 hover:bg-black/90 active:scale-95 text-white text-xs font-semibold border border-white/20 backdrop-blur-md transition shadow-sm"
-                  title="Change band cover picture"
-                >
-                  <Camera className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Band Picture</span>
-                </button>
-              )}
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setIsQrOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/70 hover:bg-black/90 active:scale-95 text-white text-xs font-semibold border border-white/20 backdrop-blur-md transition shadow-sm"
-                >
-                  <QrCode className="w-3.5 h-3.5 text-amber-400" />
-                  <span>QR Pass</span>
-                </button>
-              )}
-            </div>
+          {/* Quick Photo / Pass Buttons Top-Right */}
+          <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+            {(isAdmin || isMember) && (
+              <button
+                type="button"
+                onClick={() => setIsChangeCoverOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 hover:bg-black/90 active:scale-95 text-white text-xs font-semibold border border-white/20 backdrop-blur-md transition shadow-md"
+                title="Change band cover picture"
+              >
+                <Camera className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden xs:inline">Band Photo</span>
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setIsQrOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 hover:bg-black/90 active:scale-95 text-white text-xs font-semibold border border-white/20 backdrop-blur-md transition shadow-md"
+                title="Invite student with QR Intake Pass"
+              >
+                <QrCode className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden xs:inline">QR Pass</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Member instrument strip */}
-        <div className="p-3 sm:p-4 bg-studio-950/90 border-t border-studio-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-          {/* Mobile compact roster overview */}
-          <div className="flex sm:hidden items-center justify-between gap-2 w-full">
-            <button
-              type="button"
-              onClick={() => setActiveTab('roster')}
-              className="flex items-center gap-2 group text-left min-w-0"
-            >
-              {/* Overlapping avatar stack */}
-              <div className="flex -space-x-2 overflow-hidden shrink-0">
-                {band.members.slice(0, 4).map((member) => (
-                  <div
-                    key={member.userId}
-                    className="inline-block w-7 h-7 rounded-full ring-2 ring-studio-950 overflow-hidden bg-studio-800"
+        {/* Instagram Profile Info & Stats */}
+        <div className="px-4 sm:px-6 pb-5 pt-0 relative">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-14 sm:-mt-16 mb-4">
+            {/* Band Avatar with Story Ring */}
+            <div className="flex items-end gap-3.5">
+              <div className="relative p-[3px] bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 rounded-full shadow-2xl shrink-0">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-studio-950 border-4 border-studio-900">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={
+                      band.coverImage ||
+                      'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=250'
+                    }
+                    alt={band.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {(isAdmin || isMember) && (
+                  <button
+                    type="button"
+                    onClick={() => setIsChangeCoverOpen(true)}
+                    className="absolute bottom-0 right-0 p-1.5 rounded-full bg-amber-500 text-slate-950 border-2 border-studio-900 shadow-md hover:bg-amber-400 active:scale-95 transition"
+                    title="Change picture"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={member.avatar}
-                      alt={member.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
+                    <Camera className="w-3.5 h-3.5 stroke-[2.5]" />
+                  </button>
+                )}
               </div>
-              <div className="min-w-0">
-                <span className="text-xs font-bold text-white group-hover:text-amber-400 transition flex items-center gap-1 truncate">
-                  {band.members.length} Musicians
-                  <span className="text-[10px] text-amber-400">→</span>
-                </span>
-              </div>
-            </button>
 
+              <div className="min-w-0 pb-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate">
+                    {band.name}
+                  </h1>
+                  <span className="text-amber-400 text-sm font-bold" title="Verified Ensemble">
+                    ✓
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                    {band.genre}
+                  </span>
+                </div>
+                <p className="text-xs text-studio-400 mt-0.5 flex items-center gap-1 truncate">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0 inline" />
+                  <span>Director {DataStore.getDirector(band.directorId || band.createdBy)?.name || 'Studio Director'}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Instagram Action Buttons */}
             <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveTab('chat')}
+                className={clsx(
+                  'flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition shadow-sm active:scale-95',
+                  activeTab === 'chat'
+                    ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white'
+                    : 'bg-studio-800 hover:bg-studio-700 text-white'
+                )}
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Band Chat</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('announcements')}
+                className={clsx(
+                  'flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition shadow-sm active:scale-95',
+                  activeTab === 'announcements'
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950'
+                    : 'bg-studio-800 hover:bg-studio-700 text-white'
+                )}
+              >
+                <Megaphone className="w-3.5 h-3.5" />
+                <span>Feed</span>
+              </button>
+
               {isAdmin && (
                 <button
                   type="button"
                   onClick={() => setIsAddMemberOpen(true)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-studio-900 active:scale-95 border border-dashed border-studio-700 text-xs text-amber-400 font-semibold"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-studio-800 hover:bg-studio-700 text-amber-400 text-xs font-bold border border-studio-700 transition active:scale-95"
+                  title="Add student musician"
                 >
-                  <UserPlus className="w-3 h-3" />
-                  <span>Add</span>
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span className="hidden xs:inline">Add</span>
                 </button>
               )}
-              <div className="text-[11px] text-studio-400 flex items-center gap-1 font-medium bg-studio-900/60 px-2.5 py-1 rounded-lg border border-studio-800">
-                <Clock className="w-3 h-3 text-amber-400 shrink-0" />
-                <span className="truncate max-w-[120px]">{band.rehearsalSchedule || 'TBD'}</span>
-              </div>
             </div>
           </div>
 
-          {/* Compact Roster & Target Schedule Overview (Zero horizontal scrolling) */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+          {/* Instagram Bio / Description */}
+          {band.description && (
+            <p className="text-xs sm:text-sm text-studio-200 max-w-2xl mb-3 leading-relaxed">
+              {band.description}
+            </p>
+          )}
+
+          {/* Instagram Stats Row */}
+          <div className="flex items-center gap-4 sm:gap-6 py-2.5 px-3.5 rounded-2xl bg-studio-950/70 border border-studio-800/80 text-xs">
+            <button
+              type="button"
+              onClick={() => setActiveTab('announcements')}
+              className="flex items-center gap-1.5 hover:text-amber-400 transition"
+            >
+              <strong className="text-white font-extrabold">{DataStore.getAnnouncements(band.id).length}</strong>
+              <span className="text-studio-400">Posts</span>
+            </button>
+            <span>•</span>
             <button
               type="button"
               onClick={() => setActiveTab('roster')}
-              className="flex items-center gap-2.5 group text-left min-w-0"
-              title="Click to view full band roster"
+              className="flex items-center gap-1.5 hover:text-amber-400 transition"
             >
-              {/* Overlapping avatar stack */}
-              <div className="flex -space-x-2 overflow-hidden shrink-0">
-                {band.members.slice(0, 5).map((member) => (
-                  <div
-                    key={member.userId}
-                    className="inline-block w-8 h-8 rounded-full ring-2 ring-studio-950 overflow-hidden bg-studio-800"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={member.avatar}
-                      alt={member.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="min-w-0">
-                <span className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-400 transition flex items-center gap-1.5 truncate">
-                  <Users className="w-3.5 h-3.5 text-amber-400" />
-                  {band.members.length} Musicians in Ensemble
-                  <span className="text-amber-400 text-xs">→</span>
-                </span>
-                <span className="text-[10px] text-studio-400 block -mt-0.5">
-                  Tap to view roster questionnaire &amp; profiles
-                </span>
-              </div>
+              <strong className="text-white font-extrabold">{band.members.length}</strong>
+              <span className="text-studio-400">Musicians</span>
             </button>
-
-            <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setIsAddMemberOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-studio-900 active:scale-95 border border-dashed border-studio-700 text-xs text-amber-400 font-semibold transition hover:bg-studio-800"
-                >
-                  <UserPlus className="w-3.5 h-3.5" />
-                  <span>Add Student</span>
-                </button>
-              )}
-              <div className="text-xs text-studio-300 flex items-center gap-1.5 font-medium bg-studio-900 px-3 py-1.5 rounded-xl border border-studio-800">
-                <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span>Target: {band.rehearsalSchedule || 'TBD'}</span>
-              </div>
-            </div>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => setActiveTab('repertoire')}
+              className="flex items-center gap-1.5 hover:text-amber-400 transition"
+            >
+              <strong className="text-white font-extrabold">{DataStore.getSongs(band.id).length}</strong>
+              <span className="text-studio-400">Songs</span>
+            </button>
+            <span className="hidden sm:inline">•</span>
+            <button
+              type="button"
+              onClick={() => setActiveTab('schedule')}
+              className="hidden sm:flex items-center gap-1 text-studio-300 hover:text-amber-400 transition truncate"
+            >
+              <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span className="truncate">Target: {band.rehearsalSchedule || 'TBD'}</span>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Ensemble View & Controls - Apple Pop-Down Menu (No redundant button rows) */}
-      <div className="bg-studio-900 border border-studio-800 rounded-2xl p-3.5 sm:p-4 shadow-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-studio-400 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              Ensemble View:
-            </span>
-            <span className="text-xs px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 font-semibold border border-amber-500/30">
-              {activeTab === 'chat' && 'Live Communication'}
-              {activeTab === 'announcements' && 'Director Notices'}
-              {activeTab === 'repertoire' && 'Active Songs'}
-              {activeTab === 'suggestions' && 'Song Voting'}
-              {activeTab === 'schedule' && 'Rehearsal Times'}
-              {activeTab === 'roster' && `${band.members.length} Musicians`}
-            </span>
-          </div>
+      {/* Instagram Stories Bar: Band Members & Profiles */}
+      <BandStoriesBar
+        band={band}
+        currentUserId={currentUser?.id}
+        onSelectMember={(member, studentDetails) => {
+          if (studentDetails) {
+            setViewProfileStudent(studentDetails);
+          } else {
+            const user = DataStore.getUserById(member.userId);
+            if (user) setViewProfileStudent(user);
+          }
+        }}
+        onOpenAddMember={() => setIsAddMemberOpen(true)}
+        isAdmin={isAdmin}
+      />
 
-          <div className="relative w-full sm:w-80">
-            <select
-              value={activeTab}
-              onChange={(e) => setActiveTab(e.target.value as any)}
-              className="w-full bg-studio-950 border-2 border-amber-500/60 rounded-xl px-4 py-2.5 text-base sm:text-xs font-bold text-white focus:outline-none focus:border-amber-400 shadow-md shadow-amber-500/10 appearance-none pr-10 cursor-pointer"
-            >
-              <option value="chat">💬 Chat Channel (Live Communication)</option>
-              <option value="announcements">📢 Persistent Announcements &amp; Notices</option>
-              <option value="repertoire">🎵 Master Setlist Repertoire</option>
-              <option value="suggestions">✨ Song Suggestions &amp; Voting</option>
-              <option value="schedule">📅 Rehearsal &amp; Event Schedule</option>
-              <option value="roster">👥 Band Roster ({band.members.length} Musicians)</option>
-            </select>
-            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-amber-400 text-xs font-bold">
-              ▼
-            </div>
+      {/* Instagram / Facebook Navigation Tabs & Apple Pop-Down Controller */}
+      <div className="bg-studio-900 border border-studio-800 rounded-2xl p-2 sm:p-2.5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+        {/* Instagram Social Segmented Tabs */}
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+          <button
+            type="button"
+            onClick={() => setActiveTab('chat')}
+            className={clsx(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition shrink-0',
+              activeTab === 'chat'
+                ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white shadow-md'
+                : 'text-studio-400 hover:text-white hover:bg-studio-800'
+            )}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>Chat</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('announcements')}
+            className={clsx(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition shrink-0',
+              activeTab === 'announcements'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
+                : 'text-studio-400 hover:text-white hover:bg-studio-800'
+            )}
+          >
+            <Megaphone className="w-3.5 h-3.5" />
+            <span>Feed</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('repertoire')}
+            className={clsx(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition shrink-0',
+              activeTab === 'repertoire'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
+                : 'text-studio-400 hover:text-white hover:bg-studio-800'
+            )}
+          >
+            <ListMusic className="w-3.5 h-3.5" />
+            <span>Setlist</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('suggestions')}
+            className={clsx(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition shrink-0',
+              activeTab === 'suggestions'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
+                : 'text-studio-400 hover:text-white hover:bg-studio-800'
+            )}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Voting</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('schedule')}
+            className={clsx(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition shrink-0',
+              activeTab === 'schedule'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
+                : 'text-studio-400 hover:text-white hover:bg-studio-800'
+            )}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Schedule</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('roster')}
+            className={clsx(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition shrink-0',
+              activeTab === 'roster'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
+                : 'text-studio-400 hover:text-white hover:bg-studio-800'
+            )}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>Lineup</span>
+          </button>
+        </div>
+
+        {/* Apple Pop-Down Controller (Quick Menu) */}
+        <div className="relative w-full md:w-64 shrink-0">
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value as any)}
+            className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-1.5 text-base sm:text-xs font-bold text-white focus:outline-none focus:border-amber-400 appearance-none pr-8 cursor-pointer"
+          >
+            <option value="chat">💬 Chat Channel (DMs)</option>
+            <option value="announcements">📢 Band Feed &amp; Wall</option>
+            <option value="repertoire">🎵 Setlist &amp; Songs</option>
+            <option value="suggestions">✨ Song Voting &amp; Suggestions</option>
+            <option value="schedule">📅 Rehearsals &amp; Schedule</option>
+            <option value="roster">👥 Musician Lineup ({band.members.length})</option>
+          </select>
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
+            ▼
           </div>
         </div>
       </div>
@@ -392,6 +491,7 @@ export default function BandHubPage({
         <BandChat
           band={band}
           onOpenSchedulePlanner={() => setActiveTab('schedule')}
+          onOpenRoster={() => setActiveTab('roster')}
         />
       )}
 

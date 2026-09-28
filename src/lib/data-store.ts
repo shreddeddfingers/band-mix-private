@@ -1156,6 +1156,42 @@ export const DataStore = {
     return newMessage;
   },
 
+  toggleMessageReaction(
+    bandId: string,
+    messageId: string,
+    emoji: string,
+    userId: string
+  ): void {
+    const all = loadItem<Record<string, ChatMessage[]>>(
+      STORAGE_KEYS.MESSAGES,
+      {}
+    );
+    if (!all[bandId]) return;
+
+    const msg = all[bandId].find((m) => m.id === messageId);
+    if (!msg) return;
+
+    if (!msg.reactions) {
+      msg.reactions = {};
+    }
+
+    const currentReactors = msg.reactions[emoji] || [];
+    if (currentReactors.includes(userId)) {
+      // Remove reaction
+      msg.reactions[emoji] = currentReactors.filter((id) => id !== userId);
+      if (msg.reactions[emoji].length === 0) {
+        delete msg.reactions[emoji];
+      }
+    } else {
+      // Add reaction
+      msg.reactions[emoji] = [...currentReactors, userId];
+    }
+
+    saveItem(STORAGE_KEYS.MESSAGES, all);
+    notify(`messages:${bandId}`);
+    notify('messages');
+  },
+
   // REHEARSAL SCHEDULING (ADMIN CONTROLLED)
   getRehearsals(bandId?: string): RehearsalEvent[] {
     const rehearsals = loadItem<RehearsalEvent[]>(
@@ -1552,6 +1588,46 @@ export const DataStore = {
     if (isFirebaseConfigured) {
       FirestoreService.deleteAnnouncement(target.bandId, id).catch(console.error);
     }
+  },
+
+  toggleAnnouncementLike(bandId: string, announcementId: string, userId: string): void {
+    const all = loadItem<BandAnnouncement[]>(STORAGE_KEYS.ANNOUNCEMENTS, []);
+    const target = all.find((a) => a.id === announcementId);
+    if (!target) return;
+
+    if (!target.likes) target.likes = [];
+    if (target.likes.includes(userId)) {
+      target.likes = target.likes.filter((id) => id !== userId);
+    } else {
+      target.likes.push(userId);
+    }
+
+    saveItem(STORAGE_KEYS.ANNOUNCEMENTS, all);
+    notify(`announcements:${bandId}`);
+  },
+
+  addAnnouncementComment(
+    bandId: string,
+    announcementId: string,
+    text: string,
+    user: UserProfile
+  ): void {
+    const all = loadItem<BandAnnouncement[]>(STORAGE_KEYS.ANNOUNCEMENTS, []);
+    const target = all.find((a) => a.id === announcementId);
+    if (!target) return;
+
+    if (!target.comments) target.comments = [];
+    target.comments.push({
+      id: `comm-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
+      authorId: user.id,
+      authorName: user.name,
+      authorAvatar: user.avatar,
+      text,
+      createdAt: new Date().toISOString(),
+    });
+
+    saveItem(STORAGE_KEYS.ANNOUNCEMENTS, all);
+    notify(`announcements:${bandId}`);
   },
 
   // --- POLYMORPHIC BAND EVENTS (Extends RehearsalEvent) ---

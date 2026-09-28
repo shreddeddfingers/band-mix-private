@@ -172,6 +172,8 @@ export interface ChatMessage {
   text: string;
   timestamp: string;
   isPinnedRehearsalNotice?: boolean;
+  reactions?: Record<string, string[]>; // emoji -> array of userIds e.g. { '❤️': ['uid1'], '🔥': ['uid2'] }
+  mediaUrl?: string;
 }
 
 // Master Repertoire & Setlist System
@@ -218,7 +220,16 @@ export interface SongVote {
   updatedAt: string;
 }
 
-// Persistent Band Announcements
+export interface PostComment {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar: string;
+  text: string;
+  createdAt: string;
+}
+
+// Persistent Band Announcements / Social Feed Posts
 export interface BandAnnouncement {
   id: string;
   bandId: string;
@@ -226,8 +237,11 @@ export interface BandAnnouncement {
   content: string;
   authorId: string;
   authorName: string;
+  authorAvatar?: string;
   isPinned: boolean;
   isArchived: boolean;
+  likes?: string[]; // Array of userIds who liked the post
+  comments?: PostComment[];
   createdAt: string;
   updatedAt: string;
 }
