@@ -1135,7 +1135,10 @@ export const DataStore = {
       STORAGE_KEYS.MESSAGES,
       {}
     );
-    return all[bandId] || [];
+    const msgs = all[bandId] || [];
+    return [...msgs].sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
   },
 
   sendMessage(
@@ -1268,7 +1271,10 @@ export const DataStore = {
       STORAGE_KEYS.DIRECT_MESSAGES,
       {}
     );
-    return all[conversationId] || [];
+    const msgs = all[conversationId] || [];
+    return [...msgs].sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
   },
 
   sendDirectMessage(params: {

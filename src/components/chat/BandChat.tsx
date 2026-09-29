@@ -64,6 +64,7 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
         .then((remoteMsgs) => {
           if (remoteMsgs && remoteMsgs.length > 0) {
             DataStore.mergeRemoteMessages(band.id, remoteMsgs);
+            setMessages(DataStore.getMessages(band.id));
           }
         })
         .catch(console.error);
@@ -71,6 +72,7 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
       unsubFirestore = FirestoreService.subscribeMessages(band.id, (remoteMsgs) => {
         if (remoteMsgs) {
           DataStore.mergeRemoteMessages(band.id, remoteMsgs);
+          setMessages(DataStore.getMessages(band.id));
         }
       });
     }
@@ -90,6 +92,7 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
     if (!inputText.trim() || !currentUser) return;
 
     DataStore.sendMessage(band.id, inputText.trim(), currentUser);
+    setMessages(DataStore.getMessages(band.id));
     setInputText('');
     setShowEmojiPicker(false);
     setShowQuickPrompts(false);
@@ -98,6 +101,7 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
   const handleSendPrompt = (promptText: string) => {
     if (!currentUser) return;
     DataStore.sendMessage(band.id, promptText, currentUser);
+    setMessages(DataStore.getMessages(band.id));
     setShowQuickPrompts(false);
   };
 
@@ -157,9 +161,11 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
             <div className="text-[11px] text-studio-400 flex items-center gap-1.5 truncate">
               <span className="text-emerald-400 font-medium">Active now</span>
               <span>•</span>
-              <span>{band.members.length} members</span>
+              <span className="text-studio-300 font-medium">{messages.length} messages</span>
               <span>•</span>
-              <span className="text-amber-400/90 font-medium truncate flex items-center gap-0.5">
+              <span>{band.members.length} members</span>
+              <span className="hidden sm:inline">•</span>
+              <span className="hidden sm:inline-flex text-amber-400/90 font-medium truncate items-center gap-0.5">
                 <ShieldCheck className="w-3 h-3 text-amber-400 shrink-0 inline" />
                 {directorLabel}
               </span>

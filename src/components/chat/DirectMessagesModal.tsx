@@ -129,6 +129,7 @@ export function DirectMessagesModal({
         .then((remoteMsgs) => {
           if (remoteMsgs && remoteMsgs.length > 0) {
             DataStore.mergeRemoteDirectMessages(conversationId, remoteMsgs);
+            setMessages(DataStore.getDirectMessages(conversationId));
           }
         })
         .catch(console.error);
@@ -136,6 +137,7 @@ export function DirectMessagesModal({
       unsubFirestore = FirestoreService.subscribeDirectMessages(conversationId, (remoteMsgs) => {
         if (remoteMsgs) {
           DataStore.mergeRemoteDirectMessages(conversationId, remoteMsgs);
+          setMessages(DataStore.getDirectMessages(conversationId));
         }
       });
     }
@@ -153,7 +155,7 @@ export function DirectMessagesModal({
 
   const handleSendMessage = (textToSend?: string) => {
     const text = (textToSend || inputText).trim();
-    if (!text || !currentUser || !activeRecipient) return;
+    if (!text || !currentUser || !activeRecipient || !conversationId) return;
 
     DataStore.sendDirectMessage({
       sender: currentUser,
@@ -161,6 +163,7 @@ export function DirectMessagesModal({
       text,
     });
 
+    setMessages(DataStore.getDirectMessages(conversationId));
     setInputText('');
   };
 

@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { DataStore, subscribeToStore } from '@/lib/data-store';
 import { isFirebaseConfigured } from '@/lib/firebase';
 import { FirestoreService } from '@/lib/firestore-service';
-import { Band, InstrumentType, UserProfile } from '@/types';
+import { Band, InstrumentType, UserProfile, ChatMessage } from '@/types';
 import { InstrumentIcon } from '@/components/InstrumentIcon';
 import { Badge } from '@/components/Badge';
 import { BandChat } from '@/components/chat/BandChat';
@@ -47,8 +47,9 @@ export default function BandHubPage({
   const router = useRouter();
   const { isAdmin, currentUser } = useAuth();
   const [band, setBand] = useState<Band | null>(null);
-  const [activeTab, setActiveTab] = useState<'feed' | 'songs' | 'schedule' | 'chat'>('feed');
+  const [activeTab, setActiveTab] = useState<'feed' | 'chat' | 'songs' | 'schedule'>('feed');
   const [songsSubTab, setSongsSubTab] = useState<'setlist' | 'voting'>('setlist');
+  const [bandMessages, setBandMessages] = useState<ChatMessage[]>([]);
 
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isChangeCoverOpen, setIsChangeCoverOpen] = useState(false);
@@ -56,6 +57,70 @@ export default function BandHubPage({
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [selectedStudentToAdd, setSelectedStudentToAdd] = useState('');
   const [selectedInstrumentToAdd, setSelectedInstrumentToAdd] = useState<InstrumentType>('guitars');
+
+  // Restore saved active tab on page mount/refresh (URL query param or localStorage)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam === 'chat' || tabParam === 'songs' || tabParam === 'schedule' || tabParam === 'feed') {
+      setActiveTab(tabParam);
+      return;
+    }
+    const saved = localStorage.getItem(`band_${resolvedParams.id}_activeTab`);
+    if (saved === 'chat' || saved === 'songs' || saved === 'schedule' || saved === 'feed') {
+      setActiveTab(saved);
+    }
+  }, [resolvedParams.id]);
+
+  const handleTabChange = (newTab: 'feed' | 'chat' | 'songs' | 'schedule') => {
+    setActiveTab(newTab);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`band_${resolvedParams.id}_activeTab`, newTab);
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', newTab);
+        window.history.replaceState({}, '', url.toString());
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  // Real-time messages sync at page level
+  useEffect(() => {
+    const refreshMsgs = () => {
+      setBandMessages(DataStore.getMessages(resolvedParams.id));
+    };
+
+    refreshMsgs();
+    const unsubLocal = subscribeToStore(`messages:${resolvedParams.id}`, refreshMsgs);
+
+    let unsubFirestore: (() => void) | undefined;
+    if (isFirebaseConfigured) {
+      DataStore.syncLocalMessagesToFirestore(resolvedParams.id)
+        .then(() => FirestoreService.getMessages(resolvedParams.id))
+        .then((remoteMsgs) => {
+          if (remoteMsgs && remoteMsgs.length > 0) {
+            DataStore.mergeRemoteMessages(resolvedParams.id, remoteMsgs);
+            setBandMessages(DataStore.getMessages(resolvedParams.id));
+          }
+        })
+        .catch(console.error);
+
+      unsubFirestore = FirestoreService.subscribeMessages(resolvedParams.id, (remoteMsgs) => {
+        if (remoteMsgs) {
+          DataStore.mergeRemoteMessages(resolvedParams.id, remoteMsgs);
+          setBandMessages(DataStore.getMessages(resolvedParams.id));
+        }
+      });
+    }
+
+    return () => {
+      unsubLocal();
+      if (unsubFirestore) unsubFirestore();
+    };
+  }, [resolvedParams.id]);
 
   useEffect(() => {
     const refresh = () => {
@@ -208,23 +273,28 @@ export default function BandHubPage({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-studio-950 via-studio-950/60 to-transparent" />
 
-          {/* Instagram-Style Top-Right Header Actions (Messages Icon, Cover, QR Pass) */}
+          {/* Instagram-Style Top-Right Header Actions (Band Chat, Photo, QR Pass) */}
           <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
-            {/* Instagram Direct Messages Icon Button */}
+            {/* Instagram Band Chat Button */}
             <button
               type="button"
-              onClick={() => setActiveTab(activeTab === 'chat' ? 'feed' : 'chat')}
+              onClick={() => handleTabChange(activeTab === 'chat' ? 'feed' : 'chat')}
               className={clsx(
                 'relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg transition active:scale-95 border backdrop-blur-md',
                 activeTab === 'chat'
                   ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 border-pink-400 text-white shadow-pink-500/30'
                   : 'bg-black/75 hover:bg-black/90 border-white/20 text-white'
               )}
-              title={activeTab === 'chat' ? 'Return to Band Feed' : 'Direct Messages'}
+              title={activeTab === 'chat' ? 'Return to Band Feed' : 'Open Band Chat'}
             >
               <MessageCircle className="w-4 h-4 text-pink-400 stroke-[2.5]" />
-              <span>{activeTab === 'chat' ? 'Close Chat' : 'Messages'}</span>
+              <span>{activeTab === 'chat' ? 'Feed' : 'Band Chat'}</span>
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              {bandMessages.length > 0 && activeTab !== 'chat' && (
+                <span className="text-[10px] font-black px-1.5 py-0.2 rounded-full bg-pink-500 text-white leading-none">
+                  {bandMessages.length}
+                </span>
+              )}
             </button>
 
             {(isAdmin || isMember) && (
@@ -310,25 +380,34 @@ export default function BandHubPage({
           )}
 
           {/* Instagram Stats Row */}
-          <div className="flex items-center gap-4 sm:gap-6 py-2.5 px-3.5 rounded-2xl bg-studio-950/70 border border-studio-800/80 text-xs">
+          <div className="flex items-center gap-3 sm:gap-6 py-2.5 px-3.5 rounded-2xl bg-studio-950/70 border border-studio-800/80 text-xs overflow-x-auto no-scrollbar">
             <button
               type="button"
-              onClick={() => setActiveTab('feed')}
-              className="flex items-center gap-1.5 hover:text-amber-400 transition"
+              onClick={() => handleTabChange('feed')}
+              className="flex items-center gap-1.5 hover:text-amber-400 transition shrink-0"
             >
               <strong className="text-white font-extrabold">{DataStore.getAnnouncements(band.id).length}</strong>
               <span className="text-studio-400">Posts</span>
             </button>
             <span>•</span>
-            <div className="flex items-center gap-1.5 text-studio-300">
+            <button
+              type="button"
+              onClick={() => handleTabChange('chat')}
+              className="flex items-center gap-1.5 hover:text-amber-400 transition shrink-0"
+            >
+              <strong className="text-white font-extrabold">{bandMessages.length}</strong>
+              <span className="text-studio-400">Chat</span>
+            </button>
+            <span>•</span>
+            <div className="flex items-center gap-1.5 text-studio-300 shrink-0">
               <strong className="text-white font-extrabold">{band.members.length}</strong>
               <span className="text-studio-400">Musicians</span>
             </div>
             <span>•</span>
             <button
               type="button"
-              onClick={() => setActiveTab('songs')}
-              className="flex items-center gap-1.5 hover:text-amber-400 transition"
+              onClick={() => handleTabChange('songs')}
+              className="flex items-center gap-1.5 hover:text-amber-400 transition shrink-0"
             >
               <strong className="text-white font-extrabold">{DataStore.getSongs(band.id).length}</strong>
               <span className="text-studio-400">Songs</span>
@@ -336,7 +415,7 @@ export default function BandHubPage({
             <span className="hidden sm:inline">•</span>
             <button
               type="button"
-              onClick={() => setActiveTab('schedule')}
+              onClick={() => handleTabChange('schedule')}
               className="hidden sm:flex items-center gap-1 text-studio-300 hover:text-amber-400 transition truncate"
             >
               <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -346,7 +425,7 @@ export default function BandHubPage({
         </div>
       </div>
 
-      {/* Instagram Stories Bar: Band Members & Profiles (Single Add Member button here) */}
+      {/* Instagram Stories Bar: Band Members & Profiles */}
       <BandStoriesBar
         band={band}
         currentUserId={currentUser?.id}
@@ -362,49 +441,75 @@ export default function BandHubPage({
         isAdmin={isAdmin}
       />
 
-      {/* Primary Navigation - Clean 3-Option Switcher & Apple Pop-Down (Zero Horizontal Scrolling) */}
+      {/* Primary Navigation - 4 Clean Segmented Buttons & Apple Pop-Down (Zero Horizontal Scrolling) */}
       <div className="bg-studio-900 border border-studio-800 rounded-2xl p-2 sm:p-2.5 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-        {/* 3 Clean Segmented Buttons that fit smoothly on mobile */}
-        <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto">
+        {/* 4 Clean Segmented Buttons that fit smoothly on mobile without horizontal scrolling */}
+        <div className="grid grid-cols-4 gap-1 sm:gap-1.5 w-full sm:w-auto">
           <button
             type="button"
-            onClick={() => setActiveTab('feed')}
+            onClick={() => handleTabChange('feed')}
             className={clsx(
-              'flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
+              'flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
               activeTab === 'feed'
                 ? 'bg-amber-500 text-slate-950 font-extrabold shadow-amber-500/20'
                 : 'bg-studio-950 hover:bg-studio-800 text-studio-300 hover:text-white'
             )}
           >
-            <Megaphone className="w-3.5 h-3.5" />
+            <Megaphone className="w-3.5 h-3.5 shrink-0" />
             <span>Feed</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setActiveTab('songs')}
+            onClick={() => handleTabChange('chat')}
             className={clsx(
-              'flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
+              'relative flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
+              activeTab === 'chat'
+                ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white font-extrabold shadow-pink-500/20'
+                : 'bg-studio-950 hover:bg-studio-800 text-studio-300 hover:text-white'
+            )}
+          >
+            <MessageCircle className="w-3.5 h-3.5 shrink-0 text-pink-400" />
+            <span>Chat</span>
+            {bandMessages.length > 0 && (
+              <span
+                className={clsx(
+                  'text-[9px] sm:text-[10px] font-black px-1 sm:px-1.5 py-0.2 rounded-full leading-none shrink-0',
+                  activeTab === 'chat'
+                    ? 'bg-white/25 text-white'
+                    : 'bg-pink-500/20 text-pink-300 border border-pink-500/30'
+                )}
+              >
+                {bandMessages.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleTabChange('songs')}
+            className={clsx(
+              'flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
               activeTab === 'songs'
                 ? 'bg-amber-500 text-slate-950 font-extrabold shadow-amber-500/20'
                 : 'bg-studio-950 hover:bg-studio-800 text-studio-300 hover:text-white'
             )}
           >
-            <ListMusic className="w-3.5 h-3.5" />
+            <ListMusic className="w-3.5 h-3.5 shrink-0" />
             <span>Songs</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setActiveTab('schedule')}
+            onClick={() => handleTabChange('schedule')}
             className={clsx(
-              'flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
+              'flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
               activeTab === 'schedule'
                 ? 'bg-amber-500 text-slate-950 font-extrabold shadow-amber-500/20'
                 : 'bg-studio-950 hover:bg-studio-800 text-studio-300 hover:text-white'
             )}
           >
-            <Calendar className="w-3.5 h-3.5" />
+            <Calendar className="w-3.5 h-3.5 shrink-0" />
             <span>Schedule</span>
           </button>
         </div>
@@ -413,13 +518,13 @@ export default function BandHubPage({
         <div className="relative w-full sm:w-64 shrink-0">
           <select
             value={activeTab}
-            onChange={(e) => setActiveTab(e.target.value as any)}
+            onChange={(e) => handleTabChange(e.target.value as any)}
             className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2 text-base sm:text-xs font-bold text-white focus:outline-none focus:border-amber-400 appearance-none pr-8 cursor-pointer"
           >
             <option value="feed">📢 Band Feed (Updates &amp; Wall)</option>
+            <option value="chat">💬 Band Chat ({bandMessages.length} messages)</option>
             <option value="songs">🎵 Songs, Setlist &amp; Voting</option>
             <option value="schedule">📅 Rehearsal Schedule</option>
-            <option value="chat">💬 Direct Messages (Chat)</option>
           </select>
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
             ▼
@@ -428,29 +533,75 @@ export default function BandHubPage({
       </div>
 
       {/* Tab Panels */}
-      {/* 1. Direct Messages / Chat Panel */}
+      {/* 1. Band Chat Panel */}
       {activeTab === 'chat' && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <button
               type="button"
-              onClick={() => setActiveTab('feed')}
+              onClick={() => handleTabChange('feed')}
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-studio-400 hover:text-white transition"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Band Feed</span>
             </button>
+            <span className="text-xs text-studio-400 font-medium">
+              Live sync • {bandMessages.length} {bandMessages.length === 1 ? 'message' : 'messages'}
+            </span>
           </div>
           <BandChat
             band={band}
-            onOpenSchedulePlanner={() => setActiveTab('schedule')}
+            onOpenSchedulePlanner={() => handleTabChange('schedule')}
           />
         </div>
       )}
 
       {/* 2. Band Feed (Default Wall) */}
       {activeTab === 'feed' && (
-        <BandAnnouncementsTab band={band} />
+        <div className="space-y-4">
+          {/* Quick Jump to Active Band Chat Banner */}
+          <div
+            onClick={() => handleTabChange('chat')}
+            className="cursor-pointer group flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/40 via-studio-900 to-studio-900 border border-purple-500/30 hover:border-purple-500/60 shadow-lg transition active:scale-[0.99]"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 p-[2px] shrink-0">
+                <div className="w-full h-full rounded-full bg-studio-950 flex items-center justify-center text-amber-400">
+                  <MessageCircle className="w-5 h-5 text-pink-400" />
+                </div>
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-white group-hover:text-amber-400 transition">
+                    Band Chat
+                  </span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[10px] text-studio-400 font-medium">
+                    ({bandMessages.length} {bandMessages.length === 1 ? 'message' : 'messages'})
+                  </span>
+                </div>
+                <p className="text-xs text-studio-300 truncate mt-0.5">
+                  {bandMessages.length > 0 ? (
+                    <>
+                      <strong className="text-white">
+                        {bandMessages[bandMessages.length - 1].senderName}:
+                      </strong>{' '}
+                      {bandMessages[bandMessages.length - 1].text}
+                    </>
+                  ) : (
+                    'Tap here to chat with your bandmates in real-time!'
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-bold group-hover:bg-purple-500 group-hover:text-white transition">
+              <span>Open Chat</span>
+              <span>→</span>
+            </div>
+          </div>
+
+          <BandAnnouncementsTab band={band} />
+        </div>
       )}
 
       {/* 3. Unified Songs & Setlist Area (Selecting a song & voting are inside) */}
