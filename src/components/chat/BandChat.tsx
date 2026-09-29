@@ -59,7 +59,8 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
 
     let unsubFirestore: (() => void) | undefined;
     if (isFirebaseConfigured) {
-      FirestoreService.getMessages(band.id)
+      DataStore.syncLocalMessagesToFirestore(band.id)
+        .then(() => FirestoreService.getMessages(band.id))
         .then((remoteMsgs) => {
           if (remoteMsgs && remoteMsgs.length > 0) {
             DataStore.mergeRemoteMessages(band.id, remoteMsgs);

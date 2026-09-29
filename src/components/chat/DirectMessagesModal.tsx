@@ -124,7 +124,8 @@ export function DirectMessagesModal({
 
     let unsubFirestore: (() => void) | undefined;
     if (isFirebaseConfigured) {
-      FirestoreService.getDirectMessages(conversationId)
+      DataStore.syncLocalDirectMessagesToFirestore(conversationId)
+        .then(() => FirestoreService.getDirectMessages(conversationId))
         .then((remoteMsgs) => {
           if (remoteMsgs && remoteMsgs.length > 0) {
             DataStore.mergeRemoteDirectMessages(conversationId, remoteMsgs);

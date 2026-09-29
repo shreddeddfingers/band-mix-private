@@ -128,6 +128,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         unsubRemoteInvites = FirestoreService.subscribeInvites((remoteInvites) => {
           DataStore.mergeRemoteInvites(remoteInvites);
         });
+
+        // Backfill any offline/unsynced messages from this device to cloud
+        DataStore.syncAllPendingMessagesToFirestore().catch(console.warn);
       } catch (err) {
         console.warn('Real-time cloud sync subscription failed:', err);
       }

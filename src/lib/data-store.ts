@@ -1235,6 +1235,29 @@ export const DataStore = {
     notify('messages');
   },
 
+  async syncLocalMessagesToFirestore(bandId: string): Promise<void> {
+    if (!isFirebaseConfigured) return;
+    const all = loadItem<Record<string, ChatMessage[]>>(
+      STORAGE_KEYS.MESSAGES,
+      {}
+    );
+    const localMsgs = all[bandId] || [];
+    if (localMsgs.length === 0) return;
+
+    try {
+      const remoteMsgs = await FirestoreService.getMessages(bandId);
+      const remoteIds = new Set(remoteMsgs.map((m) => m.id));
+
+      for (const msg of localMsgs) {
+        if (!remoteIds.has(msg.id)) {
+          await FirestoreService.sendMessage(bandId, msg);
+        }
+      }
+    } catch (e) {
+      console.warn('Error syncing local messages to Firestore:', e);
+    }
+  },
+
   // --- 1-ON-1 DIRECT MESSAGING (DIRECTOR <-> STUDENT) ---
   getDmConversationId(userId1: string, userId2: string): string {
     return ['dm', ...[userId1, userId2].sort()].join('_');
@@ -1311,6 +1334,52 @@ export const DataStore = {
     saveItem(STORAGE_KEYS.DIRECT_MESSAGES, all);
     notify(`direct_messages:${conversationId}`);
     notify('direct_messages');
+  },
+
+  async syncLocalDirectMessagesToFirestore(conversationId: string): Promise<void> {
+    if (!isFirebaseConfigured) return;
+    const all = loadItem<Record<string, DirectMessage[]>>(
+      STORAGE_KEYS.DIRECT_MESSAGES,
+      {}
+    );
+    const localMsgs = all[conversationId] || [];
+    if (localMsgs.length === 0) return;
+
+    try {
+      const remoteMsgs = await FirestoreService.getDirectMessages(conversationId);
+      const remoteIds = new Set(remoteMsgs.map((m) => m.id));
+
+      for (const msg of localMsgs) {
+        if (!remoteIds.has(msg.id)) {
+          await FirestoreService.sendDirectMessage(msg);
+        }
+      }
+    } catch (e) {
+      console.warn('Error syncing local direct messages to Firestore:', e);
+    }
+  },
+
+  async syncAllPendingMessagesToFirestore(): Promise<void> {
+    if (!isFirebaseConfigured || typeof window === 'undefined') return;
+    try {
+      const allBandMsgs = loadItem<Record<string, ChatMessage[]>>(
+        STORAGE_KEYS.MESSAGES,
+        {}
+      );
+      for (const bandId of Object.keys(allBandMsgs)) {
+        await this.syncLocalMessagesToFirestore(bandId);
+      }
+
+      const allDms = loadItem<Record<string, DirectMessage[]>>(
+        STORAGE_KEYS.DIRECT_MESSAGES,
+        {}
+      );
+      for (const convId of Object.keys(allDms)) {
+        await this.syncLocalDirectMessagesToFirestore(convId);
+      }
+    } catch (e) {
+      console.warn('Background message sync error:', e);
+    }
   },
 
   markDirectMessagesRead(conversationId: string, readerUserId: string): void {

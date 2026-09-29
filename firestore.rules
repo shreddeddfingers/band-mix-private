@@ -47,5 +47,10 @@ service cloud.firestore {
     match /invites/{code} {
       allow read, write: if true;
     }
+
+    // 5. Direct Messages (1-on-1 private messaging)
+    match /direct_messages/{conversationId}/messages/{messageId} {
+      allow read, write: if true;
+    }
   }
 }
