@@ -836,6 +836,15 @@ export const DataStore = {
     students[idx] = updated;
     saveItem(STORAGE_KEYS.STUDENTS, students);
 
+    // If avatar was updated, ensure only the owner can change it
+    if (updates.avatar) {
+      const activeUserId = this.getActiveUserId();
+      if (activeUserId && activeUserId !== studentId) {
+        console.warn(`[Security] User ${activeUserId} attempted to change avatar for student ${studentId}. Denied.`);
+        delete updates.avatar;
+      }
+    }
+
     // If avatar was updated, propagate to all band rosters
     if (updates.avatar) {
       const bands = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);
@@ -868,6 +877,12 @@ export const DataStore = {
   },
 
   updateUserAvatar(userId: string, avatarUrl: string): void {
+    const activeUserId = this.getActiveUserId();
+    if (activeUserId && activeUserId !== userId) {
+      console.warn(`[Security] User ${activeUserId} attempted to change avatar for user ${userId}. Denied.`);
+      return;
+    }
+
     // 1. Check if user is director
     const directors = this.getDirectors();
     const dirIdx = directors.findIndex((d) => d.id === userId);

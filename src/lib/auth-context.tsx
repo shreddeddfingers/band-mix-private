@@ -434,12 +434,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateUserAvatar = (avatarUrl: string, targetUserId?: string) => {
-    const uid = targetUserId || currentUser?.id;
+    const uid = currentUser?.id;
     if (!uid) return;
-    DataStore.updateUserAvatar(uid, avatarUrl);
-    if (currentUser && currentUser.id === uid) {
-      setCurrentUser((prev) => (prev ? { ...prev, avatar: avatarUrl } : prev));
+    if (targetUserId && targetUserId !== uid) {
+      console.warn('[Security] Unauthorized: Users may only change their own profile picture.');
+      return;
     }
+    DataStore.updateUserAvatar(uid, avatarUrl);
+    setCurrentUser((prev) => (prev ? { ...prev, avatar: avatarUrl } : prev));
   };
 
   const role: UserRole | 'guest' = currentUser?.role || 'guest';

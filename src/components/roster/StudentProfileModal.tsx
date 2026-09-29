@@ -15,6 +15,7 @@ import { InstrumentIcon } from '@/components/InstrumentIcon';
 import { Badge } from '@/components/Badge';
 import { DataStore } from '@/lib/data-store';
 import { calculateExactAge, ageToAgeGroup } from '@/lib/age-utils';
+import { useAuth } from '@/lib/auth-context';
 import {
   X,
   Calendar,
@@ -154,6 +155,9 @@ export function StudentProfileModal({
   const [isChangeAvatarOpen, setIsChangeAvatarOpen] = useState(false);
   const [isDmOpen, setIsDmOpen] = useState(false);
 
+  const { currentUser } = useAuth();
+  const isOwnProfile = Boolean(currentUser && student && currentUser.id === student.id);
+
   if (!isOpen || !student) return null;
 
   // Resolve private profile if exactAge was not stored directly on public user
@@ -189,6 +193,10 @@ export function StudentProfileModal({
   };
 
   const handleSaveAvatar = (newAvatarUrl: string) => {
+    if (!isOwnProfile) {
+      console.warn('[Security] Unauthorized attempt to change another user avatar.');
+      return;
+    }
     DataStore.updateUserAvatar(student.id, newAvatarUrl);
     if (onStudentUpdated) {
       onStudentUpdated({
@@ -229,15 +237,17 @@ export function StudentProfileModal({
                   alt={student.name}
                   className="w-full h-full object-cover"
                 />
-                <button
-                  type="button"
-                  onClick={() => setIsChangeAvatarOpen(true)}
-                  className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold transition-opacity"
-                  title="Change profile picture"
-                >
-                  <Camera className="w-4 h-4 text-amber-400 mb-0.5" />
-                  Change
-                </button>
+                {isOwnProfile && (
+                  <button
+                    type="button"
+                    onClick={() => setIsChangeAvatarOpen(true)}
+                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold transition-opacity"
+                    title="Change profile picture"
+                  >
+                    <Camera className="w-4 h-4 text-amber-400 mb-0.5" />
+                    Change
+                  </button>
+                )}
               </div>
 
               <div className="min-w-0 space-y-1.5">
@@ -266,16 +276,18 @@ export function StudentProfileModal({
               </div>
             </div>
 
-            <div className="shrink-0 self-stretch sm:self-center">
-              <button
-                type="button"
-                onClick={() => setIsChangeAvatarOpen(true)}
-                className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-studio-900 hover:bg-studio-800 text-studio-300 hover:text-white border border-studio-700 text-xs font-semibold transition"
-              >
-                <Camera className="w-3.5 h-3.5 text-amber-400" />
-                <span>Change Photo</span>
-              </button>
-            </div>
+            {isOwnProfile && (
+              <div className="shrink-0 self-stretch sm:self-center">
+                <button
+                  type="button"
+                  onClick={() => setIsChangeAvatarOpen(true)}
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-studio-900 hover:bg-studio-800 text-studio-300 hover:text-white border border-studio-700 text-xs font-semibold transition"
+                >
+                  <Camera className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Change Photo</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Section 2: Key Age & Core Demographic Strip */}
@@ -681,7 +693,7 @@ export function StudentProfileModal({
         />
       )}
 
-      {student && (
+      {student && isOwnProfile && (
         <ChangeAvatarModal
           isOpen={isChangeAvatarOpen}
           onClose={() => setIsChangeAvatarOpen(false)}
