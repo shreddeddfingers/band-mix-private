@@ -1188,6 +1188,30 @@ export const DataStore = {
     }
 
     saveItem(STORAGE_KEYS.MESSAGES, all);
+    if (isFirebaseConfigured) {
+      FirestoreService.sendMessage(bandId, msg).catch(console.error);
+    }
+    notify(`messages:${bandId}`);
+    notify('messages');
+  },
+
+  mergeRemoteMessages(bandId: string, remoteMessages: ChatMessage[]): void {
+    if (!remoteMessages || remoteMessages.length === 0) return;
+    const all = loadItem<Record<string, ChatMessage[]>>(
+      STORAGE_KEYS.MESSAGES,
+      {}
+    );
+    const existing = all[bandId] || [];
+    const messageMap = new Map<string, ChatMessage>();
+    existing.forEach((m) => messageMap.set(m.id, m));
+    remoteMessages.forEach((m) => messageMap.set(m.id, m));
+
+    const merged = Array.from(messageMap.values()).sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    all[bandId] = merged;
+    saveItem(STORAGE_KEYS.MESSAGES, all);
     notify(`messages:${bandId}`);
     notify('messages');
   },
@@ -1450,6 +1474,19 @@ export const DataStore = {
     if (isFirebaseConfigured) {
       FirestoreService.deleteSong(target.bandId, id).catch(console.error);
     }
+  },
+
+  mergeRemoteSongs(bandId: string, remoteSongs: BandSong[]): void {
+    if (!remoteSongs) return;
+    const all = this.getSongs();
+    const otherBandsSongs = all.filter((s) => s.bandId !== bandId);
+    const thisBandMap = new Map<string, BandSong>();
+    all.filter((s) => s.bandId === bandId).forEach((s) => thisBandMap.set(s.id, s));
+    remoteSongs.forEach((s) => thisBandMap.set(s.id, s));
+    const merged = [...otherBandsSongs, ...Array.from(thisBandMap.values())];
+    saveItem(STORAGE_KEYS.SONGS, merged);
+    notify(`songs:${bandId}`);
+    notify('songs');
   },
 
   // --- ANONYMOUS SONG SENTIMENT VOTING ---

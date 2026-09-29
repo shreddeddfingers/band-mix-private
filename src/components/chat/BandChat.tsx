@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Band, ChatMessage } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import { DataStore, subscribeToStore } from '@/lib/data-store';
+import { FirestoreService } from '@/lib/firestore-service';
+import { isFirebaseConfigured } from '@/lib/firebase';
 import { InstrumentIcon } from '../InstrumentIcon';
 import {
   Send,
@@ -53,8 +55,29 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
     };
 
     loadMessages();
-    const unsub = subscribeToStore(`messages:${band.id}`, loadMessages);
-    return () => unsub();
+    const unsubLocal = subscribeToStore(`messages:${band.id}`, loadMessages);
+
+    let unsubFirestore: (() => void) | undefined;
+    if (isFirebaseConfigured) {
+      FirestoreService.getMessages(band.id)
+        .then((remoteMsgs) => {
+          if (remoteMsgs && remoteMsgs.length > 0) {
+            DataStore.mergeRemoteMessages(band.id, remoteMsgs);
+          }
+        })
+        .catch(console.error);
+
+      unsubFirestore = FirestoreService.subscribeMessages(band.id, (remoteMsgs) => {
+        if (remoteMsgs) {
+          DataStore.mergeRemoteMessages(band.id, remoteMsgs);
+        }
+      });
+    }
+
+    return () => {
+      unsubLocal();
+      if (unsubFirestore) unsubFirestore();
+    };
   }, [band.id]);
 
   useEffect(() => {

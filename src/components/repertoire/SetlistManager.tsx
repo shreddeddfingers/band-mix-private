@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Band, BandSong, SongStatus } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import { DataStore, subscribeToStore } from '@/lib/data-store';
+import { FirestoreService } from '@/lib/firestore-service';
+import { isFirebaseConfigured } from '@/lib/firebase';
 import {
   ListMusic,
   Plus,
@@ -80,8 +82,29 @@ export function SetlistManager({ band }: SetlistManagerProps) {
     };
 
     refresh();
-    const unsub = subscribeToStore(`songs:${band.id}`, refresh);
-    return () => unsub();
+    const unsubLocal = subscribeToStore(`songs:${band.id}`, refresh);
+
+    let unsubFirestore: (() => void) | undefined;
+    if (isFirebaseConfigured) {
+      FirestoreService.getSongs(band.id)
+        .then((remoteSongs) => {
+          if (remoteSongs && remoteSongs.length > 0) {
+            DataStore.mergeRemoteSongs(band.id, remoteSongs);
+          }
+        })
+        .catch(console.error);
+
+      unsubFirestore = FirestoreService.subscribeSongs(band.id, (remoteSongs) => {
+        if (remoteSongs) {
+          DataStore.mergeRemoteSongs(band.id, remoteSongs);
+        }
+      });
+    }
+
+    return () => {
+      unsubLocal();
+      if (unsubFirestore) unsubFirestore();
+    };
   }, [band.id]);
 
   const activeRepertoire = songs.filter((s) => s.status !== 'suggested');
@@ -93,7 +116,7 @@ export function SetlistManager({ band }: SetlistManagerProps) {
 
   const handleAddSong = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAdmin || !title.trim() || !artist.trim()) return;
+    if (!isAdmin || !title.trim()) return;
 
     DataStore.createSong({
       bandId: band.id,
@@ -209,9 +232,11 @@ export function SetlistManager({ band }: SetlistManagerProps) {
                       <h4 className="text-base font-bold text-white flex items-center gap-2">
                         {song.title}
                       </h4>
-                      <span className="text-xs font-semibold text-studio-400">
-                        {song.artist}
-                      </span>
+                      {song.artist && (
+                        <span className="text-xs font-semibold text-studio-400">
+                          {song.artist}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1.5">
@@ -324,14 +349,13 @@ export function SetlistManager({ band }: SetlistManagerProps) {
 
               <div>
                 <label className="block text-xs font-semibold text-studio-300 uppercase tracking-wider mb-1.5">
-                  Original Artist / Composer *
+                  Original Artist / Composer (Optional)
                 </label>
                 <input
                   type="text"
                   value={artist}
                   onChange={(e) => setArtist(e.target.value)}
-                  placeholder="e.g. Herbie Hancock"
-                  required
+                  placeholder="e.g. Herbie Hancock (optional)"
                   className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>

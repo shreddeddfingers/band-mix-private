@@ -203,6 +203,23 @@ export const FirestoreService = {
     );
   },
 
+  subscribeBand(bandId: string, callback: (band: Band | null) => void): Unsubscribe {
+    const firestore = getDb();
+    return onSnapshot(
+      doc(firestore, 'bands', bandId),
+      (snap) => {
+        if (snap.exists()) {
+          callback(snap.data() as Band);
+        } else {
+          callback(null);
+        }
+      },
+      (err) => {
+        console.warn(`Error subscribing to band ${bandId} in Firestore:`, err);
+      }
+    );
+  },
+
   async getBand(id: string): Promise<Band | null> {
     const firestore = getDb();
     const snap = await getDoc(doc(firestore, 'bands', id));
@@ -243,6 +260,14 @@ export const FirestoreService = {
   },
 
   // --- REAL-TIME BAND CHAT ---
+  async getMessages(bandId: string): Promise<ChatMessage[]> {
+    const firestore = getDb();
+    const msgCol = collection(firestore, `bands/${bandId}/messages`);
+    const q = query(msgCol, orderBy('timestamp', 'asc'));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => d.data() as ChatMessage);
+  },
+
   subscribeMessages(
     bandId: string,
     callback: (messages: ChatMessage[]) => void
@@ -266,7 +291,8 @@ export const FirestoreService = {
   async sendMessage(bandId: string, message: ChatMessage): Promise<void> {
     const firestore = getDb();
     const msgRef = doc(firestore, `bands/${bandId}/messages`, message.id);
-    await setDoc(msgRef, message);
+    const cleaned = stripUndefined(message);
+    await setDoc(msgRef, cleaned);
   },
 
   // --- REHEARSAL SCHEDULING (ADMIN CONTROLLED) ---
@@ -373,6 +399,24 @@ export const FirestoreService = {
     const songsCol = collection(firestore, `bands/${bandId}/songs`);
     const snap = await getDocs(songsCol);
     return snap.docs.map((d) => d.data() as BandSong);
+  },
+
+  subscribeSongs(
+    bandId: string,
+    callback: (songs: BandSong[]) => void
+  ): Unsubscribe {
+    const firestore = getDb();
+    const songsCol = collection(firestore, `bands/${bandId}/songs`);
+    return onSnapshot(
+      songsCol,
+      (snapshot) => {
+        const songs = snapshot.docs.map((d) => d.data() as BandSong);
+        callback(songs);
+      },
+      (error) => {
+        console.error(`Error listening to songs for band ${bandId}:`, error);
+      }
+    );
   },
 
   async setSong(song: BandSong): Promise<void> {

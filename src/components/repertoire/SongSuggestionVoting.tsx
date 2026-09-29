@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Band, BandSong, SongSentiment } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import { DataStore, subscribeToStore } from '@/lib/data-store';
+import { FirestoreService } from '@/lib/firestore-service';
+import { isFirebaseConfigured } from '@/lib/firebase';
 import {
   Sparkles,
   Plus,
@@ -79,13 +81,34 @@ export function SongSuggestionVoting({ band }: SongSuggestionVotingProps) {
     };
 
     refresh();
-    const unsub = subscribeToStore(`songs:${band.id}`, refresh);
-    return () => unsub();
+    const unsubLocal = subscribeToStore(`songs:${band.id}`, refresh);
+
+    let unsubFirestore: (() => void) | undefined;
+    if (isFirebaseConfigured) {
+      FirestoreService.getSongs(band.id)
+        .then((remoteSongs) => {
+          if (remoteSongs && remoteSongs.length > 0) {
+            DataStore.mergeRemoteSongs(band.id, remoteSongs);
+          }
+        })
+        .catch(console.error);
+
+      unsubFirestore = FirestoreService.subscribeSongs(band.id, (remoteSongs) => {
+        if (remoteSongs) {
+          DataStore.mergeRemoteSongs(band.id, remoteSongs);
+        }
+      });
+    }
+
+    return () => {
+      unsubLocal();
+      if (unsubFirestore) unsubFirestore();
+    };
   }, [band.id]);
 
   const handleSuggestSong = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !artist.trim() || !currentUser) return;
+    if (!title.trim() || !currentUser) return;
 
     DataStore.createSong({
       bandId: band.id,
@@ -180,9 +203,11 @@ export function SongSuggestionVoting({ band }: SongSuggestionVotingProps) {
                   <div>
                     <div className="flex items-center gap-2">
                       <h4 className="text-base font-bold text-white">{song.title}</h4>
-                      <span className="text-xs font-medium text-studio-400">
-                        by {song.artist}
-                      </span>
+                      {song.artist && (
+                        <span className="text-xs font-medium text-studio-400">
+                          by {song.artist}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2 mt-1 text-[11px] text-studio-400">
@@ -357,14 +382,13 @@ export function SongSuggestionVoting({ band }: SongSuggestionVotingProps) {
 
               <div>
                 <label className="block text-xs font-semibold text-studio-300 uppercase tracking-wider mb-1.5">
-                  Artist / Band *
+                  Artist / Band (Optional)
                 </label>
                 <input
                   type="text"
                   value={artist}
                   onChange={(e) => setArtist(e.target.value)}
-                  placeholder="e.g. Stevie Wonder"
-                  required
+                  placeholder="e.g. Stevie Wonder (optional)"
                   className="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>

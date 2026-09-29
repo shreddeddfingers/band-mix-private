@@ -62,21 +62,35 @@ export default function BandHubPage({
       const b = DataStore.getBand(resolvedParams.id);
       if (b) {
         setBand({ ...b });
-      } else if (isFirebaseConfigured) {
-        FirestoreService.getBand(resolvedParams.id)
-          .then((remoteB) => {
-            if (remoteB) {
-              DataStore.mergeRemoteBands([remoteB]);
-              setBand({ ...remoteB });
-            }
-          })
-          .catch(console.error);
       }
     };
 
     refresh();
-    const unsub = subscribeToStore('bands', refresh);
-    return () => unsub();
+    const unsubLocal = subscribeToStore('bands', refresh);
+
+    let unsubFirestore: (() => void) | undefined;
+    if (isFirebaseConfigured) {
+      FirestoreService.getBand(resolvedParams.id)
+        .then((remoteB) => {
+          if (remoteB) {
+            DataStore.mergeRemoteBands([remoteB]);
+            setBand({ ...remoteB });
+          }
+        })
+        .catch(console.error);
+
+      unsubFirestore = FirestoreService.subscribeBand(resolvedParams.id, (remoteB) => {
+        if (remoteB) {
+          DataStore.mergeRemoteBands([remoteB]);
+          setBand({ ...remoteB });
+        }
+      });
+    }
+
+    return () => {
+      unsubLocal();
+      if (unsubFirestore) unsubFirestore();
+    };
   }, [resolvedParams.id]);
 
   if (!band) {
