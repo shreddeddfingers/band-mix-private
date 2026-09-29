@@ -452,8 +452,30 @@ export const DataStore = {
     for (const remote of validRemote) {
       const idx = merged.findIndex((s) => s.id === remote.id);
       if (idx >= 0) {
-        if (JSON.stringify(merged[idx]) !== JSON.stringify(remote)) {
-          merged[idx] = { ...merged[idx], ...remote };
+        const existing = merged[idx];
+        const remoteHasCustomAvatar =
+          remote.avatar &&
+          !remote.avatar.includes('unsplash') &&
+          !remote.avatar.includes('dicebear');
+        const localHasCustomAvatar =
+          existing.avatar &&
+          !existing.avatar.includes('unsplash') &&
+          !existing.avatar.includes('dicebear');
+
+        const resolvedAvatar = remoteHasCustomAvatar
+          ? remote.avatar
+          : localHasCustomAvatar
+          ? existing.avatar
+          : remote.avatar || existing.avatar;
+
+        const updatedStudent: UserProfile = {
+          ...existing,
+          ...remote,
+          avatar: resolvedAvatar,
+        };
+
+        if (JSON.stringify(merged[idx]) !== JSON.stringify(updatedStudent)) {
+          merged[idx] = updatedStudent;
           changed = true;
         }
       } else {
@@ -1435,6 +1457,66 @@ export const DataStore = {
       console.warn('Background message sync error:', e);
     }
   },
+
+  async syncLocalStudentsToFirestore(): Promise<void> {
+    if (!isFirebaseConfigured || typeof window === 'undefined') return;
+    try {
+      const students = loadItem<UserProfile[]>(STORAGE_KEYS.STUDENTS, []);
+      for (const s of students) {
+        if (
+          s.avatar &&
+          s.avatar.length > 0 &&
+          !s.avatar.includes('unsplash') &&
+          !s.avatar.includes('dicebear')
+        ) {
+          const remoteUser = await FirestoreService.getUser(s.id);
+          if (
+            !remoteUser?.avatar ||
+            remoteUser.avatar.includes('unsplash') ||
+            remoteUser.avatar.includes('dicebear')
+          ) {
+            await FirestoreService.updateUser(s.id, { avatar: s.avatar });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Background student avatar sync error:', e);
+    }
+  },
+
+  async syncLocalBandsToFirestore(): Promise<void> {
+    if (!isFirebaseConfigured || typeof window === 'undefined') return;
+    try {
+      const bands = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);
+      for (const b of bands) {
+        const remoteBand = await FirestoreService.getBand(b.id);
+        if (remoteBand) {
+          let needsUpdate = false;
+          const updatedMembers = remoteBand.members.map((m) => {
+            const liveUser =
+              this.getUserById(m.userId) ||
+              (m.role === 'director' ? this.getDirector(m.userId) : null);
+            if (
+              liveUser?.avatar &&
+              liveUser.avatar !== m.avatar &&
+              !liveUser.avatar.includes('unsplash') &&
+              !liveUser.avatar.includes('dicebear')
+            ) {
+              needsUpdate = true;
+              return { ...m, avatar: liveUser.avatar };
+            }
+            return m;
+          });
+          if (needsUpdate) {
+            await FirestoreService.updateBand(b.id, { members: updatedMembers });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Background band avatar sync error:', e);
+    }
+  },
+
 
   markDirectMessagesRead(conversationId: string, readerUserId: string): void {
     const all = loadItem<Record<string, DirectMessage[]>>(

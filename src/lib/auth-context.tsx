@@ -129,8 +129,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           DataStore.mergeRemoteInvites(remoteInvites);
         });
 
-        // Backfill any offline/unsynced messages from this device to cloud
+        // Backfill any offline/unsynced messages, student avatars, and band members from this device to cloud
         DataStore.syncAllPendingMessagesToFirestore().catch(console.warn);
+        DataStore.syncLocalStudentsToFirestore().catch(console.warn);
+        DataStore.syncLocalBandsToFirestore().catch(console.warn);
       } catch (err) {
         console.warn('Real-time cloud sync subscription failed:', err);
       }
