@@ -11,6 +11,7 @@ interface BandStoriesBarProps {
   currentUserId?: string;
   onSelectMember: (member: BandMember, studentDetails?: UserProfile) => void;
   onOpenAddMember?: () => void;
+  onOpenChangeCover?: () => void;
   isAdmin?: boolean;
 }
 
@@ -19,13 +20,18 @@ export function BandStoriesBar({
   currentUserId,
   onSelectMember,
   onOpenAddMember,
+  onOpenChangeCover,
   isAdmin,
 }: BandStoriesBarProps) {
   return (
     <div className="w-full bg-studio-950/80 border border-studio-800/80 rounded-2xl p-3 shadow-inner">
       <div className="flex items-center gap-3 overflow-x-auto no-scrollbar scroll-smooth py-1 px-1">
         {/* Story 1: Band Story / Cover */}
-        <div className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group">
+        <div
+          onClick={() => onOpenChangeCover && onOpenChangeCover()}
+          className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group"
+          title="Tap to change band picture"
+        >
           <div className="relative p-[2.5px] bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 rounded-full transition-transform group-hover:scale-105 active:scale-95">
             <div className="w-14 h-14 rounded-full overflow-hidden bg-studio-900 border-2 border-studio-950">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -52,6 +58,10 @@ export function BandStoriesBar({
           const studentDetails = DataStore.getUserById(member.userId);
           const isMe = member.userId === currentUserId;
           const isDir = member.role === 'director';
+          const liveAvatar =
+            studentDetails?.avatar ||
+            (isDir ? (DataStore.getDirector(member.userId)?.avatar || DataStore.getDirector()?.avatar) : null) ||
+            member.avatar;
 
           return (
             <button
@@ -71,7 +81,7 @@ export function BandStoriesBar({
                 <div className="w-14 h-14 rounded-full overflow-hidden bg-studio-900 border-2 border-studio-950">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={member.avatar}
+                    src={liveAvatar}
                     alt={member.name}
                     className="w-full h-full object-cover"
                   />

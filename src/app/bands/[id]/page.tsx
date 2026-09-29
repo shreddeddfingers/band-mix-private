@@ -437,6 +437,7 @@ export default function BandHubPage({
           }
         }}
         onOpenAddMember={() => setIsAddMemberOpen(true)}
+        onOpenChangeCover={() => setIsChangeCoverOpen(true)}
         isAdmin={isAdmin}
       />
 

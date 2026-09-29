@@ -142,7 +142,13 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full ring-2 ring-studio-900 overflow-hidden bg-studio-800">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={band.members[0].avatar}
+                  src={
+                    DataStore.getUserById(band.members[0].userId)?.avatar ||
+                    (band.members[0].role === 'director'
+                      ? DataStore.getDirector(band.members[0].userId)?.avatar
+                      : null) ||
+                    band.members[0].avatar
+                  }
                   alt={band.members[0].name}
                   className="w-full h-full object-cover"
                 />
@@ -231,6 +237,12 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
             const isMe = msg.senderId === currentUser?.id;
             const isMsgAdmin = msg.senderRole === 'admin';
             const hasReactions = msg.reactions && Object.keys(msg.reactions).length > 0;
+            const liveSenderAvatar =
+              DataStore.getUserById(msg.senderId)?.avatar ||
+              (isMsgAdmin
+                ? DataStore.getDirector(msg.senderId)?.avatar || DataStore.getDirector()?.avatar
+                : null) ||
+              msg.senderAvatar;
 
             return (
               <div
@@ -246,7 +258,7 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
                   <div className="relative shrink-0 self-end mb-1">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={msg.senderAvatar}
+                      src={liveSenderAvatar}
                       alt={msg.senderName}
                       className={clsx(
                         'w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border bg-studio-800',

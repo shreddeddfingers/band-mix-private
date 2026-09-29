@@ -902,7 +902,19 @@ export const DataStore = {
 
   // BANDS (CRUD)
   getBands(directorId?: string): Band[] {
-    const bands = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);
+    const rawBands = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);
+    const bands = rawBands.map((band) => ({
+      ...band,
+      members: (band.members || []).map((m) => {
+        const liveUser =
+          this.getUserById(m.userId) ||
+          (m.role === 'director' ? this.getDirector(m.userId) : null);
+        return {
+          ...m,
+          avatar: liveUser?.avatar || m.avatar,
+        };
+      }),
+    }));
     if (!directorId) return bands;
     const filtered = bands.filter(
       (b) =>
@@ -918,7 +930,21 @@ export const DataStore = {
   },
 
   getBand(id: string): Band | undefined {
-    return loadItem<Band[]>(STORAGE_KEYS.BANDS, []).find((b) => b.id === id);
+    const rawBands = loadItem<Band[]>(STORAGE_KEYS.BANDS, []);
+    const band = rawBands.find((b) => b.id === id);
+    if (!band) return undefined;
+    return {
+      ...band,
+      members: (band.members || []).map((m) => {
+        const liveUser =
+          this.getUserById(m.userId) ||
+          (m.role === 'director' ? this.getDirector(m.userId) : null);
+        return {
+          ...m,
+          avatar: liveUser?.avatar || m.avatar,
+        };
+      }),
+    };
   },
 
   createBand(data: {
