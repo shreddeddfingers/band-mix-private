@@ -33,8 +33,10 @@ import {
   ShieldCheck,
   Compass,
   Camera,
+  MessageSquare,
 } from 'lucide-react';
 import { ChangeAvatarModal } from '@/components/profile/ChangeAvatarModal';
+import { DirectMessagesModal } from '@/components/chat/DirectMessagesModal';
 
 interface StudentProfileModalProps {
   isOpen: boolean;
@@ -44,6 +46,7 @@ interface StudentProfileModalProps {
   onAssignBand?: (student: UserProfile) => void;
   onDeleteStudent?: (student: UserProfile) => void;
   onStudentUpdated?: (updated: UserProfile) => void;
+  onOpenDirectMessage?: (student: UserProfile) => void;
 }
 
 const HOBBY_LABELS: Record<HobbyInterest, string> = {
@@ -144,10 +147,12 @@ export function StudentProfileModal({
   onAssignBand,
   onDeleteStudent,
   onStudentUpdated,
+  onOpenDirectMessage,
 }: StudentProfileModalProps) {
   const [isEditingAge, setIsEditingAge] = useState(false);
   const [newAgeInput, setNewAgeInput] = useState('');
   const [isChangeAvatarOpen, setIsChangeAvatarOpen] = useState(false);
+  const [isDmOpen, setIsDmOpen] = useState(false);
 
   if (!isOpen || !student) return null;
 
@@ -628,6 +633,22 @@ export function StudentProfileModal({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenDirectMessage) {
+                  onOpenDirectMessage(student);
+                  onClose();
+                } else {
+                  setIsDmOpen(true);
+                }
+              }}
+              className="px-4 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center gap-1.5"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              Direct Message
+            </button>
+
             {onAssignBand && (
               <button
                 type="button"
@@ -651,6 +672,14 @@ export function StudentProfileModal({
           </div>
         </div>
       </div>
+
+      {student && (
+        <DirectMessagesModal
+          isOpen={isDmOpen}
+          onClose={() => setIsDmOpen(false)}
+          initialStudent={student}
+        />
+      )}
 
       {student && (
         <ChangeAvatarModal

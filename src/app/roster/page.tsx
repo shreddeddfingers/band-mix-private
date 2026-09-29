@@ -30,7 +30,9 @@ import {
   ChevronDown,
   ArrowRight,
   ChevronRight,
+  MessageSquare,
 } from 'lucide-react';
+import { DirectMessagesModal } from '@/components/chat/DirectMessagesModal';
 import { clsx } from 'clsx';
 
 export default function RosterPage() {
@@ -55,6 +57,8 @@ export default function RosterPage() {
   const [studentToDelete, setStudentToDelete] = useState<UserProfile | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
+  const [isDmOpen, setIsDmOpen] = useState(false);
+  const [dmStudent, setDmStudent] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const refresh = () => {
@@ -637,8 +641,8 @@ export default function RosterPage() {
                       </div>
                     </div>
 
-                    {/* Right: Band Status Pill + Chevron */}
-                    <div className="flex items-center gap-2.5 shrink-0">
+                    {/* Right: Band Status Pill + Direct Message + Chevron */}
+                    <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
                       {studentBands.length === 0 ? (
                         <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
                           Unassigned
@@ -651,6 +655,21 @@ export default function RosterPage() {
                           </span>
                         </span>
                       )}
+
+                      {/* Quick Direct Message Action */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDmStudent(student);
+                          setIsDmOpen(true);
+                        }}
+                        className="p-1.5 sm:p-2 rounded-xl bg-studio-950 hover:bg-amber-500 hover:text-slate-950 text-studio-300 border border-studio-800 transition shrink-0"
+                        title={`Send direct message to ${student.name}`}
+                        aria-label={`Send direct message to ${student.name}`}
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      </button>
 
                       <div className="w-7 h-7 rounded-full bg-studio-950 group-hover:bg-amber-500 group-hover:text-slate-950 text-studio-400 transition flex items-center justify-center">
                         <ChevronRight className="w-4 h-4" />
@@ -672,10 +691,23 @@ export default function RosterPage() {
         bands={bands}
         onAssignBand={(student) => setAssignStudent(student)}
         onDeleteStudent={(student) => setStudentToDelete(student)}
+        onOpenDirectMessage={(student) => {
+          setDmStudent(student);
+          setIsDmOpen(true);
+        }}
         onStudentUpdated={(updated) => {
           setStudents(DataStore.getStudents(activeDirectorId));
           setViewProfileStudent(updated);
         }}
+      />
+
+      <DirectMessagesModal
+        isOpen={isDmOpen}
+        onClose={() => {
+          setIsDmOpen(false);
+          setDmStudent(null);
+        }}
+        initialStudent={dmStudent}
       />
 
       <AssignBandModal

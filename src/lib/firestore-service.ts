@@ -19,6 +19,7 @@ import {
   BandAnnouncement,
   BandSong,
   ChatMessage,
+  DirectMessage,
   InstrumentType,
   InviteCode,
   PrivateUserProfile,
@@ -291,6 +292,46 @@ export const FirestoreService = {
   async sendMessage(bandId: string, message: ChatMessage): Promise<void> {
     const firestore = getDb();
     const msgRef = doc(firestore, `bands/${bandId}/messages`, message.id);
+    const cleaned = stripUndefined(message);
+    await setDoc(msgRef, cleaned);
+  },
+
+  // --- 1-ON-1 DIRECT MESSAGING (DIRECTOR <-> STUDENT) ---
+  async getDirectMessages(conversationId: string): Promise<DirectMessage[]> {
+    const firestore = getDb();
+    const msgCol = collection(firestore, `direct_messages/${conversationId}/messages`);
+    const q = query(msgCol, orderBy('timestamp', 'asc'));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => d.data() as DirectMessage);
+  },
+
+  subscribeDirectMessages(
+    conversationId: string,
+    callback: (messages: DirectMessage[]) => void
+  ): Unsubscribe {
+    const firestore = getDb();
+    const msgCol = collection(firestore, `direct_messages/${conversationId}/messages`);
+    const q = query(msgCol, orderBy('timestamp', 'asc'));
+
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const msgs = snapshot.docs.map((d) => d.data() as DirectMessage);
+        callback(msgs);
+      },
+      (error) => {
+        console.error(`Error listening to direct messages for ${conversationId}:`, error);
+      }
+    );
+  },
+
+  async sendDirectMessage(message: DirectMessage): Promise<void> {
+    const firestore = getDb();
+    const msgRef = doc(
+      firestore,
+      `direct_messages/${message.conversationId}/messages`,
+      message.id
+    );
     const cleaned = stripUndefined(message);
     await setDoc(msgRef, cleaned);
   },

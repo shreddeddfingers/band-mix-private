@@ -176,6 +176,20 @@ export interface ChatMessage {
   mediaUrl?: string;
 }
 
+export interface DirectMessage {
+  id: string;
+  conversationId: string; // e.g. dm_${[id1, id2].sort().join('_')}
+  senderId: string;
+  senderName: string;
+  senderRole: UserRole;
+  senderAvatar: string;
+  recipientId: string;
+  recipientName: string;
+  text: string;
+  timestamp: string;
+  read?: boolean;
+}
+
 // Master Repertoire & Setlist System
 export type SongStatus =
   | 'suggested'

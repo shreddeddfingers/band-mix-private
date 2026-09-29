@@ -9,6 +9,7 @@ import {
   BandMember,
   BandSong,
   ChatMessage,
+  DirectMessage,
   InstrumentType,
   InviteCode,
   PrivateUserProfile,
@@ -90,6 +91,7 @@ const STORAGE_KEYS = {
   SONGS: 'bandmix_prod_songs',
   VOTES: 'bandmix_prod_song_votes',
   ANNOUNCEMENTS: 'bandmix_prod_announcements',
+  DIRECT_MESSAGES: 'bandmix_prod_direct_messages',
   ACTIVE_USER_ID: 'bandmix_active_user_id',
   REMEMBER_DEVICE: 'bandmix_remember_device',
 };
@@ -696,6 +698,23 @@ export const DataStore = {
       );
     }
 
+    // Auto-send welcome direct message from the director to the new student
+    try {
+      const director = studentData.directorId
+        ? this.getDirector(studentData.directorId)
+        : this.getDirector();
+      if (director && director.id !== newStudent.id) {
+        const welcomeText = `Welcome to the studio, ${newStudent.name}! I am your director. You can message me directly here anytime about rehearsals, songs, or your instrument.`;
+        this.sendDirectMessage({
+          sender: director,
+          recipient: newStudent,
+          text: welcomeText,
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to send welcome direct message:', e);
+    }
+
     notify('students');
     return newStudent;
   },
@@ -1214,6 +1233,196 @@ export const DataStore = {
     saveItem(STORAGE_KEYS.MESSAGES, all);
     notify(`messages:${bandId}`);
     notify('messages');
+  },
+
+  // --- 1-ON-1 DIRECT MESSAGING (DIRECTOR <-> STUDENT) ---
+  getDmConversationId(userId1: string, userId2: string): string {
+    return ['dm', ...[userId1, userId2].sort()].join('_');
+  },
+
+  getDirectMessages(conversationId: string): DirectMessage[] {
+    const all = loadItem<Record<string, DirectMessage[]>>(
+      STORAGE_KEYS.DIRECT_MESSAGES,
+      {}
+    );
+    return all[conversationId] || [];
+  },
+
+  sendDirectMessage(params: {
+    sender: UserProfile;
+    recipient: UserProfile;
+    text: string;
+  }): DirectMessage {
+    const conversationId = this.getDmConversationId(
+      params.sender.id,
+      params.recipient.id
+    );
+    const all = loadItem<Record<string, DirectMessage[]>>(
+      STORAGE_KEYS.DIRECT_MESSAGES,
+      {}
+    );
+    if (!all[conversationId]) all[conversationId] = [];
+
+    const newMsg: DirectMessage = {
+      id: `dm-msg-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
+      conversationId,
+      senderId: params.sender.id,
+      senderName: params.sender.name,
+      senderRole: params.sender.role,
+      senderAvatar: params.sender.avatar,
+      recipientId: params.recipient.id,
+      recipientName: params.recipient.name,
+      text: params.text,
+      timestamp: new Date().toISOString(),
+      read: false,
+    };
+
+    all[conversationId].push(newMsg);
+    saveItem(STORAGE_KEYS.DIRECT_MESSAGES, all);
+
+    if (isFirebaseConfigured) {
+      FirestoreService.sendDirectMessage(newMsg).catch(console.error);
+    }
+
+    notify(`direct_messages:${conversationId}`);
+    notify('direct_messages');
+    return newMsg;
+  },
+
+  mergeRemoteDirectMessages(
+    conversationId: string,
+    remoteMessages: DirectMessage[]
+  ): void {
+    if (!remoteMessages || remoteMessages.length === 0) return;
+    const all = loadItem<Record<string, DirectMessage[]>>(
+      STORAGE_KEYS.DIRECT_MESSAGES,
+      {}
+    );
+    const existing = all[conversationId] || [];
+    const messageMap = new Map<string, DirectMessage>();
+    existing.forEach((m) => messageMap.set(m.id, m));
+    remoteMessages.forEach((m) => messageMap.set(m.id, m));
+
+    const merged = Array.from(messageMap.values()).sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    all[conversationId] = merged;
+    saveItem(STORAGE_KEYS.DIRECT_MESSAGES, all);
+    notify(`direct_messages:${conversationId}`);
+    notify('direct_messages');
+  },
+
+  markDirectMessagesRead(conversationId: string, readerUserId: string): void {
+    const all = loadItem<Record<string, DirectMessage[]>>(
+      STORAGE_KEYS.DIRECT_MESSAGES,
+      {}
+    );
+    if (!all[conversationId]) return;
+
+    let changed = false;
+    all[conversationId].forEach((msg) => {
+      if (msg.recipientId === readerUserId && !msg.read) {
+        msg.read = true;
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      saveItem(STORAGE_KEYS.DIRECT_MESSAGES, all);
+      notify(`direct_messages:${conversationId}`);
+      notify('direct_messages');
+    }
+  },
+
+  getDirectConversationsForUser(userId: string): {
+    conversationId: string;
+    otherUser: UserProfile;
+    lastMessage: DirectMessage;
+    unreadCount: number;
+  }[] {
+    const all = loadItem<Record<string, DirectMessage[]>>(
+      STORAGE_KEYS.DIRECT_MESSAGES,
+      {}
+    );
+    const conversations: {
+      conversationId: string;
+      otherUser: UserProfile;
+      lastMessage: DirectMessage;
+      unreadCount: number;
+    }[] = [];
+
+    const students = this.getStudents();
+    const directors = this.getDirectors();
+    const allUsers = [...students, ...directors];
+    const userMap = new Map<string, UserProfile>();
+    allUsers.forEach((u) => userMap.set(u.id, u));
+
+    for (const [convId, msgs] of Object.entries(all)) {
+      if (!convId.startsWith('dm_') || msgs.length === 0) continue;
+      const hasUser = msgs.some(
+        (m) => m.senderId === userId || m.recipientId === userId
+      );
+      if (!hasUser) continue;
+
+      const lastMessage = msgs[msgs.length - 1];
+      const otherUserId =
+        lastMessage.senderId === userId
+          ? lastMessage.recipientId
+          : lastMessage.senderId;
+
+      let otherUser = userMap.get(otherUserId);
+      if (!otherUser) {
+        const isSenderOther = lastMessage.senderId === otherUserId;
+        otherUser = {
+          id: otherUserId,
+          name: isSenderOther ? lastMessage.senderName : lastMessage.recipientName,
+          email: `${otherUserId}@student.studio`,
+          role: isSenderOther ? lastMessage.senderRole : 'student',
+          primaryInstrument: 'guitars',
+          instruments: ['guitars'],
+          skillLevel: 'intermediate',
+          ageGroup: 'teens',
+          musicalStyles: [],
+          avatar: isSenderOther ? lastMessage.senderAvatar : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+          bandIds: [],
+          joinedAt: new Date().toISOString(),
+        };
+      }
+
+      const unreadCount = msgs.filter(
+        (m) => m.recipientId === userId && !m.read
+      ).length;
+
+      conversations.push({
+        conversationId: convId,
+        otherUser,
+        lastMessage,
+        unreadCount,
+      });
+    }
+
+    return conversations.sort(
+      (a, b) =>
+        new Date(b.lastMessage.timestamp).getTime() -
+        new Date(a.lastMessage.timestamp).getTime()
+    );
+  },
+
+  getTotalUnreadDirectMessagesCount(userId: string): number {
+    const all = loadItem<Record<string, DirectMessage[]>>(
+      STORAGE_KEYS.DIRECT_MESSAGES,
+      {}
+    );
+    let total = 0;
+    for (const msgs of Object.values(all)) {
+      for (const m of msgs) {
+        if (m.recipientId === userId && !m.read) {
+          total++;
+        }
+      }
+    }
+    return total;
   },
 
   // REHEARSAL SCHEDULING (ADMIN CONTROLLED)
