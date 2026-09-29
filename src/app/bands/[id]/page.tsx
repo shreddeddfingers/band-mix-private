@@ -98,20 +98,19 @@ export default function BandHubPage({
 
     let unsubFirestore: (() => void) | undefined;
     if (isFirebaseConfigured) {
-      DataStore.syncLocalMessagesToFirestore(resolvedParams.id)
-        .then(() => FirestoreService.getMessages(resolvedParams.id))
+      FirestoreService.getMessages(resolvedParams.id)
         .then((remoteMsgs) => {
           if (remoteMsgs && remoteMsgs.length > 0) {
+            setBandMessages(remoteMsgs);
             DataStore.mergeRemoteMessages(resolvedParams.id, remoteMsgs);
-            setBandMessages(DataStore.getMessages(resolvedParams.id));
           }
         })
         .catch(console.error);
 
       unsubFirestore = FirestoreService.subscribeMessages(resolvedParams.id, (remoteMsgs) => {
         if (remoteMsgs) {
+          setBandMessages(remoteMsgs);
           DataStore.mergeRemoteMessages(resolvedParams.id, remoteMsgs);
-          setBandMessages(DataStore.getMessages(resolvedParams.id));
         }
       });
     }

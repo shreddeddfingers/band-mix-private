@@ -187,6 +187,21 @@ function loadItem<T>(key: string, fallback: T): T {
 function saveItem<T>(key: string, data: T): void {
   if (typeof window === 'undefined') return;
   try {
+    if (key === STORAGE_KEYS.MESSAGES && data && typeof data === 'object') {
+      const sanitized: any = {};
+      for (const [bId, msgs] of Object.entries(data as any)) {
+        if (Array.isArray(msgs)) {
+          sanitized[bId] = msgs.map((m: any) => {
+            if (m.senderAvatar && m.senderAvatar.startsWith('data:')) {
+              return { ...m, senderAvatar: '' };
+            }
+            return m;
+          });
+        }
+      }
+      localStorage.setItem(key, JSON.stringify(sanitized));
+      return;
+    }
     localStorage.setItem(key, JSON.stringify(data));
   } catch (err) {
     console.error('Failed to save to localStorage', err);
@@ -1153,6 +1168,13 @@ export const DataStore = {
     );
     if (!all[bandId]) all[bandId] = [];
 
+    const sanitizedAvatar =
+      sender.avatar && !sender.avatar.startsWith('data:')
+        ? sender.avatar
+        : sender.role === 'admin'
+        ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250'
+        : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=250';
+
     const newMessage: ChatMessage = {
       id: `msg-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
       bandId,
@@ -1160,7 +1182,7 @@ export const DataStore = {
       senderName: sender.name,
       senderRole: sender.role,
       senderInstrument: sender.primaryInstrument,
-      senderAvatar: sender.avatar,
+      senderAvatar: sanitizedAvatar,
       text,
       timestamp: new Date().toISOString(),
       isPinnedRehearsalNotice,

@@ -59,20 +59,19 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
 
     let unsubFirestore: (() => void) | undefined;
     if (isFirebaseConfigured) {
-      DataStore.syncLocalMessagesToFirestore(band.id)
-        .then(() => FirestoreService.getMessages(band.id))
+      FirestoreService.getMessages(band.id)
         .then((remoteMsgs) => {
           if (remoteMsgs && remoteMsgs.length > 0) {
+            setMessages(remoteMsgs);
             DataStore.mergeRemoteMessages(band.id, remoteMsgs);
-            setMessages(DataStore.getMessages(band.id));
           }
         })
         .catch(console.error);
 
       unsubFirestore = FirestoreService.subscribeMessages(band.id, (remoteMsgs) => {
         if (remoteMsgs) {
+          setMessages(remoteMsgs);
           DataStore.mergeRemoteMessages(band.id, remoteMsgs);
-          setMessages(DataStore.getMessages(band.id));
         }
       });
     }
