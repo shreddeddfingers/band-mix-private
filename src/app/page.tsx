@@ -37,7 +37,7 @@ import { clsx } from 'clsx';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { currentUser, isAdmin, isStudent, activeDirectorId, activeBranding } = useAuth();
+  const { currentUser, isAdmin, isStudent, activeDirectorId, activeBranding, isAuthLoading } = useAuth();
   const [bands, setBands] = useState<Band[]>([]);
   const [students, setStudents] = useState<UserProfile[]>([]);
   const [rehearsals, setRehearsals] = useState<RehearsalEvent[]>([]);
@@ -108,6 +108,18 @@ export default function DashboardPage() {
       router.replace(`/bands/${displayedBands[0].id}`);
     }
   }, [isStudent, displayedBands, router]);
+
+  // Loading persistent session state
+  if (isAuthLoading) {
+    return (
+      <div className="py-24 flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-200">
+        <div className="w-9 h-9 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
+        <p className="text-xs text-studio-400 font-semibold tracking-wide">
+          Connecting to {activeBranding?.studioName || 'BandMix'} Studio...
+        </p>
+      </div>
+    );
+  }
 
   // Guest / Unauthenticated Portal View
   if (!currentUser) {

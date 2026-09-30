@@ -37,7 +37,7 @@ import { clsx } from 'clsx';
 
 export default function RosterPage() {
   const router = useRouter();
-  const { isAdmin, currentUser, activeDirectorId } = useAuth();
+  const { isAdmin, currentUser, activeDirectorId, isAuthLoading } = useAuth();
   const [activeView, setActiveView] = useState<'roster' | 'matching'>('roster');
   const [students, setStudents] = useState<UserProfile[]>([]);
   const [bands, setBands] = useState<Band[]>([]);
@@ -86,6 +86,14 @@ export default function RosterPage() {
       }
     }
   }, [isAdmin, currentUser, router]);
+
+  if (isAuthLoading) {
+    return (
+      <div className="py-20 text-center">
+        <p className="text-studio-400">Loading studio roster...</p>
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     const studentBands = currentUser

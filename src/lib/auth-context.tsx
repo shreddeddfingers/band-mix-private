@@ -9,6 +9,7 @@ import { FirestoreService } from './firestore-service';
 
 interface AuthContextType {
   currentUser: UserProfile | null;
+  isAuthLoading: boolean;
   role: UserRole | 'guest';
   isAdmin: boolean;
   isStudent: boolean;
@@ -92,11 +93,74 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [availableUsers, setAvailableUsers] = useState<UserProfile[]>([]);
   const [directors, setDirectors] = useState<UserProfile[]>([]);
   const isFirebaseActive = isFirebaseConfigured;
 
   useEffect(() => {
+    // 1. Immediate Session Restoration from persistent storage & cloud fallback
+    const restoreSession = async () => {
+      try {
+        // Priority 1: Instant restoration from cached active profile in localStorage
+        const cached = DataStore.getActiveUserProfile();
+        if (cached) {
+          setCurrentUser(cached);
+          setIsAuthLoading(false);
+          return;
+        }
+
+        // Priority 2: Active user ID lookup
+        const activeUserId = DataStore.getActiveUserId();
+        if (activeUserId) {
+          const localUser = DataStore.getUserById(activeUserId);
+          if (localUser) {
+            DataStore.setActiveUserProfile(localUser);
+            setCurrentUser(localUser);
+            setIsAuthLoading(false);
+            return;
+          }
+
+          // If not cached locally yet, fetch directly from cloud Firestore
+          if (isFirebaseActive) {
+            try {
+              const remoteUser = await FirestoreService.getUser(activeUserId);
+              if (remoteUser) {
+                DataStore.setActiveUserProfile(remoteUser);
+                if (remoteUser.role === 'student') {
+                  DataStore.mergeRemoteStudents([remoteUser]);
+                } else {
+                  DataStore.mergeRemoteDirectors([remoteUser]);
+                }
+                setCurrentUser(remoteUser);
+                setIsAuthLoading(false);
+                return;
+              }
+            } catch (err) {
+              console.warn('Failed to fetch active user from Firestore:', err);
+            }
+          }
+        }
+
+        // Priority 3: Persistent director device fallback
+        // If device has a configured director and remember device is enabled:
+        const directors = DataStore.getDirectors();
+        if (directors.length > 0 && DataStore.isRememberDevice()) {
+          const defaultDirector = directors[0];
+          DataStore.setActiveUserProfile(defaultDirector);
+          setCurrentUser(defaultDirector);
+          setIsAuthLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.warn('Session restoration error:', err);
+      } finally {
+        setIsAuthLoading(false);
+      }
+    };
+
+    restoreSession();
+
     // If Firebase Auth is configured, subscribe to live auth changes
     let unsubAuth: (() => void) | undefined;
     let unsubRemoteUsers: (() => void) | undefined;
@@ -107,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubAuth = AuthService.onAuthStateChanged(async (firebaseUser) => {
         if (firebaseUser) {
           const profile = await AuthService.syncUserProfile(firebaseUser);
-          DataStore.setActiveUserId(profile.id);
+          DataStore.setActiveUserProfile(profile);
           setCurrentUser(profile);
         }
       });
@@ -138,7 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Refresh available users from store and restore active session
+    // Refresh available users from store and keep active session in sync
     const refreshUsers = () => {
       const allDirectors = DataStore.getDirectors();
       setDirectors(allDirectors);
@@ -149,6 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (activeUserId) {
         const found = all.find((u) => u.id === activeUserId);
         if (found) {
+          DataStore.setActiveUserProfile(found);
           setCurrentUser(found);
           return;
         }
@@ -157,17 +222,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (currentUser) {
         const updated = all.find((u) => u.id === currentUser.id);
         if (updated) {
+          DataStore.setActiveUserProfile(updated);
           setCurrentUser(updated);
-        } else if (currentUser.role === 'student') {
-          DataStore.setActiveUserId(null);
-          setCurrentUser(null);
         }
+        // NOTE: We never wipe or log out the user here if updated wasn't in all.
       }
     };
 
     refreshUsers();
     const unsubStudents = subscribeToStore('students', refreshUsers);
     const unsubBands = subscribeToStore('bands', refreshUsers);
+
+    // Re-verify session when tab re-opens or device wakes up from sleep
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        refreshUsers();
+        const activeUserId = DataStore.getActiveUserId();
+        if (activeUserId && !currentUser) {
+          restoreSession();
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       unsubAuth?.();
@@ -176,13 +254,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubRemoteInvites?.();
       unsubStudents();
       unsubBands();
+      window.removeEventListener('focus', handleVisibilityChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [isFirebaseActive]);
 
   const switchUser = (userId: string) => {
-    const user = availableUsers.find((u) => u.id === userId);
+    const user = availableUsers.find((u) => u.id === userId) || DataStore.getUserById(userId);
     if (user) {
-      DataStore.setActiveUserId(user.id);
+      DataStore.setActiveUserProfile(user);
       setCurrentUser(user);
     }
   };
@@ -190,7 +270,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const switchDirector = (directorId: string) => {
     const director = directors.find((d) => d.id === directorId) || DataStore.getDirector(directorId);
     if (director) {
-      DataStore.setActiveUserId(director.id);
+      DataStore.setActiveUserProfile(director);
       setCurrentUser(director);
       DataStore.setDirector(director);
     }
@@ -230,7 +310,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    DataStore.setActiveUserId(student.id);
+    DataStore.setActiveUserProfile(student);
     setCurrentUser(student);
     return student;
   };
@@ -244,7 +324,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const fbUser = await AuthService.signInWithEmail(email, password);
         const profile = await AuthService.syncUserProfile(fbUser);
-        DataStore.setActiveUserId(profile.id);
+        DataStore.setActiveUserProfile(profile);
         DataStore.setDirector(profile);
         setCurrentUser(profile);
         return profile;
@@ -302,7 +382,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       );
     }
 
-    DataStore.setActiveUserId(director.id);
+    DataStore.setActiveUserProfile(director);
     DataStore.setDirector(director);
     setCurrentUser(director);
     return director;
@@ -349,7 +429,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const updatedDirectors = DataStore.getDirectors();
     setDirectors(updatedDirectors);
-    DataStore.setActiveUserId(newDirector.id);
+    DataStore.setActiveUserProfile(newDirector);
     setCurrentUser(newDirector);
     DataStore.setDirector(newDirector);
     return newDirector;
@@ -386,28 +466,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setActiveBranding(branding);
     applyBrandCssTheme(branding);
     if (currentUser?.role === 'admin') {
-      setCurrentUser({
+      const updated = {
         ...currentUser,
         studioName: branding.studioName,
         branding,
-      });
+      };
+      DataStore.setActiveUserProfile(updated);
+      setCurrentUser(updated);
     }
   };
 
   const switchRole = (role: UserRole, studentId?: string) => {
     if (role === 'admin') {
       const director = DataStore.getDirector(activeDirectorId);
+      DataStore.setActiveUserProfile(director);
       setCurrentUser(director);
     } else {
       const students = DataStore.getStudents(activeDirectorId);
       if (studentId) {
         const found = students.find((s) => s.id === studentId);
         if (found) {
+          DataStore.setActiveUserProfile(found);
           setCurrentUser(found);
           return;
         }
       }
       if (students.length > 0) {
+        DataStore.setActiveUserProfile(students[0]);
         setCurrentUser(students[0]);
       }
     }
@@ -417,6 +502,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (isFirebaseActive) {
       const fbUser = await AuthService.signInWithGoogle();
       const profile = await AuthService.syncUserProfile(fbUser);
+      DataStore.setActiveUserProfile(profile);
       setCurrentUser(profile);
     }
   };
@@ -429,7 +515,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn('Firebase signOut error:', err);
       }
     }
-    DataStore.setActiveUserId(null);
+    DataStore.setActiveUserProfile(null);
     setCurrentUser(null);
   };
 
@@ -452,6 +538,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         currentUser,
+        isAuthLoading,
         role,
         isAdmin,
         isStudent,

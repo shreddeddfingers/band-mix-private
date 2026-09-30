@@ -31,7 +31,7 @@ import { clsx } from 'clsx';
 
 export default function BandsPage() {
   const router = useRouter();
-  const { isAdmin, currentUser, isStudent, activeDirectorId } = useAuth();
+  const { isAdmin, currentUser, isStudent, activeDirectorId, isAuthLoading } = useAuth();
   const [bands, setBands] = useState<Band[]>([]);
   const [search, setSearch] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('all');
@@ -77,6 +77,14 @@ export default function BandsPage() {
       router.replace(`/bands/${visibleBands[0].id}`);
     }
   }, [isStudent, visibleBands, router]);
+
+  if (isAuthLoading) {
+    return (
+      <div className="py-20 text-center">
+        <p className="text-studio-400">Loading ensemble list...</p>
+      </div>
+    );
+  }
 
   if (isStudent) {
     if (visibleBands.length > 0) {

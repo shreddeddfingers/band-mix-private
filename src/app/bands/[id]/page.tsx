@@ -45,7 +45,7 @@ export default function BandHubPage({
 }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { isAdmin, currentUser } = useAuth();
+  const { isAdmin, currentUser, isAuthLoading } = useAuth();
   const [band, setBand] = useState<Band | null>(null);
   const [activeTab, setActiveTab] = useState<'feed' | 'chat' | 'songs' | 'schedule'>('feed');
   const [songsSubTab, setSongsSubTab] = useState<'setlist' | 'voting'>('setlist');
@@ -161,7 +161,7 @@ export default function BandHubPage({
     };
   }, [resolvedParams.id]);
 
-  if (!band) {
+  if (isAuthLoading || !band) {
     return (
       <div className="py-20 text-center">
         <p className="text-studio-400">Loading ensemble hub...</p>

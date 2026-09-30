@@ -12,7 +12,7 @@ import { clsx } from 'clsx';
 
 export default function SchedulePage() {
   const router = useRouter();
-  const { isAdmin, activeDirectorId, currentUser } = useAuth();
+  const { isAdmin, activeDirectorId, currentUser, isAuthLoading } = useAuth();
   const [bands, setBands] = useState<Band[]>([]);
   const [selectedBandFilter, setSelectedBandFilter] = useState<string>('all');
 
@@ -33,6 +33,14 @@ export default function SchedulePage() {
       }
     }
   }, [isAdmin, currentUser, router]);
+
+  if (isAuthLoading) {
+    return (
+      <div className="py-20 text-center">
+        <p className="text-studio-400">Loading schedule...</p>
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     const studentBands = currentUser

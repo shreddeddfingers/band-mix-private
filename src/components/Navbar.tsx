@@ -37,6 +37,7 @@ export function Navbar() {
     isAdmin,
     isStudent,
     currentUser,
+    isAuthLoading,
     activeDirectorId,
     activeBranding,
     updateUserAvatar,
@@ -206,7 +207,7 @@ export function Navbar() {
             )}
 
             {/* Guest Actions (Not Logged In) */}
-            {!currentUser && (
+            {!currentUser && !isAuthLoading && (
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -330,7 +331,7 @@ export function Navbar() {
         {mobileMenuOpen && (
           <div className="md:hidden px-4 pt-2.5 pb-4 border-t border-studio-800 bg-studio-950/95 backdrop-blur-md space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-150 shadow-2xl">
             {/* Guest Menu Options */}
-            {!currentUser && (
+            {!currentUser && !isAuthLoading && (
               <div className="pt-1 pb-2 border-b border-studio-800/80 mb-2 space-y-1.5">
                 <button
                   type="button"

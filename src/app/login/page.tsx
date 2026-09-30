@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
@@ -29,7 +29,25 @@ export default function LoginPage() {
     activeBranding,
     directors,
     currentUser,
+    isAuthLoading,
   } = useAuth();
+
+  useEffect(() => {
+    if (!isAuthLoading && currentUser) {
+      if (currentUser.role === 'student') {
+        const bands = DataStore.getBands();
+        const myBand = bands.find((b) =>
+          b.members?.some((m) => m.userId === currentUser.id) ||
+          (currentUser.bandIds && currentUser.bandIds.includes(b.id))
+        );
+        if (myBand) {
+          router.replace(`/bands/${myBand.id}`);
+          return;
+        }
+      }
+      router.replace('/');
+    }
+  }, [currentUser, isAuthLoading, router]);
 
   const [activeTab, setActiveTab] = useState<'student' | 'admin'>('student');
   const [studentQuery, setStudentQuery] = useState('');
@@ -44,6 +62,15 @@ export default function LoginPage() {
 
   const brandColor = activeBranding?.accentColor || activeBranding?.brandColor || '#F59E0B';
   const brandName = activeBranding?.studioName || 'BANDMIX';
+
+  if (isAuthLoading) {
+    return (
+      <div className="py-24 flex flex-col items-center justify-center space-y-4">
+        <div className="w-8 h-8 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
+        <p className="text-xs text-studio-400">Verifying studio session...</p>
+      </div>
+    );
+  }
 
   const handleStudentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

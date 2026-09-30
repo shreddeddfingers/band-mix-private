@@ -93,6 +93,7 @@ const STORAGE_KEYS = {
   ANNOUNCEMENTS: 'bandmix_prod_announcements',
   DIRECT_MESSAGES: 'bandmix_prod_direct_messages',
   ACTIVE_USER_ID: 'bandmix_active_user_id',
+  ACTIVE_USER_PROFILE: 'bandmix_active_user_profile',
   REMEMBER_DEVICE: 'bandmix_remember_device',
 };
 
@@ -229,7 +230,12 @@ export const DataStore = {
 
   // USERS & ROSTER
   getDirectors(): UserProfile[] {
-    return loadItem<UserProfile[]>(STORAGE_KEYS.DIRECTORS, []);
+    const list = loadItem<UserProfile[]>(STORAGE_KEYS.DIRECTORS, []);
+    if (list.length === 0) {
+      const single = loadItem<UserProfile | null>(STORAGE_KEYS.DIRECTOR, null);
+      if (single) return [single];
+    }
+    return list;
   },
 
   getDirector(id?: string): UserProfile {
@@ -567,24 +573,60 @@ export const DataStore = {
   },
 
   getAllUsers(directorId?: string): UserProfile[] {
-    return [...this.getDirectors(), ...this.getStudents(directorId)];
+    const directors = this.getDirectors();
+    const students = this.getStudents(directorId);
+    const combined = [...directors, ...students];
+    const cachedProfile = this.getActiveUserProfile();
+    if (cachedProfile && !combined.some((u) => u.id === cachedProfile.id)) {
+      combined.push(cachedProfile);
+    }
+    return combined;
   },
 
   getUserById(id: string): UserProfile | undefined {
+    const cachedProfile = this.getActiveUserProfile();
+    if (cachedProfile && cachedProfile.id === id) {
+      return cachedProfile;
+    }
     return this.getAllUsers().find((u) => u.id === id);
+  },
+
+  getActiveUserProfile(): UserProfile | null {
+    if (typeof window === 'undefined') return null;
+    return loadItem<UserProfile | null>(STORAGE_KEYS.ACTIVE_USER_PROFILE, null);
+  },
+
+  setActiveUserProfile(user: UserProfile | null): void {
+    if (typeof window === 'undefined') return;
+    if (user) {
+      saveItem(STORAGE_KEYS.ACTIVE_USER_PROFILE, user);
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_USER_ID, user.id);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.ACTIVE_USER_PROFILE);
+      localStorage.removeItem(STORAGE_KEYS.ACTIVE_USER_ID);
+    }
+    notify('students');
   },
 
   getActiveUserId(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem(STORAGE_KEYS.ACTIVE_USER_ID);
+    const id = localStorage.getItem(STORAGE_KEYS.ACTIVE_USER_ID);
+    if (id) return id;
+    const cached = this.getActiveUserProfile();
+    return cached ? cached.id : null;
   },
 
   setActiveUserId(userId: string | null): void {
     if (typeof window === 'undefined') return;
     if (userId) {
       localStorage.setItem(STORAGE_KEYS.ACTIVE_USER_ID, userId);
+      const user = this.getUserById(userId);
+      if (user) {
+        saveItem(STORAGE_KEYS.ACTIVE_USER_PROFILE, user);
+      }
     } else {
       localStorage.removeItem(STORAGE_KEYS.ACTIVE_USER_ID);
+      localStorage.removeItem(STORAGE_KEYS.ACTIVE_USER_PROFILE);
     }
   },
 
@@ -929,6 +971,11 @@ export const DataStore = {
     // 4. Update in Firestore
     if (isFirebaseConfigured) {
       FirestoreService.updateUser(userId, { avatar: avatarUrl }).catch(console.error);
+    }
+
+    const cached = this.getActiveUserProfile();
+    if (cached && cached.id === userId) {
+      this.setActiveUserProfile({ ...cached, avatar: avatarUrl });
     }
 
     notify('students');
