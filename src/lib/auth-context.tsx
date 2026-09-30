@@ -142,10 +142,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Priority 3: Persistent director device fallback
-        // If device has a configured director and remember device is enabled:
+        // Priority 3: Studio director fallback for fresh visitors or remembered devices
         const directors = DataStore.getDirectors();
-        if (directors.length > 0 && DataStore.isRememberDevice()) {
+        if (directors.length > 0) {
           const defaultDirector = directors[0];
           DataStore.setActiveUserProfile(defaultDirector);
           setCurrentUser(defaultDirector);
@@ -228,6 +227,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
           return;
         }
+      } else if (allDirectors.length > 0) {
+        // Fallback for clean browser sessions: automatically activate primary studio director
+        const primaryDirector = allDirectors[0];
+        DataStore.setActiveUserProfile(primaryDirector);
+        setCurrentUser(primaryDirector);
+        return;
       }
 
       setCurrentUser((prev) => {
@@ -460,7 +465,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const activeDirectorId =
     currentUser?.role === 'admin'
       ? currentUser.id
-      : currentUser?.directorId || 'director-main';
+      : currentUser?.directorId || (directors.length > 0 ? directors[0].id : 'director-main');
 
   const [activeBranding, setActiveBranding] = useState<StudioBranding>(BRAND_PRESETS.highland);
 
