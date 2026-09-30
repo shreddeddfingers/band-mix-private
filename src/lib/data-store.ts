@@ -605,7 +605,6 @@ export const DataStore = {
       localStorage.removeItem(STORAGE_KEYS.ACTIVE_USER_PROFILE);
       localStorage.removeItem(STORAGE_KEYS.ACTIVE_USER_ID);
     }
-    notify('students');
   },
 
   getActiveUserId(): string | null {

@@ -213,20 +213,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (activeUserId) {
         const found = all.find((u) => u.id === activeUserId);
         if (found) {
-          DataStore.setActiveUserProfile(found);
-          setCurrentUser(found);
+          setCurrentUser((prev) => {
+            if (
+              !prev ||
+              prev.id !== found.id ||
+              prev.avatar !== found.avatar ||
+              prev.name !== found.name ||
+              prev.role !== found.role
+            ) {
+              DataStore.setActiveUserProfile(found);
+              return found;
+            }
+            return prev;
+          });
           return;
         }
       }
 
-      if (currentUser) {
-        const updated = all.find((u) => u.id === currentUser.id);
-        if (updated) {
+      setCurrentUser((prev) => {
+        if (!prev) return null;
+        const updated = all.find((u) => u.id === prev.id);
+        if (
+          updated &&
+          (updated.id !== prev.id ||
+            updated.avatar !== prev.avatar ||
+            updated.name !== prev.name ||
+            updated.role !== prev.role)
+        ) {
           DataStore.setActiveUserProfile(updated);
-          setCurrentUser(updated);
+          return updated;
         }
-        // NOTE: We never wipe or log out the user here if updated wasn't in all.
-      }
+        return prev;
+      });
     };
 
     refreshUsers();
