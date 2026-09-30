@@ -262,7 +262,7 @@ export default function BandHubPage({
       )}
 
       {/* Instagram / Facebook Style Band Profile Header */}
-      <div className="relative rounded-3xl bg-studio-900 border border-studio-800 overflow-hidden shadow-2xl">
+      <div className="relative rounded-3xl apple-glass-card overflow-hidden shadow-2xl">
         {/* Cover Photo Banner */}
         <div className="relative h-44 sm:h-56 bg-studio-950 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -283,10 +283,10 @@ export default function BandHubPage({
               type="button"
               onClick={() => handleTabChange(activeTab === 'chat' ? 'feed' : 'chat')}
               className={clsx(
-                'relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg transition active:scale-95 border backdrop-blur-md',
+                'relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg transition apple-spring border min-h-[36px]',
                 activeTab === 'chat'
                   ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 border-pink-400 text-white shadow-pink-500/30'
-                  : 'bg-black/75 hover:bg-black/90 border-white/20 text-white'
+                  : 'apple-glass-pill text-white hover:text-white'
               )}
               title={activeTab === 'chat' ? 'Return to Band Feed' : 'Open Band Chat'}
             >
@@ -304,7 +304,7 @@ export default function BandHubPage({
               <button
                 type="button"
                 onClick={() => setIsChangeCoverOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/75 hover:bg-black/90 active:scale-95 text-white text-xs font-semibold border border-white/20 backdrop-blur-md transition shadow-md"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full apple-glass-pill apple-spring text-white text-xs font-semibold transition shadow-md min-h-[36px]"
                 title="Change band cover picture"
               >
                 <Camera className="w-3.5 h-3.5 text-amber-400" />
@@ -316,7 +316,7 @@ export default function BandHubPage({
               <button
                 type="button"
                 onClick={() => setIsQrOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/75 hover:bg-black/90 active:scale-95 text-white text-xs font-semibold border border-white/20 backdrop-blur-md transition shadow-md"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full apple-glass-pill apple-spring text-white text-xs font-semibold transition shadow-md min-h-[36px]"
                 title="Invite student with QR Intake Pass"
               >
                 <QrCode className="w-3.5 h-3.5 text-amber-400" />
@@ -383,43 +383,43 @@ export default function BandHubPage({
           )}
 
           {/* Instagram Stats Row */}
-          <div className="flex items-center gap-3 sm:gap-6 py-2.5 px-3.5 rounded-2xl bg-studio-950/70 border border-studio-800/80 text-xs overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-3 sm:gap-6 py-2.5 px-4 rounded-2xl apple-glass-pill text-xs overflow-x-auto no-scrollbar">
             <button
               type="button"
               onClick={() => handleTabChange('feed')}
-              className="flex items-center gap-1.5 hover:text-amber-400 transition shrink-0"
+              className="flex items-center gap-1.5 hover:text-amber-400 transition apple-spring shrink-0"
             >
               <strong className="text-white font-extrabold">{DataStore.getAnnouncements(band.id).length}</strong>
               <span className="text-studio-400">Posts</span>
             </button>
-            <span>•</span>
+            <span className="text-white/20">•</span>
             <button
               type="button"
               onClick={() => handleTabChange('chat')}
-              className="flex items-center gap-1.5 hover:text-amber-400 transition shrink-0"
+              className="flex items-center gap-1.5 hover:text-amber-400 transition apple-spring shrink-0"
             >
               <strong className="text-white font-extrabold">{bandMessages.length}</strong>
               <span className="text-studio-400">Chat</span>
             </button>
-            <span>•</span>
+            <span className="text-white/20">•</span>
             <div className="flex items-center gap-1.5 text-studio-300 shrink-0">
               <strong className="text-white font-extrabold">{band.members.length}</strong>
               <span className="text-studio-400">Musicians</span>
             </div>
-            <span>•</span>
+            <span className="text-white/20">•</span>
             <button
               type="button"
               onClick={() => handleTabChange('songs')}
-              className="flex items-center gap-1.5 hover:text-amber-400 transition shrink-0"
+              className="flex items-center gap-1.5 hover:text-amber-400 transition apple-spring shrink-0"
             >
               <strong className="text-white font-extrabold">{DataStore.getSongs(band.id).length}</strong>
               <span className="text-studio-400">Songs</span>
             </button>
-            <span className="hidden sm:inline">•</span>
+            <span className="hidden sm:inline text-white/20">•</span>
             <button
               type="button"
               onClick={() => handleTabChange('schedule')}
-              className="hidden sm:flex items-center gap-1 text-studio-300 hover:text-amber-400 transition truncate"
+              className="hidden sm:flex items-center gap-1 text-studio-300 hover:text-amber-400 transition apple-spring truncate"
             >
               <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
               <span className="truncate">Target: {band.rehearsalSchedule || 'TBD'}</span>
@@ -445,18 +445,18 @@ export default function BandHubPage({
         isAdmin={isAdmin}
       />
 
-      {/* Primary Navigation - 4 Clean Segmented Buttons & Apple Pop-Down (Zero Horizontal Scrolling) */}
-      <div className="bg-studio-900 border border-studio-800 rounded-2xl p-2 sm:p-2.5 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+      {/* Primary Navigation - 4 Clean Apple Segmented Controls & Pop-Down (Zero Horizontal Scrolling) */}
+      <div className="apple-segmented-tray rounded-2xl p-1.5 sm:p-2 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         {/* 4 Clean Segmented Buttons that fit smoothly on mobile without horizontal scrolling */}
         <div className="grid grid-cols-4 gap-1 sm:gap-1.5 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => handleTabChange('feed')}
             className={clsx(
-              'flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
+              'flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-3 rounded-xl text-xs font-bold transition apple-spring',
               activeTab === 'feed'
-                ? 'bg-amber-500 text-slate-950 font-extrabold shadow-amber-500/20'
-                : 'bg-studio-950 hover:bg-studio-800 text-studio-300 hover:text-white'
+                ? 'apple-segmented-pill-brand font-extrabold shadow-sm'
+                : 'text-white/70 hover:text-white hover:bg-white/[0.06]'
             )}
           >
             <Megaphone className="w-3.5 h-3.5 shrink-0" />
@@ -467,10 +467,10 @@ export default function BandHubPage({
             type="button"
             onClick={() => handleTabChange('chat')}
             className={clsx(
-              'relative flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
+              'relative flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-3 rounded-xl text-xs font-bold transition apple-spring',
               activeTab === 'chat'
-                ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white font-extrabold shadow-pink-500/20'
-                : 'bg-studio-950 hover:bg-studio-800 text-studio-300 hover:text-white'
+                ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white font-extrabold shadow-pink-500/25 border border-pink-400/40'
+                : 'text-white/70 hover:text-white hover:bg-white/[0.06]'
             )}
           >
             <MessageCircle className="w-3.5 h-3.5 shrink-0 text-pink-400" />
@@ -478,7 +478,7 @@ export default function BandHubPage({
             {bandMessages.length > 0 && (
               <span
                 className={clsx(
-                  'text-[9px] sm:text-[10px] font-black px-1 sm:px-1.5 py-0.2 rounded-full leading-none shrink-0',
+                  'text-[9px] sm:text-[10px] font-black px-1.5 py-0.2 rounded-full leading-none shrink-0 shadow-sm',
                   activeTab === 'chat'
                     ? 'bg-white/25 text-white'
                     : 'bg-pink-500/20 text-pink-300 border border-pink-500/30'
@@ -493,10 +493,10 @@ export default function BandHubPage({
             type="button"
             onClick={() => handleTabChange('songs')}
             className={clsx(
-              'flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
+              'flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-3 rounded-xl text-xs font-bold transition apple-spring',
               activeTab === 'songs'
-                ? 'bg-amber-500 text-slate-950 font-extrabold shadow-amber-500/20'
-                : 'bg-studio-950 hover:bg-studio-800 text-studio-300 hover:text-white'
+                ? 'apple-segmented-pill-brand font-extrabold shadow-sm'
+                : 'text-white/70 hover:text-white hover:bg-white/[0.06]'
             )}
           >
             <ListMusic className="w-3.5 h-3.5 shrink-0" />
@@ -507,10 +507,10 @@ export default function BandHubPage({
             type="button"
             onClick={() => handleTabChange('schedule')}
             className={clsx(
-              'flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95',
+              'flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-3 rounded-xl text-xs font-bold transition apple-spring',
               activeTab === 'schedule'
-                ? 'bg-amber-500 text-slate-950 font-extrabold shadow-amber-500/20'
-                : 'bg-studio-950 hover:bg-studio-800 text-studio-300 hover:text-white'
+                ? 'apple-segmented-pill-brand font-extrabold shadow-sm'
+                : 'text-white/70 hover:text-white hover:bg-white/[0.06]'
             )}
           >
             <Calendar className="w-3.5 h-3.5 shrink-0" />
@@ -523,14 +523,14 @@ export default function BandHubPage({
           <select
             value={activeTab}
             onChange={(e) => handleTabChange(e.target.value as any)}
-            className="w-full bg-studio-950 border border-studio-700/80 rounded-xl px-3 py-2 text-base sm:text-xs font-bold text-white focus:outline-none focus:border-amber-400 appearance-none pr-8 cursor-pointer"
+            className="w-full apple-glass-input rounded-xl px-3 py-2 text-base sm:text-xs font-bold text-white focus:outline-none appearance-none pr-8 cursor-pointer apple-spring-subtle"
           >
-            <option value="feed">📢 Band Feed (Updates &amp; Wall)</option>
-            <option value="chat">💬 Band Chat ({bandMessages.length} messages)</option>
-            <option value="songs">🎵 Songs, Setlist &amp; Voting</option>
-            <option value="schedule">📅 Rehearsal Schedule</option>
+            <option value="feed" className="bg-studio-950 text-white">📢 Band Feed (Updates &amp; Wall)</option>
+            <option value="chat" className="bg-studio-950 text-white">💬 Band Chat ({bandMessages.length} messages)</option>
+            <option value="songs" className="bg-studio-950 text-white">🎵 Songs, Setlist &amp; Voting</option>
+            <option value="schedule" className="bg-studio-950 text-white">📅 Rehearsal Schedule</option>
           </select>
-          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-studio-400 text-xs font-bold">
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-white/50 text-xs font-bold">
             ▼
           </div>
         </div>

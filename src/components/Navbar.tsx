@@ -113,24 +113,24 @@ export function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-studio-950/80 backdrop-blur-md border-b border-studio-800">
+      <header className="sticky top-0 z-40 apple-glass-nav transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           {/* Logo & Platform Name */}
           <div className="flex items-center gap-3 sm:gap-8 min-w-0">
-            <Link href={logoHref} className="flex items-center gap-2 sm:gap-2.5 group min-w-0">
+            <Link href={logoHref} className="flex items-center gap-2 sm:gap-2.5 group min-w-0 apple-spring-subtle">
               {activeBranding?.logoUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={activeBranding.logoUrl}
                   alt={brandName}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-cover border border-studio-700 shadow-md group-hover:scale-105 transition-transform bg-studio-900 shrink-0"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl object-cover border border-white/15 shadow-md group-hover:scale-105 transition-transform bg-studio-900 shrink-0"
                 />
               ) : (
                 <div
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-slate-950 font-black shadow-lg group-hover:scale-105 transition-transform shrink-0"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl flex items-center justify-center text-slate-950 font-black shadow-lg group-hover:scale-105 transition-transform shrink-0 border border-white/20"
                   style={{
                     backgroundColor: brandColor,
-                    boxShadow: `0 10px 15px -3px ${brandColor}33`,
+                    boxShadow: `0 8px 20px -2px ${brandColor}40`,
                   }}
                 >
                   <Radio className="w-4 h-4 sm:w-5 sm:h-5 text-slate-950 stroke-[2.5]" />
@@ -141,7 +141,7 @@ export function Navbar() {
                   {brandName}
                 </span>
                 <span
-                  className="text-[8px] sm:text-[9px] tracking-wider uppercase font-semibold block -mt-1 font-mono truncate"
+                  className="text-[8px] sm:text-[9px] tracking-wider uppercase font-semibold block -mt-1 font-mono truncate opacity-90"
                   style={{ color: brandColor }}
                 >
                   {brandBadge}
@@ -149,8 +149,8 @@ export function Navbar() {
               </div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-1">
+            {/* Desktop Navigation with Apple Segmented Pill Materials */}
+            <nav className="hidden md:flex items-center gap-1 p-1 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-md">
               {navLinks.map((link) => {
                 const Icon = link.icon;
                 const isActive =
@@ -161,13 +161,13 @@ export function Navbar() {
                     key={link.href}
                     href={link.href}
                     className={clsx(
-                      'flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-colors',
+                      'flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all apple-spring-subtle',
                       isActive
-                        ? 'bg-studio-800/90 text-white shadow-sm border border-studio-700/60'
-                        : 'text-studio-400 hover:text-studio-200 hover:bg-studio-900'
+                        ? 'apple-glass-active-pill text-white shadow-sm'
+                        : 'text-white/60 hover:text-white hover:bg-white/[0.06]'
                     )}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-4 h-4 stroke-[2]" />
                     {link.label}
                   </Link>
                 );
@@ -181,7 +181,7 @@ export function Navbar() {
             {isAdmin && (
               <button
                 onClick={() => setIsBrandingOpen(true)}
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border shadow-sm"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition border shadow-sm apple-spring"
                 style={{
                   backgroundColor: `${brandColor}18`,
                   borderColor: `${brandColor}40`,
@@ -198,7 +198,7 @@ export function Navbar() {
             {isAdmin && (
               <button
                 onClick={() => setIsQrOpen(true)}
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border shadow-sm bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition border shadow-sm bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30 apple-spring"
                 title="Generate Dynamic Onboarding QR Code"
               >
                 <QrCode className="w-4 h-4 text-amber-400" />
@@ -231,13 +231,13 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => setIsDmOpen(true)}
-                className="relative p-2 rounded-xl text-studio-300 hover:text-white hover:bg-studio-900 border border-transparent hover:border-studio-800 transition shrink-0"
+                className="relative p-2.5 rounded-full apple-glass-pill text-white/80 hover:text-white transition apple-spring shrink-0 min-w-[40px] min-h-[40px] flex items-center justify-center"
                 title="Direct Messages"
                 aria-label="Direct Messages"
               >
-                <MessageSquare className="w-5 h-5 text-amber-400" />
+                <MessageSquare className="w-4 h-4 text-amber-400 stroke-[2]" />
                 {unreadDmCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center ring-2 ring-studio-950 animate-pulse">
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center ring-2 ring-[#0b0f17] shadow-sm animate-pulse">
                     {unreadDmCount > 9 ? '9+' : unreadDmCount}
                   </span>
                 )}
@@ -251,11 +251,11 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setIsAvatarModalOpen(true)}
-                  className="relative group p-0.5 rounded-full border border-studio-700 hover:border-amber-400 transition shrink-0"
+                  className="relative group p-0.5 rounded-full apple-spring ring-1 ring-white/20 hover:ring-amber-400 transition shrink-0 min-w-[40px] min-h-[40px] flex items-center justify-center"
                   title={`Change profile picture (${currentUser.name})`}
                   aria-label="Change profile picture"
                 >
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-studio-800">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-studio-800 shadow-md">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={currentUser.avatar}
@@ -263,14 +263,14 @@ export function Navbar() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-studio-950 border border-studio-700 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 transition">
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-studio-950 border border-white/20 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 transition shadow-sm">
                     <Camera className="w-2 h-2" />
                   </div>
                 </button>
                 <button
                   type="button"
                   onClick={() => signOut()}
-                  className="p-2 rounded-xl text-studio-400 hover:text-rose-400 hover:bg-studio-900 border border-transparent hover:border-studio-800 transition shrink-0"
+                  className="p-2.5 rounded-full text-white/60 hover:text-rose-400 hover:bg-rose-500/10 transition apple-spring shrink-0 min-w-[40px] min-h-[40px] flex items-center justify-center"
                   title="Sign Out / Switch Director"
                   aria-label="Sign Out"
                 >
@@ -285,10 +285,10 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setIsStudentProfileOpen(true)}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-studio-900 hover:bg-studio-800 border border-studio-700 text-xs font-semibold text-white transition group shrink-0"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full apple-glass-pill text-xs font-semibold text-white transition apple-spring shrink-0 min-h-[40px]"
                   title="View & Edit My Profile"
                 >
-                  <div className="relative w-6 h-6 rounded-full overflow-hidden bg-studio-800 border border-studio-600 shrink-0">
+                  <div className="relative w-6 h-6 rounded-full overflow-hidden bg-studio-800 ring-1 ring-white/30 shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={currentUser.avatar}
@@ -296,10 +296,10 @@ export function Navbar() {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <span className="truncate max-w-[100px] sm:max-w-[130px]">
+                  <span className="truncate max-w-[100px] sm:max-w-[130px] font-medium">
                     {currentUser.name}
                   </span>
-                  <span className="hidden sm:inline text-[10px] text-amber-400 font-normal">
+                  <span className="hidden sm:inline text-[10px] text-amber-400 font-bold uppercase tracking-wider">
                     Profile
                   </span>
                 </button>
@@ -307,7 +307,7 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => signOut()}
-                  className="p-2 rounded-xl text-studio-400 hover:text-rose-400 hover:bg-studio-900 border border-transparent hover:border-studio-800 transition shrink-0"
+                  className="p-2.5 rounded-full text-white/60 hover:text-rose-400 hover:bg-rose-500/10 transition apple-spring shrink-0 min-w-[40px] min-h-[40px] flex items-center justify-center"
                   title="Log Out"
                   aria-label="Log Out"
                 >

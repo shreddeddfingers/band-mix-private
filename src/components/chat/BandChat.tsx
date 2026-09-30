@@ -121,9 +121,9 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
     : `Director ${rawDirectorName}`;
 
   return (
-    <div className="flex flex-col h-[560px] sm:h-[680px] bg-studio-950 border border-studio-800/90 rounded-3xl overflow-hidden shadow-2xl w-full max-w-full">
+    <div className="flex flex-col h-[560px] sm:h-[680px] apple-glass-card rounded-3xl overflow-hidden shadow-2xl w-full max-w-full">
       {/* Instagram Direct Group Header */}
-      <div className="px-4 py-3 sm:py-3.5 bg-studio-900/95 backdrop-blur-md border-b border-studio-800 flex items-center justify-between gap-3">
+      <div className="px-4 py-3 sm:py-3.5 apple-glass-nav flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           {/* Group Avatar Stack (IG Style) */}
           <div className="relative shrink-0 flex -space-x-2">
@@ -329,10 +329,10 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
                         className={clsx(
                           'px-4 py-2.5 text-sm leading-relaxed shadow-sm transition-all',
                           isMe
-                            ? 'bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 text-white font-medium rounded-2xl rounded-br-xs'
+                            ? 'apple-glass-bubble-me text-white font-medium rounded-2xl rounded-br-xs'
                             : isMsgAdmin
-                            ? 'bg-studio-900 border border-amber-500/40 text-white rounded-2xl rounded-bl-xs'
-                            : 'bg-studio-850 border border-studio-800 text-studio-100 rounded-2xl rounded-bl-xs'
+                            ? 'apple-glass-bubble-them border-amber-500/40 text-white rounded-2xl rounded-bl-xs'
+                            : 'apple-glass-bubble-them text-white rounded-2xl rounded-bl-xs'
                         )}
                       >
                         {msg.text}
@@ -347,8 +347,8 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
                           )
                         }
                         className={clsx(
-                          'absolute top-1/2 -translate-y-1/2 opacity-0 group-hover/bubble:opacity-100 transition-opacity p-1 rounded-full bg-studio-900 border border-studio-700 text-studio-400 hover:text-white hover:scale-110 shadow-md',
-                          isMe ? '-left-8' : '-right-8'
+                          'absolute top-1/2 -translate-y-1/2 opacity-0 group-hover/bubble:opacity-100 transition-opacity p-1.5 rounded-full apple-glass-pill text-white/70 hover:text-white apple-spring shadow-md',
+                          isMe ? '-left-9' : '-right-9'
                         )}
                         title="React to message"
                       >
@@ -359,7 +359,7 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
                       {activeReactionMsgId === msg.id && (
                         <div
                           className={clsx(
-                            'absolute -top-10 z-30 flex items-center gap-1 p-1 rounded-full bg-studio-900 border border-studio-700 shadow-xl backdrop-blur-md animate-in zoom-in-90 duration-150',
+                            'absolute -top-10 z-30 flex items-center gap-1 p-1 rounded-full apple-glass border border-white/20 shadow-xl animate-in zoom-in-90 duration-150',
                             isMe ? 'right-0' : 'left-0'
                           )}
                         >
@@ -368,7 +368,7 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
                               key={emoji}
                               type="button"
                               onClick={() => handleToggleReaction(msg.id, emoji)}
-                              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-studio-800 hover:scale-125 transition-transform text-sm"
+                              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 hover:scale-125 transition-transform text-sm"
                             >
                               {emoji}
                             </button>
@@ -395,10 +395,10 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
                                 type="button"
                                 onClick={() => handleToggleReaction(msg.id, emoji)}
                                 className={clsx(
-                                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition border active:scale-90',
+                                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition border apple-spring',
                                   iReacted
-                                    ? 'bg-purple-900/50 border-purple-500/60 text-white font-bold'
-                                    : 'bg-studio-900/90 border-studio-700/80 text-studio-300 hover:border-studio-500'
+                                    ? 'bg-purple-600/40 border-purple-400/60 text-white font-bold shadow-sm'
+                                    : 'apple-glass-pill text-white/80 hover:text-white'
                                 )}
                               >
                                 <span>{emoji}</span>
@@ -413,9 +413,9 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
 
                   {/* Sent Checkmark / Timestamp for Me */}
                   {isMe && !msg.isPinnedRehearsalNotice && (
-                    <div className="flex items-center gap-1 text-[10px] text-studio-500 mt-0.5 px-1">
+                    <div className="flex items-center gap-1 text-[10px] text-white/50 mt-0.5 px-1">
                       <span>{format(new Date(msg.timestamp), 'h:mm a')}</span>
-                      <CheckCheck className="w-3 h-3 text-purple-400" />
+                      <CheckCheck className="w-3 h-3 text-purple-300" />
                     </div>
                   )}
                 </div>
@@ -427,9 +427,9 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
       </div>
 
       {/* Quick Status / Availability Chips (Instagram Story Reply Style) */}
-      <div className="px-3.5 py-1.5 bg-studio-900/80 border-t border-studio-800/80 flex items-center justify-between gap-2">
+      <div className="px-3.5 py-1.5 apple-glass-nav border-t border-white/10 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-1 min-w-0">
-          <span className="text-[11px] font-bold text-studio-400 whitespace-nowrap flex items-center gap-1">
+          <span className="text-[11px] font-bold text-white/60 whitespace-nowrap flex items-center gap-1">
             <Clock className="w-3 h-3 text-amber-400" />
             <span>Quick Send:</span>
           </span>
@@ -438,7 +438,7 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
               key={i}
               type="button"
               onClick={() => handleSendPrompt(prompt)}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-studio-950 hover:bg-studio-800 text-amber-300/90 hover:text-amber-200 border border-studio-800 whitespace-nowrap transition active:scale-95 shrink-0"
+              className="text-[11px] px-2.5 py-1 rounded-full apple-glass-pill text-amber-300 hover:text-amber-200 border border-white/10 whitespace-nowrap transition apple-spring shrink-0"
             >
               {prompt}
             </button>
@@ -448,13 +448,13 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
 
       {/* Instagram Emoji Drawer */}
       {showEmojiPicker && (
-        <div className="px-3 py-2 bg-studio-900 border-t border-studio-800 flex items-center gap-2 overflow-x-auto no-scrollbar animate-in slide-in-from-bottom-2 duration-150">
+        <div className="px-3 py-2 apple-glass border-t border-white/10 flex items-center gap-2 overflow-x-auto no-scrollbar animate-in slide-in-from-bottom-2 duration-150">
           {QUICK_EMOJIS.map((emoji) => (
             <button
               key={emoji}
               type="button"
               onClick={() => setInputText((prev) => prev + emoji)}
-              className="text-xl p-1.5 rounded-xl hover:bg-studio-800 hover:scale-125 transition-transform"
+              className="text-xl p-1.5 rounded-xl hover:bg-white/10 hover:scale-125 transition-transform apple-spring"
             >
               {emoji}
             </button>
@@ -465,13 +465,13 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
       {/* Instagram Capsule Input Bar */}
       <form
         onSubmit={handleSendMessage}
-        className="p-3 bg-studio-900 border-t border-studio-800 flex items-center gap-2"
+        className="p-3 apple-glass-nav border-t border-white/10 flex items-center gap-2"
       >
-        <div className="flex-1 flex items-center gap-2 bg-studio-950 border border-studio-700/80 rounded-full px-4 py-2 focus-within:border-purple-500 transition shadow-inner">
+        <div className="flex-1 flex items-center gap-2 apple-glass-input rounded-full px-4 py-2 transition shadow-inner">
           <button
             type="button"
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="text-studio-400 hover:text-amber-400 transition"
+            className="text-white/60 hover:text-amber-400 transition apple-spring"
             title="Emoji picker"
           >
             <Smile className="w-5 h-5" />
@@ -486,7 +486,7 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
                 ? 'Message band as Director...'
                 : `Message as ${currentUser?.name || 'student'}...`
             }
-            className="flex-1 bg-transparent text-base sm:text-sm text-white placeholder-studio-500 focus:outline-none min-w-0"
+            className="flex-1 bg-transparent text-base sm:text-sm text-white placeholder-white/40 focus:outline-none min-w-0"
           />
         </div>
 
@@ -494,7 +494,7 @@ export function BandChat({ band, onOpenSchedulePlanner, onOpenRoster }: BandChat
         <button
           type="submit"
           disabled={!inputText.trim()}
-          className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 via-pink-600 to-rose-500 hover:opacity-90 active:scale-95 disabled:opacity-40 text-white font-bold flex items-center justify-center transition shadow-md shadow-pink-500/20 shrink-0"
+          className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 via-pink-600 to-rose-500 hover:opacity-90 transition apple-spring disabled:opacity-40 text-white font-bold flex items-center justify-center shadow-lg shadow-pink-500/25 shrink-0"
           title="Send message"
         >
           <Send className="w-4 h-4 ml-0.5" />

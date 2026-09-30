@@ -207,18 +207,18 @@ export function StudentProfileModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl max-h-[90vh] bg-studio-900 border border-studio-700/80 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl max-h-[90vh] apple-glass rounded-3xl shadow-2xl overflow-hidden flex flex-col">
         {/* Top Sticky Header */}
-        <div className="px-5 py-4 border-b border-studio-800 bg-studio-950/80 backdrop-blur-md flex items-center justify-between shrink-0">
+        <div className="px-5 py-4 border-b border-white/10 apple-glass-nav flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300">
+            <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full apple-glass-pill text-amber-300">
               Musician Questionnaire & Studio Profile
             </span>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl bg-studio-900 hover:bg-studio-800 text-studio-400 hover:text-white transition"
+            className="w-9 h-9 rounded-full apple-glass-pill flex items-center justify-center text-white/70 hover:text-white apple-spring transition"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -228,9 +228,9 @@ export function StudentProfileModal({
         {/* Scrollable Content */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-6">
           {/* Section 1: Hero Identity */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-studio-950/60 p-4 rounded-2xl border border-studio-800/80">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 apple-glass-card p-4 rounded-2xl">
             <div className="flex items-center gap-4 min-w-0">
-              <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-studio-800 border-2 border-studio-700 shrink-0 group">
+              <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-studio-800 ring-1 ring-white/20 shrink-0 group">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={student.avatar}
@@ -241,7 +241,7 @@ export function StudentProfileModal({
                   <button
                     type="button"
                     onClick={() => setIsChangeAvatarOpen(true)}
-                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold transition-opacity"
+                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold transition-opacity apple-spring"
                     title="Change profile picture"
                   >
                     <Camera className="w-4 h-4 text-amber-400 mb-0.5" />
@@ -259,7 +259,7 @@ export function StudentProfileModal({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-studio-900 border border-studio-700 text-xs text-white capitalize font-semibold">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full apple-glass-pill text-xs text-white capitalize font-semibold">
                     <InstrumentIcon
                       instrument={student.primaryInstrument}
                       size="xs"
@@ -270,7 +270,7 @@ export function StudentProfileModal({
                   <Badge role="student" />
                 </div>
 
-                <p className="text-xs text-studio-400 font-mono truncate">
+                <p className="text-xs text-white/50 font-mono truncate">
                   {student.email}
                 </p>
               </div>
@@ -281,7 +281,7 @@ export function StudentProfileModal({
                 <button
                   type="button"
                   onClick={() => setIsChangeAvatarOpen(true)}
-                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-studio-900 hover:bg-studio-800 text-studio-300 hover:text-white border border-studio-700 text-xs font-semibold transition"
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full apple-glass-pill text-white/80 hover:text-white text-xs font-semibold transition apple-spring min-h-[36px]"
                 >
                   <Camera className="w-3.5 h-3.5 text-amber-400" />
                   <span>Change Photo</span>

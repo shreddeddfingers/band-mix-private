@@ -148,17 +148,17 @@ export function LoginModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-studio-900 border border-studio-700/80 rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-lg apple-glass rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-studio-800 bg-studio-950/70">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/10 apple-glass-nav">
           <div className="flex items-center gap-3">
             {activeBranding?.logoUrl ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={activeBranding.logoUrl}
                 alt={brandName}
-                className="w-9 h-9 rounded-xl object-cover border border-studio-700 bg-studio-900 shrink-0"
+                className="w-9 h-9 rounded-xl object-cover ring-1 ring-white/20 bg-studio-900 shrink-0"
               />
             ) : (
               <div
@@ -172,14 +172,15 @@ export function LoginModal({
               <h2 className="text-base sm:text-lg font-black text-white tracking-tight">
                 Sign In to {brandName}
               </h2>
-              <p className="text-[11px] text-studio-400">
+              <p className="text-[11px] text-white/60">
                 Access your ensemble hub, schedule, and studio resources
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-studio-400 hover:text-white hover:bg-studio-800 transition"
+            className="w-9 h-9 rounded-full apple-glass-pill flex items-center justify-center text-white/70 hover:text-white apple-spring transition"
+            aria-label="Close login dialog"
           >
             <X className="w-5 h-5" />
           </button>
@@ -187,7 +188,7 @@ export function LoginModal({
 
         {/* Role Tabs */}
         <div className="p-4 sm:p-5 pb-0">
-          <div className="flex rounded-xl bg-studio-950 p-1 border border-studio-800">
+          <div className="flex apple-segmented-tray rounded-2xl p-1 shadow-inner">
             <button
               type="button"
               onClick={() => {
@@ -195,10 +196,10 @@ export function LoginModal({
                 setErrorMessage(null);
               }}
               className={clsx(
-                'flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-2',
+                'flex-1 py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 apple-spring',
                 activeTab === 'student'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm'
-                  : 'text-studio-400 hover:text-white'
+                  ? 'apple-segmented-pill-brand font-extrabold shadow-sm'
+                  : 'text-white/70 hover:text-white hover:bg-white/[0.06]'
               )}
             >
               <GraduationCap className="w-4 h-4" />
@@ -211,10 +212,10 @@ export function LoginModal({
                 setErrorMessage(null);
               }}
               className={clsx(
-                'flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-2',
+                'flex-1 py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 apple-spring',
                 activeTab === 'admin'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm'
-                  : 'text-studio-400 hover:text-white'
+                  ? 'apple-segmented-pill-brand font-extrabold shadow-sm'
+                  : 'text-white/70 hover:text-white hover:bg-white/[0.06]'
               )}
             >
               <ShieldCheck className="w-4 h-4" />
@@ -241,17 +242,17 @@ export function LoginModal({
                     Student Email or Full Name
                   </label>
                   <div className="relative">
-                    <User className="w-4 h-4 text-studio-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <User className="w-4 h-4 text-white/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       required
                       placeholder="e.g. student@email.com or Alex Johnson"
                       value={studentQuery}
                       onChange={(e) => setStudentQuery(e.target.value)}
-                      className="w-full bg-studio-950 border border-studio-700 rounded-xl pl-9 pr-3.5 py-2.5 text-sm text-white placeholder-studio-500 focus:outline-none focus:border-amber-500 transition"
+                      className="w-full apple-glass-input rounded-xl pl-9 pr-3.5 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none transition shadow-inner"
                     />
                   </div>
-                  <p className="text-[11px] text-studio-400 mt-1">
+                  <p className="text-[11px] text-white/60 mt-1">
                     Enter the email address or name you used during intake.
                   </p>
                 </div>
@@ -259,7 +260,7 @@ export function LoginModal({
                 <button
                   type="submit"
                   disabled={isLoading || !studentQuery.trim()}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold shadow-lg shadow-amber-500/20 transition disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold shadow-lg shadow-amber-500/20 transition apple-spring disabled:opacity-50 min-h-[44px]"
                 >
                   {isLoading ? (
                     <>
@@ -277,10 +278,10 @@ export function LoginModal({
 
               {/* Quick Select from Registered Students */}
               {availableStudents.length > 0 && (
-                <div className="pt-3 border-t border-studio-800/80">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-2 flex items-center justify-between">
+                <div className="pt-3 border-t border-white/10">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-white/60 mb-2 flex items-center justify-between">
                     <span>Registered Studio Students</span>
-                    <span className="text-[10px] text-studio-500 font-mono">
+                    <span className="text-[10px] text-amber-400/90 font-mono">
                       1-Tap Login
                     </span>
                   </div>
@@ -291,10 +292,10 @@ export function LoginModal({
                         type="button"
                         onClick={() => handleQuickStudentSelect(s.id)}
                         disabled={isLoading}
-                        className="w-full flex items-center justify-between p-2 rounded-xl bg-studio-950 hover:bg-studio-800/80 border border-studio-800 transition text-left group"
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl apple-glass-pill transition apple-spring text-left group"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-7 h-7 rounded-full overflow-hidden bg-studio-800 border border-studio-700 shrink-0">
+                          <div className="w-7 h-7 rounded-full overflow-hidden bg-studio-800 ring-1 ring-white/20 shrink-0">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={s.avatar}
@@ -306,12 +307,12 @@ export function LoginModal({
                             <span className="text-xs font-bold text-white group-hover:text-amber-300 transition truncate block">
                               {s.name}
                             </span>
-                            <span className="text-[10px] text-studio-400 capitalize">
+                            <span className="text-[10px] text-white/60 capitalize">
                               {s.primaryInstrument} • {s.skillLevel}
                             </span>
                           </div>
                         </div>
-                        <ArrowRight className="w-3.5 h-3.5 text-studio-500 group-hover:text-amber-400 transition shrink-0 ml-2" />
+                        <ArrowRight className="w-3.5 h-3.5 text-white/40 group-hover:text-amber-400 transition shrink-0 ml-2" />
                       </button>
                     ))}
                   </div>
@@ -319,15 +320,15 @@ export function LoginModal({
               )}
 
               {/* Intake Pass Callout */}
-              <div className="p-3 rounded-xl bg-studio-950 border border-studio-800 flex items-center justify-between gap-3">
+              <div className="p-3.5 rounded-2xl apple-glass-card flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-white">Don&apos;t have a profile yet?</div>
-                  <div className="text-[11px] text-studio-400">Join your studio using an intake code.</div>
+                  <div className="text-[11px] text-white/60">Join your studio using an intake code.</div>
                 </div>
                 <Link
                   href="/onboard"
                   onClick={onClose}
-                  className="px-3 py-1.5 rounded-lg bg-studio-800 hover:bg-studio-700 text-amber-400 text-xs font-bold transition shrink-0 whitespace-nowrap"
+                  className="px-3.5 py-1.5 rounded-full apple-glass-pill text-amber-400 text-xs font-bold transition apple-spring shrink-0 whitespace-nowrap min-h-[36px] flex items-center justify-center"
                 >
                   Intake Pass →
                 </Link>
@@ -344,35 +345,35 @@ export function LoginModal({
                     Director Email
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-studio-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Mail className="w-4 h-4 text-white/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="email"
                       required
                       placeholder="e.g. director@musicstudio.edu"
                       value={directorEmail}
                       onChange={(e) => setDirectorEmail(e.target.value)}
-                      className="w-full bg-studio-950 border border-studio-700 rounded-xl pl-9 pr-3.5 py-2.5 text-sm text-white placeholder-studio-500 focus:outline-none focus:border-amber-500 transition"
+                      className="w-full apple-glass-input rounded-xl pl-9 pr-3.5 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none transition shadow-inner"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-studio-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-white/70 uppercase tracking-wider mb-1.5">
                     Password {isFirebaseActive ? '' : '(Optional in studio mode)'}
                   </label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-studio-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Lock className="w-4 h-4 text-white/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="password"
                       placeholder="••••••••"
                       value={directorPassword}
                       onChange={(e) => setDirectorPassword(e.target.value)}
-                      className="w-full bg-studio-950 border border-studio-700 rounded-xl pl-9 pr-3.5 py-2.5 text-sm text-white placeholder-studio-500 focus:outline-none focus:border-amber-500 transition"
+                      className="w-full apple-glass-input rounded-xl pl-9 pr-3.5 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none transition shadow-inner"
                     />
                   </div>
                 </div>
 
-                <label className="flex items-center gap-2 text-xs text-studio-400 hover:text-studio-300 cursor-pointer py-1 select-none">
+                <label className="flex items-center gap-2 text-xs text-white/60 hover:text-white cursor-pointer py-1 select-none">
                   <input
                     type="checkbox"
                     checked={rememberDirector}
@@ -388,7 +389,7 @@ export function LoginModal({
                 <button
                   type="submit"
                   disabled={isLoading || !directorEmail.trim()}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold shadow-lg shadow-amber-500/20 transition disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold shadow-lg shadow-amber-500/20 transition apple-spring disabled:opacity-50 min-h-[44px]"
                 >
                   {isLoading ? (
                     <>
@@ -420,7 +421,7 @@ export function LoginModal({
                       }
                     }}
                     disabled={isLoading}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-studio-950 hover:bg-studio-800 border border-studio-700 text-white text-xs font-semibold transition"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full apple-glass-pill text-white text-xs font-semibold transition apple-spring min-h-[40px]"
                   >
                     Sign In with Google
                   </button>
@@ -429,8 +430,8 @@ export function LoginModal({
 
               {/* Quick Select Director Profile */}
               {availableDirectors.length > 0 && (
-                <div className="pt-3 border-t border-studio-800/80">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-studio-400 mb-2">
+                <div className="pt-3 border-t border-white/10">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-white/60 mb-2">
                     Registered Band Directors
                   </div>
                   <div className="space-y-1.5 max-h-36 overflow-y-auto">
@@ -440,22 +441,22 @@ export function LoginModal({
                         type="button"
                         onClick={() => handleQuickDirectorSelect(d.email)}
                         disabled={isLoading}
-                        className="w-full flex items-center justify-between p-2 rounded-xl bg-studio-950 hover:bg-studio-800 border border-studio-800 transition text-left group"
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl apple-glass-pill transition apple-spring text-left group"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-7 h-7 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                          <div className="w-7 h-7 rounded-full apple-glass-pill flex items-center justify-center text-amber-400 shrink-0">
                             <ShieldCheck className="w-3.5 h-3.5" />
                           </div>
                           <div className="min-w-0">
                             <span className="text-xs font-bold text-white group-hover:text-amber-300 transition truncate block">
                               {d.name}
                             </span>
-                            <span className="text-[10px] text-studio-400 truncate block">
+                            <span className="text-[10px] text-white/60 truncate block">
                               {d.studioName || d.email}
                             </span>
                           </div>
                         </div>
-                        <ArrowRight className="w-3.5 h-3.5 text-studio-500 group-hover:text-amber-400 transition shrink-0 ml-2" />
+                        <ArrowRight className="w-3.5 h-3.5 text-white/40 group-hover:text-amber-400 transition shrink-0 ml-2" />
                       </button>
                     ))}
                   </div>

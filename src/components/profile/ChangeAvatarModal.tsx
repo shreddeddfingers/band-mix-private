@@ -126,26 +126,27 @@ export function ChangeAvatarModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-studio-900 border border-studio-700/80 rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-lg apple-glass rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-studio-800 bg-studio-950/70">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/10 apple-glass-nav">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+            <div className="w-10 h-10 rounded-full apple-glass-pill flex items-center justify-center text-amber-400 shadow-sm">
               <Camera className="w-4 h-4" />
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-white">
                 Change Profile Picture
               </h2>
-              <p className="text-[11px] text-studio-400">
+              <p className="text-[11px] text-white/60">
                 Updating picture for {userName}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-studio-400 hover:text-white hover:bg-studio-800 transition"
+            className="w-9 h-9 rounded-full apple-glass-pill flex items-center justify-center text-white/70 hover:text-white apple-spring transition"
+            aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
@@ -154,8 +155,8 @@ export function ChangeAvatarModal({
         {/* Content Body */}
         <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
           {/* Live Preview Bar */}
-          <div className="flex items-center justify-center gap-4 p-3 bg-studio-950/60 rounded-2xl border border-studio-800/80">
-            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-amber-500/80 shadow-lg bg-studio-800 shrink-0">
+          <div className="flex items-center justify-center gap-4 p-3.5 apple-glass-card rounded-2xl">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden ring-2 ring-amber-400 shadow-lg bg-studio-800 shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={selectedAvatar}
@@ -175,7 +176,7 @@ export function ChangeAvatarModal({
               <div className="text-xs font-bold text-white uppercase tracking-wider">
                 Photo Preview
               </div>
-              <p className="text-[11px] text-studio-400 mt-0.5">
+              <p className="text-[11px] text-white/60 mt-0.5">
                 This image will appear on your profile, ensemble rosters, and band messages.
               </p>
             </div>
@@ -188,13 +189,13 @@ export function ChangeAvatarModal({
           )}
 
           {/* Source Tabs */}
-          <div className="flex rounded-xl bg-studio-950 p-1 border border-studio-800">
+          <div className="flex apple-segmented-tray rounded-2xl p-1 shadow-inner">
             <button
               onClick={() => setActiveTab('upload')}
-              className={`flex-1 py-1.5 sm:py-2 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-1.5 sm:py-2 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5 apple-spring ${
                 activeTab === 'upload'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm'
-                  : 'text-studio-400 hover:text-white'
+                  ? 'apple-segmented-pill-brand font-extrabold shadow-sm'
+                  : 'text-white/70 hover:text-white hover:bg-white/[0.06]'
               }`}
             >
               <Upload className="w-3.5 h-3.5" />
@@ -202,10 +203,10 @@ export function ChangeAvatarModal({
             </button>
             <button
               onClick={() => setActiveTab('presets')}
-              className={`flex-1 py-1.5 sm:py-2 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-1.5 sm:py-2 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5 apple-spring ${
                 activeTab === 'presets'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm'
-                  : 'text-studio-400 hover:text-white'
+                  ? 'apple-segmented-pill-brand font-extrabold shadow-sm'
+                  : 'text-white/70 hover:text-white hover:bg-white/[0.06]'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -213,10 +214,10 @@ export function ChangeAvatarModal({
             </button>
             <button
               onClick={() => setActiveTab('url')}
-              className={`flex-1 py-1.5 sm:py-2 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-1.5 sm:py-2 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5 apple-spring ${
                 activeTab === 'url'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm'
-                  : 'text-studio-400 hover:text-white'
+                  ? 'apple-segmented-pill-brand font-extrabold shadow-sm'
+                  : 'text-white/70 hover:text-white hover:bg-white/[0.06]'
               }`}
             >
               <LinkIcon className="w-3.5 h-3.5" />
@@ -237,16 +238,16 @@ export function ChangeAvatarModal({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full border-2 border-dashed border-studio-700 hover:border-amber-400/80 bg-studio-950/40 hover:bg-studio-950/80 rounded-2xl p-6 text-center transition flex flex-col items-center justify-center gap-2 group cursor-pointer"
+                className="w-full border-2 border-dashed border-white/20 hover:border-amber-400/80 apple-glass-card rounded-2xl p-6 text-center transition flex flex-col items-center justify-center gap-2 group cursor-pointer apple-spring"
               >
-                <div className="w-12 h-12 rounded-full bg-studio-800 border border-studio-700 flex items-center justify-center text-amber-400 group-hover:scale-110 transition">
+                <div className="w-12 h-12 rounded-full apple-glass-pill flex items-center justify-center text-amber-400 group-hover:scale-110 transition shadow-sm">
                   <Camera className="w-6 h-6" />
                 </div>
                 <div>
                   <span className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-300 transition">
                     Take Photo or Choose from Library
                   </span>
-                  <p className="text-[11px] text-studio-400 mt-0.5">
+                  <p className="text-[11px] text-white/60 mt-0.5">
                     Works directly with your iPhone camera, photo roll, or desktop files
                   </p>
                 </div>
@@ -308,11 +309,11 @@ export function ChangeAvatarModal({
                   placeholder="https://example.com/avatar.jpg"
                   value={urlInput}
                   onChange={(e) => setUrlInput(e.target.value)}
-                  className="flex-1 bg-studio-950 border border-studio-700 rounded-xl px-3 py-2 text-xs text-white placeholder-studio-500 focus:outline-none focus:border-amber-500"
+                  className="flex-1 apple-glass-input rounded-xl px-3.5 py-2 text-xs text-white placeholder-white/40 focus:outline-none transition shadow-inner"
                 />
                 <button
                   type="submit"
-                  className="px-3.5 py-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-white text-xs font-semibold transition"
+                  className="px-4 py-2 rounded-xl apple-glass-pill text-white text-xs font-semibold transition apple-spring"
                 >
                   Preview
                 </button>
@@ -322,12 +323,12 @@ export function ChangeAvatarModal({
         </div>
 
         {/* Footer actions */}
-        <div className="p-4 sm:p-5 border-t border-studio-800 bg-studio-950/70 flex items-center justify-end gap-2.5">
+        <div className="p-4 sm:p-5 border-t border-white/10 apple-glass-nav flex items-center justify-end gap-2.5">
           <button
             type="button"
             onClick={onClose}
             disabled={isProcessing}
-            className="px-4 py-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-studio-300 hover:text-white text-xs font-semibold transition"
+            className="px-4 py-2 rounded-full apple-glass-pill text-white/80 hover:text-white text-xs font-semibold transition apple-spring min-h-[40px]"
           >
             Cancel
           </button>
@@ -335,7 +336,7 @@ export function ChangeAvatarModal({
             type="button"
             onClick={handleSave}
             disabled={isProcessing || !selectedAvatar}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition shadow-lg shadow-amber-500/20 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition apple-spring shadow-lg shadow-amber-500/20 disabled:opacity-50 min-h-[40px]"
           >
             {isProcessing ? (
               <>

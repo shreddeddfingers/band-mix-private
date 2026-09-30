@@ -24,15 +24,15 @@ export function BandStoriesBar({
   isAdmin,
 }: BandStoriesBarProps) {
   return (
-    <div className="w-full bg-studio-950/80 border border-studio-800/80 rounded-2xl p-3 shadow-inner">
+    <div className="w-full apple-glass-card rounded-2xl p-3 shadow-lg">
       <div className="flex items-center gap-3 overflow-x-auto no-scrollbar scroll-smooth py-1 px-1">
         {/* Story 1: Band Story / Cover */}
         <div
           onClick={() => onOpenChangeCover && onOpenChangeCover()}
-          className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group"
+          className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group apple-spring"
           title="Tap to change band picture"
         >
-          <div className="relative p-[2.5px] bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 rounded-full transition-transform group-hover:scale-105 active:scale-95">
+          <div className="relative p-[2.5px] bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 rounded-full shadow-md group-hover:shadow-amber-500/30">
             <div className="w-14 h-14 rounded-full overflow-hidden bg-studio-900 border-2 border-studio-950">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -44,7 +44,7 @@ export function BandStoriesBar({
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shadow-md">
+            <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shadow-md ring-1 ring-white/20">
               <Music className="w-3 h-3 stroke-[2.5]" />
             </div>
           </div>
@@ -68,13 +68,13 @@ export function BandStoriesBar({
               key={member.userId}
               type="button"
               onClick={() => onSelectMember(member, studentDetails)}
-              className="flex flex-col items-center gap-1.5 shrink-0 group text-center focus:outline-none"
+              className="flex flex-col items-center gap-1.5 shrink-0 group text-center focus:outline-none apple-spring"
               title={`${member.name} - Tap to view profile & questionnaire`}
             >
               <div
-                className={`relative p-[2.5px] rounded-full transition-transform group-hover:scale-105 active:scale-95 ${
+                className={`relative p-[2.5px] rounded-full shadow-md ${
                   isDir
-                    ? 'bg-gradient-to-tr from-amber-400 via-yellow-500 to-amber-600 shadow-amber-500/20 shadow-md'
+                    ? 'bg-gradient-to-tr from-amber-400 via-yellow-500 to-amber-600 shadow-amber-500/20'
                     : 'bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600'
                 }`}
               >
@@ -88,7 +88,7 @@ export function BandStoriesBar({
                 </div>
 
                 {/* Badge: Director Shield or Instrument Icon */}
-                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-studio-950 border border-studio-700 flex items-center justify-center shadow-md">
+                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-studio-950 border border-white/20 flex items-center justify-center shadow-md">
                   {isDir ? (
                     <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
                   ) : (
@@ -116,13 +116,13 @@ export function BandStoriesBar({
           <button
             type="button"
             onClick={onOpenAddMember}
-            className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none"
+            className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none apple-spring"
             title="Add a student musician to this band"
           >
-            <div className="w-[60px] h-[60px] rounded-full border-2 border-dashed border-studio-700 group-hover:border-amber-400 flex items-center justify-center bg-studio-900/60 transition-colors group-hover:bg-studio-900">
-              <Plus className="w-5 h-5 text-studio-400 group-hover:text-amber-400 transition" />
+            <div className="w-[60px] h-[60px] rounded-full border-2 border-dashed border-white/20 group-hover:border-amber-400 flex items-center justify-center apple-glass-pill transition-colors group-hover:bg-white/[0.12]">
+              <Plus className="w-5 h-5 text-white/60 group-hover:text-amber-400 transition" />
             </div>
-            <span className="text-[11px] font-semibold text-studio-400 group-hover:text-amber-400 transition max-w-[68px] truncate text-center">
+            <span className="text-[11px] font-semibold text-white/60 group-hover:text-amber-400 transition max-w-[68px] truncate text-center">
               Add Member
             </span>
           </button>
